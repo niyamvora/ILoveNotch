@@ -6,6 +6,10 @@ APP := $(DERIVED_DATA)/Build/Products/$(CONFIGURATION)/OpenNotch.app
 SWIFT_SOURCES := App Sources Tests Package.swift
 # The commit a build comes from, with "+" when the checkout has uncommitted changes (shown in the menu).
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null)$(shell git diff --quiet HEAD -- 2>/dev/null || echo +)
+# Signs with your Apple Development certificate when you have one. macOS ties permissions (Calendar,
+# Reminders, folders) to the signature, and an ad-hoc one changes with every build, so updates would
+# ask again each time. Without a certificate (CI, most contributors) builds stay ad-hoc signed.
+SIGNING_IDENTITY ?= $(shell security find-identity -v -p codesigning 2>/dev/null | awk -F'"' '/Apple Development/ {print $$2; exit}')
 
 .PHONY: setup project build run install update test lint format licenses check clean
 
@@ -20,7 +24,7 @@ project: ## Generate OpenNotch.xcodeproj from project.yml
 build: project ## Build the app; CONFIGURATION=Debug|Release
 	xcodebuild -project OpenNotch.xcodeproj -scheme OpenNotch -configuration $(CONFIGURATION) \
 		-destination 'platform=macOS,arch=$(ARCH)' -derivedDataPath $(DERIVED_DATA) \
-		OPENNOTCH_COMMIT='$(COMMIT)' -quiet build
+		OPENNOTCH_COMMIT='$(COMMIT)' $(if $(SIGNING_IDENTITY),CODE_SIGN_IDENTITY='$(SIGNING_IDENTITY)') -quiet build
 
 run: build ## Build and relaunch the app
 	-osascript -e 'quit app "OpenNotch"'
