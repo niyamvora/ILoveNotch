@@ -107,11 +107,14 @@ struct NotchReducerTests {
         #expect(pinned.presentation == .pinned(tab: .media))
     }
 
-    @Test func switchingTabsEndsTextInputAndKeepsThePin() {
+    @Test func switchingTabsWhileTypingKeepsFocusAndThePin() {
+        // The panel still has the keyboard, so leaving focus here would need a visible hand-back.
         let unpinned = after(.show, .clicked, .beginTextInput, .selectTab(.notes))
-        #expect(unpinned.presentation == .expanded(tab: .notes))
-        let pinned = after(.show, .clicked, .togglePin, .beginTextInput, .selectTab(.notes))
+        #expect(unpinned.presentation == .focused(tab: .notes, pinned: false))
+        let pinned = after(.show, .clicked, .togglePin, .beginTextInput, .selectTab(.notes), .endTextInput)
         #expect(pinned.presentation == .pinned(tab: .notes))
+        let dragged = after(.show, .clicked, .beginTextInput, .dragEntered)
+        #expect(dragged.presentation == .focused(tab: .shelf, pinned: false))
     }
 
     @Test func theLastTabIsRemembered() {

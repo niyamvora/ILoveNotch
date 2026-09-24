@@ -12,6 +12,7 @@ final class NotchController {
     /// Called after every presentation change.
     var onPresentationChange: (() -> Void)?
 
+    private let metrics: NotchMetrics
     private let panel: NotchWindow
     private var scrollMonitor: Any?
     private var clickAwayMonitors: [Any] = []
@@ -19,11 +20,16 @@ final class NotchController {
 
     init(screen: NSScreen, content: NotchContent) {
         displayID = screen.displayID
-        let metrics = NotchMetrics(screen: screen)
+        metrics = NotchMetrics(screen: screen)
         panel = NotchWindow(frame: metrics.panelFrame)
         panel.contentView = NotchHostingView(rootView: NotchView(engine: engine, metrics: metrics, content: content))
         panel.onCancel = { [weak self] in self?.engine.send(.dismiss) }
         engine.onPresentationChange = { [weak self] old, new in self?.render(from: old, to: new) }
+        engine.pointerCheck = { [weak self] in
+            PointerCheck(
+                isInside: self?.notchFrame().contains(NSEvent.mouseLocation) ?? false,
+                isButtonDown: NSEvent.pressedMouseButtons != 0)
+        }
 
         // The panel only becomes key for text entry, so key status is the focused state.
         let center = NotificationCenter.default
@@ -41,7 +47,7 @@ final class NotchController {
             MainActor.assumeIsolated { self?.handleScroll(event) }
             return event
         }
-        Log.surface.info("Notch on display \(self.displayID, privacy: .public), notch: \(metrics.notch != nil)")
+        Log.surface.info("Notch on display \(self.displayID, privacy: .public), notch: \(self.metrics.notch != nil)")
     }
 
     /// Tears the notch down. Call before dropping the controller.
@@ -62,17 +68,30 @@ final class NotchController {
         if open != (old.openTab != nil) {
             open ? startClickAway() : stopClickAway()
         }
-        // Leaving text entry (Escape, or closing while typing): hand the keyboard back to the
-        // app the user was in. Ordering the panel out and in drops its key status.
-        if case .focused = old, panel.isKeyWindow, !Self.isFocused(new), panel.isVisible {
-            panel.orderOut(nil)
-            panel.orderFrontRegardless()
-        }
+        if !open, panel.isKeyWindow { handBackKeyboard() }
         onPresentationChange?()
     }
 
-    private static func isFocused(_ presentation: NotchPresentationState) -> Bool {
-        if case .focused = presentation { true } else { false }
+    /// The notch closed while it still had the keyboard (Escape, or collapsing mid-typing): give
+    /// the keyboard back to the app the user was in. Ordering the panel out and in drops its key
+    /// status; waiting for the collapse to finish makes that invisible, since the compact notch sits
+    /// over the black camera housing. (Doing it on every tab switch is what used to flicker.)
+    private func handBackKeyboard() {
+        Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(400))
+            guard let self, panel.isKeyWindow, panel.isVisible, engine.state.presentation.openTab == nil else { return }
+            panel.orderOut(nil)
+            panel.orderFrontRegardless()
+        }
+    }
+
+    /// Where the notch is drawn right now, in screen coordinates.
+    private func notchFrame() -> CGRect {
+        let size = metrics.size(for: engine.state.presentation)
+        let frame = panel.frame
+        return CGRect(
+            x: frame.midX - size.width / 2, y: frame.maxY - metrics.topInset - size.height,
+            width: size.width, height: size.height)
     }
 
     private func handleScroll(_ event: NSEvent) {
