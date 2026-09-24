@@ -11,7 +11,7 @@ COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null)$(shell git diff --quie
 # ask again each time. Without a certificate (CI, most contributors) builds stay ad-hoc signed.
 SIGNING_IDENTITY ?= $(shell security find-identity -v -p codesigning 2>/dev/null | awk -F'"' '/Apple Development/ {print $$2; exit}')
 
-.PHONY: setup project build build-app-store run install update release app-store test lint format licenses check clean
+.PHONY: setup project build build-app-store run install update release app-store test lint format licenses secrets check clean
 
 setup: ## Install developer tools (Brewfile) and fetch submodules
 	brew bundle
@@ -65,7 +65,10 @@ format: ## Apply formatting in place
 licenses: ## SPDX headers and third-party notices
 	scripts/check-licenses.sh
 
-check: lint test build licenses ## Everything CI runs
+secrets: ## No keys, certificates, profiles, or credentials files in git
+	scripts/check-secrets.sh
+
+check: secrets lint test build licenses ## Everything CI runs
 
 clean:
 	rm -rf .build OpenNotch.xcodeproj
