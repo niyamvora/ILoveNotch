@@ -29,6 +29,9 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
+      - name: No keys or credentials
+        run: make secrets
+
       - name: Formatting
         run: make lint
 
