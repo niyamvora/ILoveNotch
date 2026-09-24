@@ -13,7 +13,7 @@ let package = Package(
         // State machine, feature lifecycle, diagnostics. No AppKit, so it tests anywhere.
         .target(name: "NotchCore"),
         // Panel, SwiftUI surface, and notch geometry.
-        .target(name: "NotchSurface"),
+        .target(name: "NotchSurface", dependencies: ["NotchCore"]),
         .testTarget(name: "NotchCoreTests", dependencies: ["NotchCore"]),
         .testTarget(name: "NotchSurfaceTests", dependencies: ["NotchSurface"]),
     ]

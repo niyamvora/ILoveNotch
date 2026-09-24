@@ -42,6 +42,7 @@ schemes:
     test:
       config: Debug
       targets:
+        - package: OpenNotchKit/NotchCoreTests
         - package: OpenNotchKit/NotchSurfaceTests
     archive:
       config: Release
