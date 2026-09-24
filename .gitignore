@@ -1,5 +1,6 @@
-# Build output
+# Build output (build/ holds releases, App Store uploads, and soak results)
 .build/
+build/
 .swiftpm/
 DerivedData/
 xcuserdata/
@@ -36,6 +37,8 @@ extracted/
 *.pem
 .env
 .env.*
+# Release credentials (paths and IDs) for scripts/release.sh; see release.env.example
+release.env
 
 # Tool receipts
 *.visual-check.json

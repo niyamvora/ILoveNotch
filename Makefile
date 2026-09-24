@@ -11,7 +11,7 @@ COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null)$(shell git diff --quie
 # ask again each time. Without a certificate (CI, most contributors) builds stay ad-hoc signed.
 SIGNING_IDENTITY ?= $(shell security find-identity -v -p codesigning 2>/dev/null | awk -F'"' '/Apple Development/ {print $$2; exit}')
 
-.PHONY: setup project build run install update test lint format licenses check clean
+.PHONY: setup project build run install update release app-store test lint format licenses check clean
 
 setup: ## Install developer tools (Brewfile) and fetch submodules
 	brew bundle
@@ -41,6 +41,12 @@ install: ## Build a Release app into /Applications and (re)launch it
 
 update: ## Pull main when safe, rebuild, reinstall, relaunch (the app's "Update OpenNotch")
 	scripts/update.sh
+
+release: ## Sign, notarize, and draft a GitHub release: make release VERSION=0.3.0 (docs/releasing.md)
+	scripts/release.sh $(VERSION)
+
+app-store: ## Upload the App Store edition to App Store Connect: make app-store VERSION=0.3.0
+	scripts/app-store.sh $(VERSION)
 
 test: ## Run unit and performance tests
 	swift test -Xswiftc -warnings-as-errors
