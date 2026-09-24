@@ -2,15 +2,18 @@
 
 /// A feature that can own the expanded notch.
 public enum FeatureID: String, CaseIterable, Hashable, Sendable {
-    case media, shelf, tasks, notes
+    case media, shelf, calendar, tasks, notes, shortcuts, timer
 
     /// SF Symbol for tabs and settings.
     public var symbol: String {
         switch self {
         case .media: "play.circle"
         case .shelf: "tray.full"
+        case .calendar: "calendar"
         case .tasks: "checklist"
         case .notes: "note.text"
+        case .shortcuts: "square.stack.3d.up"
+        case .timer: "timer"
         }
     }
 
@@ -18,8 +21,11 @@ public enum FeatureID: String, CaseIterable, Hashable, Sendable {
         switch self {
         case .media: "Media"
         case .shelf: "Shelf"
+        case .calendar: "Calendar"
         case .tasks: "Tasks"
         case .notes: "Notes"
+        case .shortcuts: "Shortcuts"
+        case .timer: "Timer"
         }
     }
 }
