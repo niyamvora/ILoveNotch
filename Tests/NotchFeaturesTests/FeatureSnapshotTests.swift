@@ -72,6 +72,23 @@ struct FeatureSnapshotTests {
         try render(notes.view, name: "notes")
     }
 
+    @Test func tasksWithACompletedSection() throws {
+        let tasks = TasksFeature(eventStore: EventStore(), defaults: UserDefaults(suiteName: "T-\(UUID())")!)
+        let now = Date.now
+        tasks.show(
+            tasks: [
+                TaskItem(id: "1", title: "Send the invoice", due: now - 3600),
+                TaskItem(id: "2", title: "Book flights", due: now + 86_400),
+                TaskItem(id: "3", title: "Water the plants"),
+            ],
+            completed: [
+                TaskItem(id: "4", title: "Ship Phase 4", completed: now - 600),
+                TaskItem(id: "5", title: "Renew passport", completed: now - 90_000),
+            ])
+        tasks.showsCompleted = true
+        try render(tasks.view, name: "tasks")
+    }
+
     @Test func eventKitTabsBeforeAccess() throws {
         let store = EventStore()
         try render(CalendarFeature(eventStore: store).view, name: "calendar-no-access")
