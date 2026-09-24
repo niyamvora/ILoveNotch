@@ -49,8 +49,9 @@ struct MediaView: View {
                     seekBar(now, at: context.date, phase: time * 2.4)
                     controls(playing: now.isPlaying)
                     if waveform {
+                        let heard = media.audio.isHearing ? media.audio.bands : []
                         Spacer(minLength: 0)
-                        Waveform(level: animating ? 1 : 0, time: time, tint: tint)
+                        Waveform(level: animating ? 1 : 0, time: time, tint: tint, bands: heard)
                             .frame(height: 18)
                             .fadingEdges(.horizontal, length: 28)
                             .animation(.easeInOut(duration: 0.5), value: animating)

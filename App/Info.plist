@@ -6,5 +6,7 @@
 	<string>$(SRCROOT)</string>
 	<key>OpenNotchCommit</key>
 	<string>$(OPENNOTCH_COMMIT)</string>
+	<key>NSAudioCaptureUsageDescription</key>
+	<string>OpenNotch listens to what's playing so the media waveform moves with the music. Audio is analyzed on this Mac as it plays and is never recorded.</string>
 </dict>
 </plist>

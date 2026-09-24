@@ -4,5 +4,8 @@
 <dict>
 	<key>com.apple.security.personal-information.calendars</key>
 	<true/>
+	<!-- Capturing system audio for the media waveform (Core Audio process tap). -->
+	<key>com.apple.security.device.audio-input</key>
+	<true/>
 </dict>
 </plist>
