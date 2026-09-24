@@ -50,6 +50,34 @@ public struct FeatureUnavailableView: View {
     }
 }
 
+/// A time readout whose digits roll into place like an odometer whenever they change: down for
+/// countdowns, up for counters. It rolls in from 0:00 when it appears. SwiftUI's numeric-text
+/// transition animates each changed digit natively; Reduce Motion turns it off.
+public struct RollingTime: View {
+    let seconds: TimeInterval
+    var tenths = false
+    var countsDown = false
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var appeared = false
+
+    public init(_ seconds: TimeInterval, tenths: Bool = false, countsDown: Bool = false) {
+        self.seconds = seconds
+        self.tenths = tenths
+        self.countsDown = countsDown
+    }
+
+    public var body: some View {
+        let text = formatTime(appeared ? seconds : 0, tenths: tenths, roundingUp: countsDown)
+        Text(text)
+            .monospacedDigit()
+            .contentTransition(.numericText(countsDown: countsDown && appeared))
+            .animation(reduceMotion ? nil : .snappy(duration: tenths ? 0.12 : 0.4), value: text)
+            .onAppear { appeared = true }
+            .accessibilityLabel(formatTime(seconds, tenths: tenths, roundingUp: countsDown))
+    }
+}
+
 extension URL {
     /// Opens a System Settings privacy pane, e.g. "Privacy_Calendars".
     public static func privacySettings(_ pane: String) -> URL {
