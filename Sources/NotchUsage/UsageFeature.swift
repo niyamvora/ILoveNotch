@@ -59,6 +59,8 @@ public final class UsageFeature: NotchFeature {
     private(set) var errors: [String: String] = [:]
     /// Raised when a limit passes 80% or 95% while the Usage tab isn't on screen.
     @ObservationIgnored public var onActivity: ((Activity) -> Void)?
+    /// Opens the AI Usage settings, where API keys go.
+    @ObservationIgnored public var openSettings: (() -> Void)?
 
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let cacheURL: URL
@@ -114,6 +116,51 @@ public final class UsageFeature: NotchFeature {
 
     /// Enabled providers in order, for the tab.
     var enabledProviders: [UsageProvider] { providers.filter { enabled.contains($0.id) } }
+
+    // MARK: API keys
+
+    /// Providers with no sign-in of their own to reuse, and the variable each reads its API key from.
+    /// A key pasted in Settings is kept in the keychain and read like that variable.
+    nonisolated static let apiKeyNames = [
+        "openrouter": OpenRouterAuthStore.environmentNames[0], "zai": ZAIAuthStore.environmentNames[0],
+    ]
+
+    /// Where a provider's API key comes from.
+    enum KeySource { case keychain, shell, configFile, none }
+
+    func takesAPIKey(_ providerID: String) -> Bool { Self.apiKeyNames[providerID] != nil }
+
+    func keySource(_ providerID: String) -> KeySource {
+        guard let name = Self.apiKeyNames[providerID] else { return .none }
+        if APIKeyVault.key(named: name) != nil { return .keychain }
+        let runtime = allRuntimes().first { $0.provider.id == providerID } as? any APIKeyManaging
+        switch runtime?.apiKeyStatus {
+        case .fromEnvironment: return .shell
+        case .saved, .overrideActive: return .configFile
+        case .notSet, nil: return .none
+        }
+    }
+
+    /// Keeps `key` in the keychain, then looks again, and refreshes the provider if it's on.
+    func saveAPIKey(_ key: String, for providerID: String) throws {
+        guard let name = Self.apiKeyNames[providerID] else { return }
+        try APIKeyVault.save(key, named: name)
+        keyChanged(providerID)
+    }
+
+    func removeAPIKey(for providerID: String) {
+        guard let name = Self.apiKeyNames[providerID] else { return }
+        APIKeyVault.delete(named: name)
+        keyChanged(providerID)
+    }
+
+    private func keyChanged(_ providerID: String) {
+        retryAfter[providerID] = nil
+        Task {
+            await detect()
+            await refresh(providerID, force: true)
+        }
+    }
 
     public func isEnabled(_ providerID: String) -> Bool { enabled.contains(providerID) }
 

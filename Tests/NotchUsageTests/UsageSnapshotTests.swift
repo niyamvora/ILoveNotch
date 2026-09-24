@@ -82,10 +82,28 @@ struct UsageSnapshotTests {
         #expect(usage.detected == ["claude", "codex", "cursor"], "the dashboard looks for the others")
     }
 
-    @Test func beforeAnyProviderIsOnItOffersTheSignedInOnes() async throws {
-        let runtimes = ["claude", "codex", "cursor"].map { FakeRuntime(id: $0, name: $0.capitalized, used: 0) }
+    @Test func settingsListEveryProviderAndTakeTheKeysTheyNeed() async throws {
+        let runtimes = [("claude", "Claude"), ("codex", "Codex"), ("openrouter", "OpenRouter"), ("zai", "Z.ai")].map {
+            FakeRuntime(id: $0.0, name: $0.1, used: 0)
+        }
+        let usage = UsageFeature(defaults: defaults, cacheURL: cache, runtimes: { runtimes })
+        try await render(usage.settingsView, name: "usage-settings", size: CGSize(width: 460, height: 480))
+    }
+
+    @Test func beforeAnyProviderIsOnItOffersEveryOneSignedInFirst() async throws {
+        let names = [
+            "claude": "Claude", "codex": "Codex", "cursor": "Cursor", "antigravity": "Antigravity",
+            "copilot": "Copilot", "devin": "Devin", "grok": "Grok", "ollama": "Ollama", "opencode": "OpenCode",
+            "openrouter": "OpenRouter", "zai": "Z.ai",
+        ]
+        let runtimes = names.keys.sorted().map { id in
+            let runtime = FakeRuntime(id: id, name: names[id] ?? id, used: 0)
+            runtime.signedIn = ["claude", "codex", "copilot"].contains(id)
+            return runtime
+        }
         let usage = UsageFeature(defaults: defaults, cacheURL: cache, runtimes: { runtimes })
         try await render(UsageView(usage: usage), name: "usage-onboarding")
+        #expect(usage.detected == ["claude", "codex", "copilot"])
     }
 
     private func render(_ view: some View, name: String, size: CGSize = Self.size) async throws {
