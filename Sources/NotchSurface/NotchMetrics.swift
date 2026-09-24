@@ -19,6 +19,7 @@ struct NotchMetrics: Equatable {
     static let pillInset: CGFloat = 3  // gap above the floating pill
     static let hoverGrowth = CGSize(width: 12, height: 4)  // hover feedback
     static let activityWing: CGFloat = 96  // room beside the notch for a live activity
+    static let meterDepth: CGFloat = 26  // room under the notch for a level activity's row
     static let overshootRoom: CGFloat = 1.08  // springy and jelly animations briefly overshoot
 
     /// The notch is the gap between the two auxiliary top areas; no insets means no notch.
@@ -68,6 +69,12 @@ struct NotchMetrics: Equatable {
             compactSize
         case .hoverArmed:
             CGSize(width: housing.width + Self.hoverGrowth.width, height: housing.height + Self.hoverGrowth.height)
+        case .transient(let activity) where activity.level != nil:
+            // A level (volume, battery) keeps to the notch's width: one row under the camera housing,
+            // or inside the pill.
+            notch == nil
+                ? housing
+                : CGSize(width: housing.width + Self.hoverGrowth.width, height: housing.height + Self.meterDepth)
         case .transient:
             CGSize(width: housing.width + Self.activityWing * 2, height: housing.height)
         case .expanded, .pinned, .focused:
