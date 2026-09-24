@@ -66,11 +66,14 @@ public final class NotchEngine {
         switch effect {
         case .schedule(let deadline, let delay):
             timers[deadline]?.cancel()
-            timers[deadline] = Task { [weak self] in
-                // Tolerance lets macOS coalesce this wakeup with other timers (Apple's energy guidance).
-                try? await Task.sleep(for: delay, tolerance: delay / 10)
-                guard !Task.isCancelled else { return }
-                self?.send(.deadline(deadline))
+            // Sleep off the main actor so a cancelled timer never wakes the main thread; only a timer
+            // that fires hops back. Tolerance lets macOS coalesce the wakeup (Apple's energy guidance).
+            timers[deadline] = Task.detached { [weak self] in
+                do { try await Task.sleep(for: delay, tolerance: delay / 10) } catch { return }
+                await MainActor.run {
+                    guard !Task.isCancelled else { return }
+                    self?.send(.deadline(deadline))
+                }
             }
         case .cancel(let deadline):
             timers.removeValue(forKey: deadline)?.cancel()
