@@ -58,24 +58,26 @@ struct MediaView: View {
     /// Ticks once a second, and only while this tab is on screen and the track is playing.
     @ViewBuilder private func progress(_ now: NowPlaying) -> some View {
         if let duration = now.duration, duration > 0 {
+            let spokenPosition = formatTime(now.position(at: .now) ?? 0, roundingUp: false)
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 let position = now.position(at: context.date) ?? 0
                 VStack(spacing: 2) {
                     ProgressView(value: position, total: duration)
                         .progressViewStyle(.linear)
                         .tint(.white)
-                    HStack {
-                        Text(Self.time(position))
+                    HStack(spacing: 0) {
+                        RollingTime(position)
                         Spacer()
-                        Text("-" + Self.time(duration - position))
+                        Text("-")
+                        RollingTime(duration - position, countsDown: true)
                     }
-                    .font(.caption2.monospacedDigit())
+                    .font(.caption2)
                     .foregroundStyle(.white.opacity(0.5))
                 }
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Playback position")
-            .accessibilityValue("\(Self.time(now.position(at: .now) ?? 0)) of \(Self.time(duration))")
+            .accessibilityValue("\(spokenPosition) of \(formatTime(duration, roundingUp: false))")
         }
     }
 
@@ -100,10 +102,5 @@ struct MediaView: View {
         .buttonStyle(.plain)
         .help(label)
         .accessibilityLabel(label)
-    }
-
-    static func time(_ seconds: TimeInterval) -> String {
-        let total = Int(max(0, seconds).rounded())
-        return String(format: "%d:%02d", total / 60, total % 60)
     }
 }
