@@ -50,7 +50,7 @@ struct NotchPreferencesTests {
         preferences.resizeExpanded(to: CGSize(width: 5000, height: 10))
         #expect(preferences.expandedSize == CGSize(width: 720, height: 230))
         defaults.set([10.0, 9999.0], forKey: "expandedSize")  // a hand-edited value is clamped too
-        #expect(NotchPreferences(defaults: defaults).expandedSize == CGSize(width: 400, height: 480))
+        #expect(NotchPreferences(defaults: defaults).expandedSize == CGSize(width: 414, height: 480))
     }
 
     @Test func theAnimationStylePersistsAndFallsBackToSpring() {
@@ -61,13 +61,22 @@ struct NotchPreferencesTests {
         #expect(NotchPreferences(defaults: defaults).animationStyle == .spring)
     }
 
-    @Test func clickingResizeStepsThroughThePresets() {
+    @Test func plusAndMinusResizeInProportion() {
         let preferences = NotchPreferences(defaults: defaults)
-        let widths = (0..<4).map { _ in
-            preferences.cycleExpandedSize()
-            return preferences.expandedSize.width
+        var larger: [CGSize] = []
+        while let next = preferences.expandedSizeStep(larger: true) {
+            preferences.resizeExpanded(to: next)
+            larger.append(preferences.expandedSize)
         }
-        #expect(widths == [560, 420, 460, 560], "medium → large → small → medium → large")
+        #expect(larger.map(\.width) == [515, 575, 644, 718], "+ stops at the largest size")
+        while let next = preferences.expandedSizeStep(larger: false) { preferences.resizeExpanded(to: next) }
+        #expect(preferences.expandedSize == CGSize(width: 414, height: 261), "− stops at the smallest size")
+
+        let aspect = NotchPreferences.defaultExpandedSize.width / NotchPreferences.defaultExpandedSize.height
+        for step in NotchPreferences.expandedSizeSteps {
+            #expect(abs(step.width / step.height - aspect) < 0.01, "the height follows the width")
+            #expect(NotchPreferences.clamped(step) == step, "every step is within the limits")
+        }
     }
 
     @Test func observersRerunAfterEveryChange() async throws {

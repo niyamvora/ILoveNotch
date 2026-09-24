@@ -55,18 +55,20 @@ public final class NotchPreferences {
         didSet { defaults.set(animationStyle.rawValue, forKey: Key.animationStyle) }
     }
 
-    /// The open notch's size, set with its resize control. Always within the minimum and maximum.
+    /// The open notch's size, set with − and + beside the pin. Always within the minimum and maximum.
     public private(set) var expandedSize: CGSize {
         didSet { defaults.set([expandedSize.width, expandedSize.height], forKey: Key.expandedSize) }
     }
 
     public nonisolated static let defaultExpandedSize = CGSize(width: 460, height: 290)
-    public nonisolated static let minimumExpandedSize = CGSize(width: 400, height: 230)
+    /// Narrowest that still fits every tab and the controls beside them.
+    public nonisolated static let minimumExpandedSize = CGSize(width: 414, height: 230)
     public nonisolated static let maximumExpandedSize = CGSize(width: 720, height: 480)
-    /// Small, medium, and large: what clicking the resize control steps through.
-    public nonisolated static let expandedSizePresets = [
-        CGSize(width: 420, height: 250), defaultExpandedSize, CGSize(width: 560, height: 360),
-    ]
+    /// What − and + step through: the default size scaled down and up, so the height follows the width.
+    public nonisolated static let expandedSizeSteps = ([0.9, 1, 1.12, 1.25, 1.4, 1.56] as [CGFloat]).map { scale in
+        let size = defaultExpandedSize
+        return CGSize(width: (size.width * scale).rounded(), height: (size.height * scale).rounded())
+    }
 
     @ObservationIgnored private let defaults: UserDefaults
 
@@ -88,10 +90,11 @@ public final class NotchPreferences {
         expandedSize = Self.clamped(size)
     }
 
-    /// Steps to the next preset size up, wrapping around to the smallest.
-    public func cycleExpandedSize() {
-        let presets = Self.expandedSizePresets
-        expandedSize = presets.first { $0.width > expandedSize.width + 1 } ?? presets[0]
+    /// The next size up or down from the current one, or nil at the largest or smallest.
+    public func expandedSizeStep(larger: Bool) -> CGSize? {
+        let steps = Self.expandedSizeSteps
+        return larger
+            ? steps.first { $0.width > expandedSize.width + 1 } : steps.last { $0.width < expandedSize.width - 1 }
     }
 
     nonisolated static func clamped(_ size: CGSize) -> CGSize {
