@@ -24,13 +24,13 @@ that delivers it.
 
 ## v0.2: media and shelf (Phase 3)
 
-- [ ] Shows now-playing title, artist, and artwork
-- [ ] Play/pause, next, and previous controls
-- [ ] Brief live activity when the track changes
-- [ ] Drop files onto the notch to hold them on a shelf
-- [ ] Drag shelf files back out, preview with Quick Look, and send with AirDrop
-- [ ] Shelf survives relaunch; missing files are shown, not silently dropped
-- [ ] Clear message when a feature is unavailable or a permission is denied
+- [x] Shows now-playing title, artist, artwork, and progress, from any app
+- [x] Play/pause, next, and previous controls; clicking the artwork opens the player
+- [x] Brief live activity when the track changes
+- [x] Drop files onto the notch to hold them on a shelf
+- [x] Drag shelf files back out, preview with Quick Look, and send with AirDrop
+- [x] Shelf survives relaunch and follows renamed files; missing files are shown, not silently dropped
+- [x] Clear message when a feature is unavailable (for example, Media's fallback) or has nothing to show
 
 ## v0.3: productivity (Phase 4)
 

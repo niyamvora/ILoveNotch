@@ -51,21 +51,25 @@ hover, clicks, drags, sleep/lock, display changes
 | `App/` | App target generated from `project.yml`: wires features in, menu bar item, Settings |
 | `NotchCore` | State machine, `NotchEngine`, `FeatureHost` lifecycle, preferences, typed logging and signposts. No AppKit. |
 | `NotchSurface` | Fixed click-through `NSPanel` per display, animatable `NotchShape`, `PanelCoordinator` (displays, sleep, lock), notch geometry from **public** APIs (`safeAreaInsets`, `auxiliaryTop*Area`) |
-| `Tests/` | Unit tests (reducer transitions and fuzzing, engine, feature host, preferences, geometry, shape) and XCTest performance tests |
+| `NotchFeatures` | Feature modules (Media, Shelf), each a `NotchFeature` plus its views |
+| `ThirdParty/` | [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter) (BSD-3-Clause) as a git submodule |
+| `Tests/` | Unit tests (reducer transitions and fuzzing, engine, feature host, preferences, geometry, features), offscreen snapshot tests, and XCTest performance tests |
 
 The full design is in the [implementation plan](docs/plan/implementation-plan.md)
 and the [architecture diagram](docs/plan/architecture.html).
 
 ## Build & run
 
-Requires macOS 14.6+, Xcode 16+, and [XcodeGen](https://github.com/yonaskolb/XcodeGen)
-(`brew install xcodegen`).
+Requires macOS 14.6+, Xcode 16+, and [Homebrew](https://brew.sh).
 
 ```bash
+git clone --recurse-submodules https://github.com/niyamvora/OpenNotch.git
+cd OpenNotch
+make setup                        # installs XcodeGen (Brewfile) and fetches submodules
 make run                          # generate the Xcode project, build, and launch OpenNotch.app
-make test                         # unit + performance tests (plain SwiftPM)
+make install                      # build a Release app into /Applications and launch it
+make test                         # unit, snapshot, and performance tests (plain SwiftPM)
 make check                        # everything CI runs: lint, tests, build, license check
-make build CONFIGURATION=Release
 ```
 
 `make project` generates `OpenNotch.xcodeproj` (git-ignored) for working in Xcode.
@@ -83,11 +87,19 @@ user-visible behaviors are tracked in the [parity checklist](docs/parity-checkli
 - [x] **Phase 0 — Repository and governance:** MIT license, contribution, security, and privacy policies, third-party notices
 - [x] **Phase 1 — Build system and core:** XcodeGen app target, SwiftPM core libraries, Swift 6 strict concurrency, presentation state machine, feature lifecycle, logging and signposts, unit and performance tests, CI
 - [x] **Phase 2 — Production notch surface:** fixed panel with one animatable shape, click-away, Escape, drag, multi-display, menu-bar recovery, accessibility
-- [ ] **Phase 3 — Useful core (v0.2):** media now-playing and controls, file shelf with Quick Look and AirDrop
+- [x] **Phase 3 — Useful core (v0.2):** media now-playing and controls, file shelf with Quick Look and AirDrop
 - [ ] **Phase 4 — Productivity:** calendar, Reminders-backed tasks, local notes, shortcuts, timer
 - [ ] **Phase 5 — Camera and system:** camera mirror, volume and battery activities, optional HUD replacement
 - [ ] **Phase 6 — Visual and motion polish:** motion tokens, original icon and brand, themes, localization
 - [ ] **Phase 7 — Hardening and public beta:** soak tests, signed and notarized releases, Sparkle updates
+
+## Now playing
+
+Since macOS 15.4, only Apple's own processes may read system-wide now-playing
+information. OpenNotch uses [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter),
+which runs in the system `perl` (an Apple process) as a separate helper, so the
+private framework never loads into OpenNotch. If a future macOS breaks it, Media
+falls back to Music and Spotify's public notifications and says so.
 
 ## Tasks and notes
 
