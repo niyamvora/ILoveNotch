@@ -186,6 +186,8 @@ struct NotchView: View {
             }
             content.tab(tab)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                // Overlay scroll bars would sit on top of charts and lists; faded edges show there's more.
+                .scrollIndicators(.never)
                 .id(tab)
                 .transition(tabTransition)
                 .animation(reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.74), value: tab)
