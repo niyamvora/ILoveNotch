@@ -10,18 +10,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let preferences = NotchPreferences()
     private let media = MediaFeature()
     private let shelf = ShelfFeature()
+    private let notes = NotesFeature()
     private let timer = TimerFeature()
-    private lazy var features = FeatureHost([media, shelf, timer])
+    private lazy var features = FeatureHost([media, shelf, notes, timer])
     private var coordinator: PanelCoordinator?
     private var statusItem: StatusItemController?
     private lazy var settings = SettingsWindowController(preferences: preferences)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let content = NotchContent(
-            tab: { [media, shelf, timer] feature in
+            tab: { [media, shelf, notes, timer] feature in
                 switch feature {
                 case .media: AnyView(media.view)
                 case .shelf: AnyView(shelf.view)
+                case .notes: AnyView(notes.view)
                 case .timer: AnyView(timer.view)
                 default: AnyView(ComingSoonView(feature: feature))
                 }
