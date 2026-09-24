@@ -72,6 +72,7 @@ that delivers it.
 - [x] Spend for today, yesterday, and the last 30 days, and the daily usage trend
 - [x] Live activity when a limit is close or resets
 - [x] A card per provider that's on, and back from a provider's detail to the cards
+- [x] Cards share the width: one spans it, two split it, and a last short row sits centered
 - [x] A tray under the cards offers every other provider; the ones signed in on this Mac are in color
 - [x] API keys for OpenRouter and Z.ai, pasted in Settings › AI Usage and kept in the keychain
 - [x] Provider logos from theSVG
