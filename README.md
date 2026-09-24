@@ -51,7 +51,7 @@ hover, clicks, drags, sleep/lock, display changes
 | `App/` | App target generated from `project.yml`: wires features in, menu bar item, Settings |
 | `NotchCore` | State machine, `NotchEngine`, `FeatureHost` lifecycle, preferences, typed logging and signposts. No AppKit. |
 | `NotchSurface` | Fixed click-through `NSPanel` per display, animatable `NotchShape`, `PanelCoordinator` (displays, sleep, lock), notch geometry from **public** APIs (`safeAreaInsets`, `auxiliaryTop*Area`) |
-| `NotchFeatures` | Feature modules (Media, Shelf), each a `NotchFeature` plus its views |
+| `NotchFeatures` | Feature modules (Media, Shelf, Calendar, Tasks, Notes, Shortcuts, Timer), each a `NotchFeature` with its views and settings |
 | `ThirdParty/` | [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter) (BSD-3-Clause) as a git submodule |
 | `Tests/` | Unit tests (reducer transitions and fuzzing, engine, feature host, preferences, geometry, features), offscreen snapshot tests, and XCTest performance tests |
 
@@ -88,7 +88,7 @@ user-visible behaviors are tracked in the [parity checklist](docs/parity-checkli
 - [x] **Phase 1 — Build system and core:** XcodeGen app target, SwiftPM core libraries, Swift 6 strict concurrency, presentation state machine, feature lifecycle, logging and signposts, unit and performance tests, CI
 - [x] **Phase 2 — Production notch surface:** fixed panel with one animatable shape, click-away, Escape, drag, multi-display, menu-bar recovery, accessibility
 - [x] **Phase 3 — Useful core (v0.2):** media now-playing and controls, file shelf with Quick Look and AirDrop
-- [ ] **Phase 4 — Productivity:** calendar, Reminders-backed tasks, local notes, shortcuts, timer
+- [x] **Phase 4 — Productivity:** calendar, Reminders-backed tasks, local notes, shortcuts, timer, per-feature settings
 - [ ] **Phase 5 — Camera and system:** camera mirror, volume and battery activities, optional HUD replacement
 - [ ] **Phase 6 — Visual and motion polish:** motion tokens, original icon and brand, themes, localization
 - [ ] **Phase 7 — Hardening and public beta:** soak tests, signed and notarized releases, Sparkle updates
@@ -103,11 +103,13 @@ falls back to Music and Spotify's public notifications and says so.
 
 ## Tasks and notes
 
-Tasks will use Apple **Reminders** through EventKit, so they sync to your iPhone
-over iCloud with no server to run. Notes are stored locally, with optional
-iCloud sync later; driving Apple Notes through Apple Events was dropped as
-brittle and permission-heavy. (Google **Keep** is intentionally not used: it has
-no official API.)
+Tasks use Apple **Reminders** through EventKit, so they sync to your iPhone over
+iCloud with no server to run. Notes are plain-text files in
+`~/Library/Application Support/OpenNotch/Notes`, with optional iCloud sync
+later; driving Apple Notes through Apple Events was dropped as brittle and
+permission-heavy. (Google **Keep** is intentionally not used: it has no official
+API.) Calendar and Reminders access is requested only when you tap **Allow
+Access** in their tab.
 
 ## Contributing
 
