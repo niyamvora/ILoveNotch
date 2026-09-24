@@ -23,7 +23,8 @@ that delivers it.
 - [x] Dragging files over the notch opens it to the shelf
 - [x] Closed, the notch hides behind the camera housing; hovering grows it slightly
 - [x] Switching tabs slides the content across, and the selection moves with a jelly stretch
-- [x] Resize the open notch by dragging the control beside the pin, or click it to step through sizes
+- [x] Resize the open notch in proportion with − and + beside the pin
+- [x] Pushing the pointer against the top edge over the notch opens it
 - [x] Choose how the notch opens and closes (spring, jelly, pop, smooth, snappy, or instant), with a preview
 - [x] Builds from a checkout update themselves from the menu bar (**Update OpenNotch**)
 
@@ -46,6 +47,7 @@ that delivers it.
 - [x] Quick local notes that save as you type
 - [x] Shortcut launcher that runs shortcuts in the background
 - [x] Timer and stopwatch with rolling-digit animation and a "Timer done" live activity
+- [x] Every stopwatch lap, newest first, in a scrolling list
 - [x] Per-feature settings, including access status for Calendar and Reminders
 
 ## v0.3+: camera and system (Phase 5)
