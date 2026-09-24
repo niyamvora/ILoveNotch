@@ -13,16 +13,19 @@ final class NotchController {
     var onPresentationChange: (() -> Void)?
 
     private let metrics: NotchMetrics
+    private let preferences: NotchPreferences
     private let panel: NotchWindow
     private var scrollMonitor: Any?
     private var clickAwayMonitors: [Any] = []
     private var keyObservers: [NSObjectProtocol] = []
 
-    init(screen: NSScreen, content: NotchContent) {
+    init(screen: NSScreen, content: NotchContent, preferences: NotchPreferences) {
         displayID = screen.displayID
         metrics = NotchMetrics(screen: screen)
+        self.preferences = preferences
         panel = NotchWindow(frame: metrics.panelFrame)
-        panel.contentView = NotchHostingView(rootView: NotchView(engine: engine, metrics: metrics, content: content))
+        let view = NotchView(engine: engine, metrics: metrics, preferences: preferences, content: content)
+        panel.contentView = NotchHostingView(rootView: view)
         panel.onCancel = { [weak self] in self?.engine.send(.dismiss) }
         engine.onPresentationChange = { [weak self] old, new in self?.render(from: old, to: new) }
         engine.pointerCheck = { [weak self] in
@@ -87,7 +90,7 @@ final class NotchController {
 
     /// Where the notch is drawn right now, in screen coordinates.
     private func notchFrame() -> CGRect {
-        let size = metrics.size(for: engine.state.presentation)
+        let size = metrics.size(for: engine.state.presentation, expanded: preferences.expandedSize)
         let frame = panel.frame
         return CGRect(
             x: frame.midX - size.width / 2, y: frame.maxY - metrics.topInset - size.height,

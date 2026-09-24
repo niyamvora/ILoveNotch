@@ -54,6 +54,21 @@ struct NotchMetricsTests {
         }
     }
 
+    @Test(arguments: displays)
+    func everyResizeFitsInsideTheFixedPanel(metrics: NotchMetrics) {
+        for chosen in [NotchPreferences.minimumExpandedSize, NotchPreferences.maximumExpandedSize] {
+            let size = metrics.size(for: .expanded(tab: .media), expanded: chosen)
+            let panel = metrics.panelFrame
+            #expect(size.width <= panel.width && size.height + metrics.topInset <= panel.height)
+        }
+    }
+
+    @Test func theChosenSizeIsUsedButNeverNarrowerThanTheLip() {
+        #expect(macBookPro14.size(for: .pinned(tab: .notes), expanded: CGSize(width: 600, height: 380)).width == 600)
+        let tiny = macBookPro14.size(for: .expanded(tab: .media), expanded: CGSize(width: 100, height: 300))
+        #expect(tiny.width == macBookPro14.size(for: .compact).width + 80)
+    }
+
     @Test func theNotchIsTheGapBetweenTheAuxiliaryAreas() {
         #expect(macBookPro14.notch == CGSize(width: 188, height: 32))
         #expect(macBookPro14.topInset == 0)

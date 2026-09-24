@@ -68,6 +68,18 @@ private struct GeneralSettings: View {
             Text("Otherwise OpenNotch uses the built-in display's notch, or the main display.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            LabeledContent("Open notch size") {
+                HStack {
+                    Text("\(Int(preferences.expandedSize.width)) × \(Int(preferences.expandedSize.height))")
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                    Button("Reset") { preferences.resizeExpanded(to: NotchPreferences.defaultExpandedSize) }
+                        .disabled(preferences.expandedSize == NotchPreferences.defaultExpandedSize)
+                }
+            }
+            Text("Drag the resize control beside the pin to resize the open notch; click it to switch sizes.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
             Button("Reset to Defaults", role: .destructive) { preferences.reset() }
         }
         .formStyle(.grouped)

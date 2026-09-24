@@ -16,7 +16,7 @@ struct NotchMetrics: Equatable {
     static let pillInset: CGFloat = 3  // gap above the floating pill
     static let hoverGrowth = CGSize(width: 12, height: 4)  // hover feedback
     static let activityWing: CGFloat = 96  // room beside the notch for a live activity
-    static let expanded = CGSize(width: 460, height: 290)
+    static let overshootRoom: CGFloat = 1.04  // springy open animations briefly overshoot
 
     /// The notch is the gap between the two auxiliary top areas; no insets means no notch.
     init(screen: CGRect, safeAreaTop: CGFloat, left: CGRect?, right: CGRect?) {
@@ -41,11 +41,17 @@ struct NotchMetrics: Equatable {
         return CGSize(width: notch.width + Self.lip.width * 2, height: notch.height + Self.lip.height)
     }
 
-    var expandedSize: CGSize {
-        CGSize(width: max(Self.expanded.width, compactSize.width + 80), height: Self.expanded.height)
+    /// The open notch at the user's chosen size: never narrower than the lip plus room for the tabs,
+    /// never larger than the display allows.
+    func expandedSize(_ chosen: CGSize) -> CGSize {
+        CGSize(
+            width: min(max(chosen.width, compactSize.width + 80), screen.width - 32),
+            height: min(chosen.height, screen.height * 0.6))
     }
 
-    func size(for presentation: NotchPresentationState) -> CGSize {
+    func size(
+        for presentation: NotchPresentationState, expanded: CGSize = NotchPreferences.defaultExpandedSize
+    ) -> CGSize {
         switch presentation {
         case .hidden, .suspended, .compact:
             compactSize
@@ -56,20 +62,23 @@ struct NotchMetrics: Equatable {
         case .transient:
             CGSize(width: compactSize.width + Self.activityWing * 2, height: compactSize.height)
         case .expanded, .pinned, .focused:
-            expandedSize
+            expandedSize(expanded)
         }
     }
 
     /// Gap between the top of the display and the shape: none on a notch, a little above a pill.
     var topInset: CGFloat { notch == nil ? Self.pillInset : 0 }
 
-    /// The fixed panel: big enough for every state and pinned to the top center, so the window
-    /// never moves or resizes; only the shape inside it animates.
+    /// The fixed panel: big enough for every state at the largest size the notch can be resized to,
+    /// with room for springy overshoot, and pinned to the top center. The window never moves or
+    /// resizes; only the shape inside it animates.
     var panelFrame: CGRect {
-        let states: [NotchPresentationState] = [.hoverArmed, .transient(Self.sizingActivity), .expanded(tab: .media)]
-        let sizes = states.map(size(for:))
-        let width = sizes.map(\.width).max()!
-        let height = sizes.map(\.height).max()! + topInset
+        let largest = [
+            size(for: .hoverArmed), size(for: .transient(Self.sizingActivity)),
+            size(for: .expanded(tab: .media), expanded: NotchPreferences.maximumExpandedSize),
+        ]
+        let width = min(largest.map(\.width).max()! * Self.overshootRoom, screen.width)
+        let height = min(largest.map(\.height).max()! * Self.overshootRoom + topInset, screen.height)
         return CGRect(x: screen.midX - width / 2, y: screen.maxY - height, width: width, height: height)
     }
 
