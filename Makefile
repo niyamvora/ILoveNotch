@@ -11,7 +11,7 @@ COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null)$(shell git diff --quie
 # ask again each time. Without a certificate (CI, most contributors) builds stay ad-hoc signed.
 SIGNING_IDENTITY ?= $(shell security find-identity -v -p codesigning 2>/dev/null | awk -F'"' '/Apple Development/ {print $$2; exit}')
 
-.PHONY: setup project build run install update release app-store test lint format licenses check clean
+.PHONY: setup project build build-app-store run install update release app-store test lint format licenses check clean
 
 setup: ## Install developer tools (Brewfile) and fetch submodules
 	brew bundle
@@ -25,6 +25,11 @@ build: project ## Build the app; CONFIGURATION=Debug|Release
 	xcodebuild -project OpenNotch.xcodeproj -scheme OpenNotch -configuration $(CONFIGURATION) \
 		-destination 'platform=macOS,arch=$(ARCH)' -derivedDataPath $(DERIVED_DATA) \
 		OPENNOTCH_COMMIT='$(COMMIT)' $(if $(SIGNING_IDENTITY),CODE_SIGN_IDENTITY='$(SIGNING_IDENTITY)') -quiet build
+
+build-app-store: project ## Build the sandboxed App Store edition into its own folder
+	xcodebuild -project OpenNotch.xcodeproj -scheme "OpenNotch App Store" -configuration $(CONFIGURATION) \
+		-destination 'platform=macOS,arch=$(ARCH)' -derivedDataPath .build/xcode-appstore \
+		$(if $(SIGNING_IDENTITY),CODE_SIGN_IDENTITY='$(SIGNING_IDENTITY)') -quiet build
 
 run: build ## Build and relaunch the app
 	-osascript -e 'quit app "OpenNotch"'

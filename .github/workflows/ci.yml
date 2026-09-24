@@ -41,5 +41,8 @@ jobs:
       - name: Release build
         run: make build CONFIGURATION=Release
 
+      - name: App Store edition build
+        run: make build-app-store CONFIGURATION=Release
+
       - name: License check
         run: make licenses
