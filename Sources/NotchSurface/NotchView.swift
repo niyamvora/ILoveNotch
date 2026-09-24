@@ -41,7 +41,6 @@ struct NotchView: View {
     @State private var dropTargeted = false
     @State private var justDropped = false
     @State private var slideForward = true
-    @State private var resizeOrigin: CGSize?
     @Namespace private var selection
 
     var body: some View {
@@ -178,11 +177,14 @@ struct NotchView: View {
             HStack(spacing: 4) {
                 tabBar(selected: tab)
                 Spacer(minLength: 0)
-                resizeControl
-                iconButton(pinned ? "pin.fill" : "pin", label: pinned ? "Unpin" : "Pin") {
-                    engine.send(.togglePin)
+                HStack(spacing: 0) {
+                    sizeButton(larger: false)
+                    sizeButton(larger: true)
+                    iconButton(pinned ? "pin.fill" : "pin", label: pinned ? "Unpin" : "Pin") {
+                        engine.send(.togglePin)
+                    }
+                    iconButton("gearshape", label: "Settings") { content.openSettings() }
                 }
-                iconButton("gearshape", label: "Settings") { content.openSettings() }
             }
             content.tab(tab)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -261,33 +263,14 @@ struct NotchView: View {
             removal: .move(edge: outgoing).combined(with: .opacity))
     }
 
-    /// Drag to resize the open notch; it grows from its top center, so the width follows the drag at
-    /// twice the speed. Click to step through small, medium, and large. The notch won't collapse
-    /// mid-drag: the engine's pointer check sees the held mouse button.
-    private var resizeControl: some View {
-        Image(systemName: "arrow.up.left.and.arrow.down.right")
-            .font(.system(size: 11, weight: .semibold))
-            .frame(width: 26, height: 26)
-            .contentShape(Rectangle())
-            .foregroundStyle(.white.opacity(resizeOrigin == nil ? 0.75 : 1))
-            .gesture(
-                DragGesture(minimumDistance: 2, coordinateSpace: .global)
-                    .onChanged { drag in
-                        let origin = resizeOrigin ?? preferences.expandedSize
-                        resizeOrigin = origin
-                        preferences.resizeExpanded(
-                            to: CGSize(
-                                width: origin.width + drag.translation.width * 2,
-                                height: origin.height + drag.translation.height))
-                    }
-                    .onEnded { _ in resizeOrigin = nil }
-            )
-            .onTapGesture {
-                withAnimation(motion(for: engine.state.presentation)) { preferences.cycleExpandedSize() }
-            }
-            .help("Drag to resize. Click to switch between small, medium, and large.")
-            .accessibilityLabel("Resize")
-            .accessibilityAction(named: "Next size") { preferences.cycleExpandedSize() }
+    /// − and + step the open notch through sizes in proportion, so its height follows its width.
+    private func sizeButton(larger: Bool) -> some View {
+        let next = preferences.expandedSizeStep(larger: larger)
+        return iconButton(larger ? "plus" : "minus", label: larger ? "Make Larger" : "Make Smaller") {
+            guard let next else { return }
+            withAnimation(motion(for: engine.state.presentation)) { preferences.resizeExpanded(to: next) }
+        }
+        .disabled(next == nil)
     }
 
     private func iconButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
