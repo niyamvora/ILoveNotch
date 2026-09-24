@@ -76,8 +76,8 @@ public final class NotchPreferences {
         didSet { defaults.set(showsAccessoryBattery, forKey: Key.showsAccessoryBattery) }
     }
 
-    /// The open notch's size, set with − and + in its bottom-right corner. Always within the minimum
-    /// and maximum.
+    /// The open notch's size, set by dragging its bottom-right corner. Always within the minimum and
+    /// maximum.
     public private(set) var expandedSize: CGSize {
         didSet { defaults.set([expandedSize.width, expandedSize.height], forKey: Key.expandedSize) }
     }
@@ -86,8 +86,9 @@ public final class NotchPreferences {
     /// Narrowest that still fits every tab and the controls beside them.
     public nonisolated static let minimumExpandedSize = CGSize(width: 414, height: 230)
     public nonisolated static let maximumExpandedSize = CGSize(width: 720, height: 480)
-    /// What − and + step through, smallest first: the minimum size, as narrow as the next step but
-    /// shorter, then the default size scaled down and up, so the height follows the width.
+    /// What VoiceOver's adjust steps through on the resize corner, smallest first: the minimum size, as
+    /// narrow as the next step but shorter, then the default size scaled down and up, so the height
+    /// follows the width.
     public nonisolated static let expandedSizeSteps =
         [minimumExpandedSize]
         + ([0.9, 1, 1.12, 1.25, 1.4, 1.56] as [CGFloat]).map { scale in
