@@ -49,6 +49,7 @@ targets:
         INFOPLIST_KEY_NSDownloadsFolderUsageDescription: OpenNotch keeps files you drop on the shelf so you can drag them out later.
         INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: OpenNotch shows today's events in the notch. Your calendars stay on this Mac.
         INFOPLIST_KEY_NSRemindersFullAccessUsageDescription: OpenNotch shows, adds, and completes your reminders in the notch.
+        INFOPLIST_KEY_NSCameraUsageDescription: OpenNotch shows your camera in the Mirror tab while that tab is open. Nothing is recorded.
         ENABLE_HARDENED_RUNTIME: YES
         # Hardened Runtime resource access: EventKit (Calendar and Reminders).
         CODE_SIGN_ENTITLEMENTS: App/OpenNotch.entitlements

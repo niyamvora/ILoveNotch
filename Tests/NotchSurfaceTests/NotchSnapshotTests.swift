@@ -16,11 +16,14 @@ private let notched = NotchMetrics(
 private let notchless = NotchMetrics(
     screen: CGRect(x: 0, y: 0, width: 2560, height: 1440), safeAreaTop: 0, left: nil, right: nil)
 private let song = Activity(feature: .media, symbol: "music.note", title: "Midnight City", duration: .seconds(3))
+private let volume = Activity(
+    feature: nil, symbol: "speaker.wave.2.fill", title: "56%", level: 0.56, duration: .seconds(1))
 
 private let snapshotCases: [(name: String, metrics: NotchMetrics, events: [NotchEvent])] = [
     ("compact", notched, [.show]),
     ("hover", notched, [.show, .pointerEntered]),
     ("activity", notched, [.show, .activity(song)]),
+    ("volume", notched, [.show, .activity(volume)]),
     ("expanded-media", notched, [.show, .clicked]),
     ("pinned-notes", notched, [.show, .selectTab(.notes), .togglePin]),
     ("pill-compact", notchless, [.show]),

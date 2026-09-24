@@ -208,6 +208,8 @@ struct NotchView: View {
 
     private func tabBar(selected: FeatureID) -> some View {
         let tabs = engine.state.tabs
+        // Every tab and the controls beside them fit the smallest size; with all eight on, tabs narrow.
+        let tabWidth: CGFloat = tabs.count > 7 ? 28 : 32
         return HStack(spacing: 2) {
             ForEach(tabs, id: \.self) { tab in
                 Button {
@@ -217,7 +219,7 @@ struct NotchView: View {
                 } label: {
                     Image(systemName: tab.symbol)
                         .font(.system(size: 14, weight: .medium))
-                        .frame(width: 32, height: 26)
+                        .frame(width: tabWidth, height: 26)
                         .scaleEffect(tab == selected ? 1.08 : 1)
                         .contentShape(Rectangle())
                 }
@@ -286,15 +288,29 @@ struct NotchView: View {
         .accessibilityLabel(label)
     }
 
-    /// A live activity sits on either side of the physical notch.
+    /// A live activity sits on either side of the physical notch, with a meter before the title when
+    /// it has a level, like the volume or the battery's charge.
     private func live(_ activity: Activity) -> some View {
         HStack(spacing: 0) {
             Image(systemName: activity.symbol)
                 .font(.system(size: 13, weight: .semibold))
+                .contentTransition(.symbolEffect(.replace))
             Spacer(minLength: metrics.housing.width)
-            Text(activity.title)
-                .font(.system(size: 12, weight: .medium))
-                .lineLimit(1)
+            HStack(spacing: 6) {
+                if let level = activity.level {
+                    Capsule()
+                        .fill(.white.opacity(0.25))
+                        .frame(width: 30, height: 4)
+                        .overlay(alignment: .leading) {
+                            Capsule().fill(.white).frame(width: 30 * min(max(level, 0), 1), height: 4)
+                        }
+                        .accessibilityHidden(true)
+                }
+                Text(activity.title)
+                    .font(.system(size: 12, weight: .medium))
+                    .monospacedDigit()
+                    .lineLimit(1)
+            }
         }
         .padding(.horizontal, 14)
         .frame(height: metrics.housing.height)

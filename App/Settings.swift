@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 import AppKit
 import NotchCore
+import NotchFeatures
 import ServiceManagement
 import SwiftUI
 
@@ -145,9 +146,49 @@ private struct FeatureSettings: View {
                     }
                 }
             }
+            SystemSettings(preferences: preferences)
         }
         .formStyle(.grouped)
         .frame(height: 440)
+    }
+}
+
+/// Live activities that belong to no tab: volume, battery, and accessories.
+private struct SystemSettings: View {
+    @Bindable var preferences: NotchPreferences
+    @State private var trusted = VolumeKeyTap.isTrusted
+
+    var body: some View {
+        Section {
+            Toggle("Show volume changes", isOn: $preferences.showsVolume)
+            // A closure, not a method reference: see GeneralSettings.
+            Toggle(isOn: Binding(get: { preferences.replacesVolumeDisplay }, set: { setReplacesVolumeDisplay($0) })) {
+                Text("Replace the macOS volume display")
+                Text("Catches the volume keys so the change shows in the notch instead. Needs Accessibility access.")
+            }
+            .disabled(!preferences.showsVolume)
+            if preferences.replacesVolumeDisplay, !trusted {
+                LabeledContent("Accessibility") {
+                    Button("Open Accessibility Settings") {
+                        NSWorkspace.shared.open(.privacySettings("Privacy_Accessibility"))
+                    }
+                }
+            }
+            Toggle("Show charging and battery", isOn: $preferences.showsBattery)
+            Toggle(isOn: $preferences.showsAccessoryBattery) {
+                Text("Show a Bluetooth accessory's battery when it connects")
+                Text("Experimental: Apple keyboards, mice, and trackpads.")
+            }
+        } header: {
+            Label("System", systemImage: "gearshape.2").font(.headline)
+        }
+        .onAppear { trusted = VolumeKeyTap.isTrusted }
+    }
+
+    private func setReplacesVolumeDisplay(_ replaces: Bool) {
+        preferences.replacesVolumeDisplay = replaces
+        trusted = VolumeKeyTap.isTrusted
+        if replaces, !trusted { VolumeKeyTap.requestTrust() }
     }
 }
 
