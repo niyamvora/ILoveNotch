@@ -1,6 +1,6 @@
 # Releasing
 
-How a signed, notarized OpenNotch reaches GitHub Releases and installed copies. The scripted part
+How a signed, notarized ILoveNotch reaches GitHub Releases and installed copies. The scripted part
 is `make release VERSION=…` ([`scripts/release.sh`](../scripts/release.sh)); publishing is a
 deliberate, manual step.
 
@@ -69,7 +69,7 @@ Privacy answers ("Data Not Collected").
 
 - `spctl --assess --type execute --verbose` on the exported app says "Notarized Developer ID"
   (the script runs it).
-- Install from the DMG on a Mac or user account that has never run OpenNotch: it opens without a
+- Install from the DMG on a Mac or user account that has never run ILoveNotch: it opens without a
   Gatekeeper warning.
 - Update an installed earlier release through **Check for Updates…**.
 - Keep the previous DMG: rolling back is installing it over the new one.

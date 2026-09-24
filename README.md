@@ -1,9 +1,17 @@
-# OpenNotch
+<p align="center">
+  <img src="docs/media/icon.png" width="128" alt="The ILoveNotch icon: a notch with heart eyes">
+</p>
 
-[![CI](https://github.com/niyamvora/OpenNotch/actions/workflows/ci.yml/badge.svg)](https://github.com/niyamvora/OpenNotch/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![macOS 14.6+](https://img.shields.io/badge/macOS-14.6%2B-black?logo=apple)](#build--run)
-[![Sponsor](https://img.shields.io/badge/sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/niyamvora)
+<h1 align="center">ILoveNotch</h1>
+
+<p align="center"><b>Your MacBook's notch, finally useful.</b> Free and open source.</p>
+
+<p align="center">
+  <a href="https://github.com/niyamvora/ILoveNotch/actions/workflows/ci.yml"><img src="https://github.com/niyamvora/ILoveNotch/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a>
+  <a href="#build--run"><img src="https://img.shields.io/badge/macOS-14.6%2B-black?logo=apple" alt="macOS 14.6 or later"></a>
+  <a href="https://github.com/sponsors/niyamvora"><img src="https://img.shields.io/badge/sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white" alt="Sponsor"></a>
+</p>
 
 An **original, open-source** macOS menu-notch utility — turns the notch on Apple
 Silicon MacBooks into an interactive tray for media, files, your calendar, tasks,
@@ -15,15 +23,21 @@ near-zero idle CPU**.
   <img src="docs/media/ai-usage.gif" width="760" alt="The open notch on the AI Usage tab: Claude and Codex as cards with rings and bars, then Claude's limits, spend, and daily usage chart">
 </p>
 
+<p align="center">
+  <img src="docs/media/screenshots/ai-usage.png" width="49%" alt="Keep an eye on your AI limits: Claude, Codex, and Copilot usage as cards in the notch">
+  <img src="docs/media/screenshots/claude.png" width="49%" alt="Know exactly where you stand: Claude's session and weekly limits, spend, and a 30-day chart">
+  <img src="docs/media/screenshots/codex.png" width="49%" alt="Every model, one glance: Codex's limits, resets, spend, and credits">
+  <img src="docs/media/screenshots/shelf.png" width="49%" alt="Park it in the notch: files dropped on the notch shelf, ready to drag out or AirDrop">
+  <img src="docs/media/screenshots/timer.png" width="49%" alt="Focus in one tap: preset timers from 1 minute to 1 hour, plus a stopwatch">
+  <img src="docs/media/screenshots/calendar.png" width="49%" alt="Your day, one hover away: today's events in the notch">
+</p>
+
 > **Not affiliated with, endorsed by, or derived from any commercial notch app.**
 > This is a clean-room implementation written from scratch. It contains no
 > disassembled or decompiled code, and nothing from any commercial notch app.
 > Features are common-idea reimplementations. Everything here is original or
 > comes from permissively licensed open-source projects (MIT, BSD, CC0), listed
 > in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-
-_OpenNotch is a working name: the final name and icon come with the first public
-release._
 
 ## What it does
 
@@ -53,15 +67,15 @@ release._
 
 ### What's left
 
-Everything above is built and tested. Before the first public release: the
-final name and icon ([brand assets](docs/brand-assets.md)), a Developer ID
-certificate for signed downloads ([releasing](docs/releasing.md)), and the Mac
-App Store listing ([App Store edition](docs/plan/implementation-plan.md#app-store-edition)).
+Everything above is built and tested, with its name and icon. Before the first
+public release: a Developer ID certificate for signed downloads
+([releasing](docs/releasing.md)), and the Mac App Store listing
+([App Store edition](docs/plan/implementation-plan.md#app-store-edition)).
 
 ## Why
 
 Notch utilities are genuinely useful, but the popular closed-source one is
-unmaintained and drew complaints about heavy RAM/CPU use. OpenNotch is a free,
+unmaintained and drew complaints about heavy RAM/CPU use. ILoveNotch is a free,
 maintained, efficient alternative anyone can inspect and improve.
 
 ## Design principles (the efficiency story)
@@ -107,10 +121,10 @@ and the [architecture diagram](docs/plan/architecture.html).
 Requires macOS 14.6+, Xcode 16+, and [Homebrew](https://brew.sh).
 
 ```bash
-git clone --recurse-submodules https://github.com/niyamvora/OpenNotch.git
-cd OpenNotch
+git clone --recurse-submodules https://github.com/niyamvora/ILoveNotch.git
+cd ILoveNotch
 make setup                        # installs XcodeGen (Brewfile) and fetches submodules
-make run                          # generate the Xcode project, build, and launch OpenNotch.app
+make run                          # generate the Xcode project, build, and launch ILoveNotch.app
 make install                      # build a Release app into /Applications and launch it
 make update                       # pull main when it's clean, then reinstall and relaunch
 make test                         # unit, snapshot, and performance tests (plain SwiftPM)
@@ -119,7 +133,9 @@ make build-app-store              # the sandboxed App Store edition
 scripts/soak.sh                   # sample the running app's CPU and memory against the budgets
 ```
 
-`make project` generates `OpenNotch.xcodeproj` (git-ignored) for working in Xcode.
+`make project` generates `OpenNotch.xcodeproj` (git-ignored) for working in Xcode. The project,
+its targets, and the code keep the original name OpenNotch; the app is ILoveNotch everywhere
+people see it.
 Watch the state machine live with:
 
 ```bash
@@ -129,15 +145,15 @@ log stream --level debug --predicate 'subsystem == "cafe.opennotch.app"'
 ### Test it on your Mac
 
 1. `make install` builds a Release app into `/Applications` and launches it.
-   There's no Dock icon: look for the notch, and for the OpenNotch item in the
-   menu bar (version, Update OpenNotch, Settings…, Sponsor, Quit).
+   There's no Dock icon: look for the notch, and for the ILoveNotch item in the
+   menu bar (version, Update ILoveNotch, Settings…, Sponsor, Quit).
 2. Quit other notch apps first; two apps can't share the notch.
 3. Hover the notch (or click it, or pull down with two fingers), then try each
    tab. Calendar and Tasks ask for access the first time you tap **Allow Access**.
    Resize the open notch by dragging its bottom-right corner, keep it open with
    the pin beside Settings, and pick how it opens and closes in
    **Settings › General**.
-4. To get the latest, choose **Update OpenNotch** from the menu bar item (or run
+4. To get the latest, choose **Update ILoveNotch** from the menu bar item (or run
    `make update`). It pulls `main` when your checkout is clean, rebuilds, and
    relaunches; see [updates](docs/updates.md).
 5. With an Apple Development certificate in your keychain (Xcode › Settings ›
@@ -146,15 +162,15 @@ log stream --level debug --predicate 'subsystem == "cafe.opennotch.app"'
    each rebuild.
 6. To start at login, turn on **Settings › General › Launch at login**.
 7. To uninstall, choose **Quit** from the menu bar item and delete
-   `/Applications/OpenNotch.app`; data lives in
+   `/Applications/ILoveNotch.app`; data lives in
    `~/Library/Application Support/OpenNotch`.
 
 ## Now playing
 
 Since macOS 15.4, only Apple's own processes may read system-wide now-playing
-information. OpenNotch uses [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter),
+information. ILoveNotch uses [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter),
 which runs in the system `perl` (an Apple process) as a separate helper, so the
-private framework never loads into OpenNotch. If a future macOS breaks it, Media
+private framework never loads into ILoveNotch. If a future macOS breaks it, Media
 falls back to Music and Spotify's public notifications and says so.
 
 The waveform under the player moves with the music. It listens to your Mac's
@@ -182,7 +198,7 @@ in **Settings › AI Usage** and kept in your keychain.
 Each provider reads the sign-in its own tool keeps on this Mac and sends it only
 to its own service. What it reads and sends is in
 [PRIVACY.md](PRIVACY.md#ai-usage). The provider code is adapted from
-[OpenUsage](https://github.com/robinebers/openusage) (MIT), and OpenNotch isn't
+[OpenUsage](https://github.com/robinebers/openusage) (MIT), and ILoveNotch isn't
 affiliated with it. The tab is in the GitHub build only: reading other tools'
 sign-ins doesn't fit the App Store's sandbox.
 
@@ -204,7 +220,7 @@ described in [SECURITY.md](SECURITY.md); privacy commitments are in
 
 ## Sponsors
 
-OpenNotch is free and open source. If it's useful to you,
+ILoveNotch is free and open source. If it's useful to you,
 [sponsor the project](https://github.com/sponsors/niyamvora) to help keep it
 maintained, and star the repo so more people find it.
 

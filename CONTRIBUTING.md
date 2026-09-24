@@ -1,6 +1,6 @@
-# Contributing to OpenNotch
+# Contributing to ILoveNotch
 
-Thanks for helping. OpenNotch is a clean-room, MIT-licensed project, so a few
+Thanks for helping. ILoveNotch is a clean-room, MIT-licensed project, so a few
 rules matter more than usual.
 
 ## Clean-room rules
@@ -43,7 +43,7 @@ commit to one logical change that builds and passes tests on its own.
 
 ## Versioning and releases
 
-OpenNotch follows [Semantic Versioning](https://semver.org/) with `vX.Y.Z` tags.
+ILoveNotch follows [Semantic Versioning](https://semver.org/) with `vX.Y.Z` tags.
 Before 1.0, each minor version is a milestone (`v0.1` notch shell, `v0.2` media
 and shelf, `v0.3` productivity) and patches are fixes. Releases ship as signed,
 notarized DMGs on GitHub Releases.
