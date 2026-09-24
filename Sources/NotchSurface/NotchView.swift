@@ -94,7 +94,7 @@ struct NotchView: View {
         .animation(motion(for: presentation), value: presentation)
         .animation(reduceMotion ? nil : .spring(response: 0.26, dampingFraction: 0.8), value: dropTargeted)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("OpenNotch")
+        .accessibilityLabel("ILoveNotch")
         .accessibilityAction(named: presentation.openTab == nil ? "Open" : "Close") {
             engine.send(presentation.openTab == nil ? .clicked : .dismiss)
         }

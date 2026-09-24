@@ -14,7 +14,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         self.openSettings = openSettings
         super.init()
         statusItem.button?.image = NSImage(
-            systemSymbolName: "rectangle.topthird.inset.filled", accessibilityDescription: "OpenNotch")
+            systemSymbolName: "rectangle.topthird.inset.filled", accessibilityDescription: "ILoveNotch")
         let menu = NSMenu()
         menu.delegate = self
         statusItem.menu = menu
@@ -22,15 +22,15 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
-        let version = NSMenuItem(title: "OpenNotch \(Updater.version)", action: nil, keyEquivalent: "")
+        let version = NSMenuItem(title: "ILoveNotch \(Updater.version)", action: nil, keyEquivalent: "")
         version.isEnabled = false
         menu.addItem(version)
         for item in updateItems() { menu.addItem(item) }
         menu.addItem(.separator())
         menu.addItem(menuItem("Settings…", #selector(showSettings), key: ","))
-        menu.addItem(menuItem("Sponsor OpenNotch…", #selector(sponsor)))
+        menu.addItem(menuItem("Sponsor ILoveNotch…", #selector(sponsor)))
         menu.addItem(.separator())
-        let quit = NSMenuItem(title: "Quit OpenNotch", action: #selector(NSApplication.terminate), keyEquivalent: "q")
+        let quit = NSMenuItem(title: "Quit ILoveNotch", action: #selector(NSApplication.terminate), keyEquivalent: "q")
         menu.addItem(quit)
     }
 
@@ -43,9 +43,9 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             }
             switch updater.state {
             case .idle:
-                return [menuItem("Update OpenNotch", #selector(update))]
+                return [menuItem("Update ILoveNotch", #selector(update))]
             case .updating:
-                let item = NSMenuItem(title: "Updating OpenNotch…", action: nil, keyEquivalent: "")
+                let item = NSMenuItem(title: "Updating ILoveNotch…", action: nil, keyEquivalent: "")
                 item.isEnabled = false
                 return [item]
             case .failed:
@@ -71,11 +71,11 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 }
 
 enum Links {
-    static let repository = URL(string: "https://github.com/niyamvora/OpenNotch")!
-    static let releases = URL(string: "https://github.com/niyamvora/OpenNotch/releases")!
+    static let repository = URL(string: "https://github.com/niyamvora/ILoveNotch")!
+    static let releases = URL(string: "https://github.com/niyamvora/ILoveNotch/releases")!
     static let sponsor = URL(string: "https://github.com/sponsors/niyamvora")!
-    static let privacy = URL(string: "https://github.com/niyamvora/OpenNotch/blob/main/PRIVACY.md")!
+    static let privacy = URL(string: "https://github.com/niyamvora/ILoveNotch/blob/main/PRIVACY.md")!
     /// Rendered on GitHub; the direct download also carries a copy in its Resources.
     static let acknowledgements = URL(
-        string: "https://github.com/niyamvora/OpenNotch/blob/main/THIRD_PARTY_NOTICES.md")!
+        string: "https://github.com/niyamvora/ILoveNotch/blob/main/THIRD_PARTY_NOTICES.md")!
 }

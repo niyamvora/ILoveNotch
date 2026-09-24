@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds, signs, notarizes, and packages an OpenNotch release, then drafts it on GitHub:
+# Builds, signs, notarizes, and packages an ILoveNotch release, then drafts it on GitHub:
 #
 #   scripts/release.sh 0.3.0            # a release
 #   scripts/release.sh 0.3.0-beta.1     # a beta, drafted as a GitHub pre-release
@@ -59,7 +59,7 @@ cat >"$out/ExportOptions.plist" <<PLIST
 PLIST
 xcodebuild -exportArchive -archivePath "$out/OpenNotch.xcarchive" -exportPath "$out/export" \
     -exportOptionsPlist "$out/ExportOptions.plist" -allowProvisioningUpdates -quiet
-app="$out/export/OpenNotch.app"
+app="$out/export/ILoveNotch.app"
 codesign --verify --deep --strict "$app"
 codesign -dv "$app" 2>&1 | grep -q "Authority=Developer ID Application" || {
     echo "The export isn't signed with Developer ID" >&2
@@ -67,17 +67,17 @@ codesign -dv "$app" 2>&1 | grep -q "Authority=Developer ID Application" || {
 }
 
 echo "== Notarizing the app"
-ditto -c -k --keepParent "$app" "$out/OpenNotch.zip"
-xcrun notarytool submit "$out/OpenNotch.zip" "${auth[@]}" --wait
+ditto -c -k --keepParent "$app" "$out/ILoveNotch.zip"
+xcrun notarytool submit "$out/ILoveNotch.zip" "${auth[@]}" --wait
 xcrun stapler staple "$app"
 spctl --assess --type execute --verbose "$app"  # Gatekeeper's verdict: "Notarized Developer ID"
 
 echo "== Packaging the DMG"
-dmg="$out/OpenNotch-$version.dmg"
+dmg="$out/ILoveNotch-$version.dmg"
 mkdir -p "$out/dmg"
-ditto "$app" "$out/dmg/OpenNotch.app"
+ditto "$app" "$out/dmg/ILoveNotch.app"
 ln -s /Applications "$out/dmg/Applications"
-hdiutil create -volname "OpenNotch $version" -srcfolder "$out/dmg" -fs HFS+ -format UDZO -ov "$dmg" -quiet
+hdiutil create -volname "ILoveNotch $version" -srcfolder "$out/dmg" -fs HFS+ -format UDZO -ov "$dmg" -quiet
 identity=$(security find-identity -v -p codesigning | awk -F'"' '/Developer ID Application/ {print $2; exit}')
 if [[ -n $identity ]]; then
     codesign --sign "$identity" --timestamp "$dmg"
@@ -96,13 +96,13 @@ fi
 mkdir -p "$out/updates"
 cp "$dmg" "$out/updates/"
 [[ -f appcast.xml ]] && cp appcast.xml "$out/updates/"  # keeps the earlier releases' entries
-"$sparkle/generate_appcast" --download-url-prefix "https://github.com/niyamvora/OpenNotch/releases/download/$tag/" \
+"$sparkle/generate_appcast" --download-url-prefix "https://github.com/niyamvora/ILoveNotch/releases/download/$tag/" \
     "$out/updates"
 cp "$out/updates/appcast.xml" appcast.xml
 
 echo "== Drafting the GitHub release"
-(cd "$out" && shasum -a 256 "OpenNotch-$version.dmg" >SHA256SUMS)
-flags=(--draft --title "OpenNotch $version" --generate-notes --target main)
+(cd "$out" && shasum -a 256 "ILoveNotch-$version.dmg" >SHA256SUMS)
+flags=(--draft --title "ILoveNotch $version" --generate-notes --target main)
 [[ $version == *-* ]] && flags+=(--prerelease)
 gh release create "$tag" "$dmg" "$out/SHA256SUMS" "${flags[@]}"
 

@@ -84,7 +84,7 @@ struct CodexUsageClient: Sendable {
         var headers = [
             "Authorization": "Bearer \(accessToken)",
             "Accept": "application/json",
-            "User-Agent": "OpenNotch"
+            "User-Agent": "ILoveNotch"
         ]
         if let accountID, !accountID.isEmpty {
             headers["ChatGPT-Account-Id"] = accountID
@@ -106,7 +106,7 @@ struct CodexUsageClient: Sendable {
         var headers = [
             "Authorization": "Bearer \(accessToken)",
             "Accept": "application/json",
-            "User-Agent": "OpenNotch",
+            "User-Agent": "ILoveNotch",
             "OpenAI-Beta": "codex-1",
             "originator": "Codex Desktop"
         ]
