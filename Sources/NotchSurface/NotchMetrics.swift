@@ -16,7 +16,7 @@ struct NotchMetrics: Equatable {
     static let pillInset: CGFloat = 3  // gap above the floating pill
     static let hoverGrowth = CGSize(width: 12, height: 4)  // hover feedback
     static let activityWing: CGFloat = 96  // room beside the notch for a live activity
-    static let overshootRoom: CGFloat = 1.04  // springy open animations briefly overshoot
+    static let overshootRoom: CGFloat = 1.08  // springy and jelly animations briefly overshoot
 
     /// The notch is the gap between the two auxiliary top areas; no insets means no notch.
     init(screen: CGRect, safeAreaTop: CGFloat, left: CGRect?, right: CGRect?) {
