@@ -90,7 +90,8 @@ struct NotchView: View {
             return NotchShape(topRadius: 0, bottomRadius: open ? 24 : Self.pillRadius, flushTop: false)
         }
         switch presentation {
-        case .expanded, .pinned, .focused: return NotchShape(topRadius: 10, bottomRadius: 26)
+        case .expanded, .pinned, .focused:
+            return NotchShape(topRadius: Self.expandedTopRadius, bottomRadius: Self.expandedBottomRadius)
         case .hoverArmed, .transient: return NotchShape(topRadius: 6, bottomRadius: 13)
         default: return NotchShape(topRadius: 6, bottomRadius: 10)
         }
@@ -125,10 +126,18 @@ struct NotchView: View {
                 .id(tab)
                 .transition(.opacity)
         }
-        .padding(.top, (metrics.notch?.height ?? 0) + 8)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 14)
+        .padding(contentPadding)
         .foregroundStyle(.white)
+    }
+
+    private static let expandedTopRadius: CGFloat = 10
+    private static let expandedBottomRadius: CGFloat = 26
+
+    /// Expanded content keeps 22 pt of black around it, measured from the visible edge: the sides of
+    /// the notch outline sit inside its frame by the top radius, and the bottom corners are rounded.
+    private var contentPadding: EdgeInsets {
+        let side = (metrics.notch == nil ? 0 : Self.expandedTopRadius) + 22
+        return EdgeInsets(top: (metrics.notch?.height ?? 0) + 10, leading: side, bottom: 22, trailing: side)
     }
 
     private func tabBar(selected: FeatureID) -> some View {
