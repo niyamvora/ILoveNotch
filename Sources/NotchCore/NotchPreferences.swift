@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: MIT
+// CGSize through Foundation alone makes Swift 6.3 serialize the size constants below with Double
+// fields, and Release builds of NotchSurface then crash the optimizer.
+import CoreGraphics
 import Foundation
 import Observation
 
