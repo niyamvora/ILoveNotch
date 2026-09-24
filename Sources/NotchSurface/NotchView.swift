@@ -33,6 +33,7 @@ struct NotchView: View {
     @Environment(\.colorSchemeContrast) private var contrast
     @State private var dropTargeted = false
     @State private var justDropped = false
+    @State private var slideForward = true
     @Namespace private var selection
 
     var body: some View {
@@ -41,12 +42,6 @@ struct NotchView: View {
         let outline = shape(for: presentation)
         ZStack(alignment: .top) {
             outline.fill(.black)
-            if contrast == .increased {
-                outline.stroke(.white.opacity(0.45), lineWidth: 1)
-            }
-            if dropTargeted {
-                outline.stroke(Color.accentColor, lineWidth: 2).shadow(color: .accentColor, radius: 6)
-            }
             if let tab = presentation.openTab {
                 expanded(tab: tab, pinned: presentation.isPinned)
                     .transition(.opacity)
@@ -56,6 +51,15 @@ struct NotchView: View {
             }
         }
         .frame(width: size.width, height: size.height, alignment: .top)
+        .clipShape(outline)  // content sliding between tabs never shows outside the notch
+        .overlay {
+            if contrast == .increased {
+                outline.stroke(.white.opacity(0.45), lineWidth: 1)
+            }
+            if dropTargeted {
+                outline.stroke(Color.accentColor, lineWidth: 2).shadow(color: .accentColor, radius: 6)
+            }
+        }
         .environment(\.colorScheme, .dark)  // the notch is always black
         .contentShape(outline)
         .onHover { engine.send($0 ? .pointerEntered : .pointerExited) }
@@ -124,7 +128,8 @@ struct NotchView: View {
             content.tab(tab)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .id(tab)
-                .transition(.opacity)
+                .transition(tabTransition)
+                .animation(reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.74), value: tab)
         }
         .padding(contentPadding)
         .foregroundStyle(.white)
@@ -141,30 +146,60 @@ struct NotchView: View {
     }
 
     private func tabBar(selected: FeatureID) -> some View {
-        HStack(spacing: 2) {
-            ForEach(engine.state.tabs, id: \.self) { tab in
+        let tabs = engine.state.tabs
+        return HStack(spacing: 2) {
+            ForEach(tabs, id: \.self) { tab in
                 Button {
+                    // Content slides the same way the selection travels.
+                    slideForward = (tabs.firstIndex(of: tab) ?? 0) >= (tabs.firstIndex(of: selected) ?? 0)
                     engine.send(.selectTab(tab))
                 } label: {
                     Image(systemName: tab.symbol)
                         .font(.system(size: 14, weight: .medium))
                         .frame(width: 32, height: 26)
-                        .background {
-                            if tab == selected {
-                                Capsule()
-                                    .fill(.white.opacity(0.16))
-                                    .matchedGeometryEffect(id: "selection", in: selection)
-                            }
-                        }
+                        .scaleEffect(tab == selected ? 1.08 : 1)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .matchedGeometryEffect(id: tab, in: selection)  // a slot the capsule can move to
                 .help(tab.title)
                 .accessibilityLabel(tab.title)
                 .accessibilityAddTraits(tab == selected ? .isSelected : [])
             }
         }
-        .animation(reduceMotion ? nil : .spring(response: 0.17, dampingFraction: 0.9), value: selected)
+        .background {
+            // One capsule travels between tabs: a bouncy spring carries it, and a quick
+            // stretch-and-settle makes the move read as jelly instead of a jump.
+            Capsule()
+                .fill(.white.opacity(0.16))
+                .matchedGeometryEffect(id: selected, in: selection, isSource: false)
+                .keyframeAnimator(initialValue: CGSize(width: 1, height: 1), trigger: selected) { capsule, scale in
+                    capsule.scaleEffect(scale)
+                } keyframes: { _ in
+                    let stretch: CGFloat = reduceMotion ? 1 : 1.3
+                    KeyframeTrack(\.width) {
+                        SpringKeyframe(stretch, duration: 0.12)
+                        SpringKeyframe(reduceMotion ? 1 : 0.94, duration: 0.14)
+                        SpringKeyframe(1, duration: 0.24)
+                    }
+                    KeyframeTrack(\.height) {
+                        SpringKeyframe(2 - stretch, duration: 0.12)
+                        SpringKeyframe(reduceMotion ? 1 : 1.05, duration: 0.14)
+                        SpringKeyframe(1, duration: 0.24)
+                    }
+                }
+        }
+        .animation(reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.64), value: selected)
+    }
+
+    /// Content slides in from the side the selection moved toward, with a little scale and fade.
+    private var tabTransition: AnyTransition {
+        guard !reduceMotion else { return .opacity }
+        let incoming: Edge = slideForward ? .trailing : .leading
+        let outgoing: Edge = slideForward ? .leading : .trailing
+        return .asymmetric(
+            insertion: .move(edge: incoming).combined(with: .opacity).combined(with: .scale(scale: 0.96)),
+            removal: .move(edge: outgoing).combined(with: .opacity))
     }
 
     private func iconButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
