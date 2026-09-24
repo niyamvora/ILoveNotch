@@ -31,8 +31,7 @@ struct NotesFeatureTests {
         notes.phase = .foreground
         notes.update(notes.add(), text: "draft")
         #expect(files().isEmpty, "not on every keystroke")
-        try await Task.sleep(for: .milliseconds(800))
-        #expect(files().count == 1)
+        #expect(await eventually { files().count == 1 })
     }
 
     @Test func emptyNotesAreNeverKept() {

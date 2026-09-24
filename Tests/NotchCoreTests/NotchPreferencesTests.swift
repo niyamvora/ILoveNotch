@@ -45,10 +45,9 @@ struct NotchPreferencesTests {
         var seen: [[FeatureID]] = []
         observeContinuously { seen.append(preferences.tabs) }
         preferences.setEnabled(.tasks, false)
-        try await Task.sleep(for: .milliseconds(50))
+        #expect(await eventually { seen.count == 2 })
         preferences.setEnabled(.tasks, true)
-        try await Task.sleep(for: .milliseconds(50))
-        #expect(seen.count == 3)
+        #expect(await eventually { seen.count == 3 })
         #expect(seen.last == FeatureID.allCases)
     }
 }

@@ -37,7 +37,7 @@ struct TimerFeatureTests {
         var activities: [Activity] = []
         timer.onActivity = { activities.append($0) }
         timer.start(0.2)
-        try await Task.sleep(for: .milliseconds(900))
+        #expect(await eventually { !activities.isEmpty })
         #expect(activities.map(\.title) == ["Timer done"])
         #expect(timer.countdown == nil && !timer.alarmPending)
     }
