@@ -54,9 +54,12 @@ that delivers it.
 
 ## v0.3+: camera and system (Phase 5)
 
-- [ ] Front-camera mirror
-- [ ] Volume change indicator
-- [ ] Charging and battery activity
+- [x] Front-camera mirror, off until turned on; the camera runs only while the Mirror tab is open
+- [x] Volume change indicator with a meter, following the output device
+- [x] Charging and battery activity: charger in or out, 20% and 10% left, and full
+- [x] Replace the macOS volume display (opt-in, needs Accessibility access)
+- [x] Bluetooth accessory battery when it connects (experimental: Apple keyboards, mice, and trackpads)
+- [x] Each system activity can be turned off in Settings › Features › System
 
 ## v0.5: AI usage (Phase 8)
 
@@ -68,8 +71,8 @@ that delivers it.
 
 ## Later
 
-- [ ] Replace the system volume HUD (v0.4)
-- [ ] Brightness HUD and Bluetooth accessory battery (experimental)
+- [ ] Brightness display (blocked: Apple silicon has no public API to read or set brightness)
+- [ ] AirPods and other Bluetooth batteries (blocked: no public API)
 - [ ] General notification mirror (deferred: no clean public API)
 - [ ] Signed, notarized DMG on GitHub Releases with in-app updates ([Phase 7](updates.md#public-releases-phase-7))
 - [ ] Sandboxed Mac App Store edition ([Phase 7](plan/implementation-plan.md#app-store-edition))
