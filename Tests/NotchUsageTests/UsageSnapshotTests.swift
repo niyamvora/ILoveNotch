@@ -1,0 +1,98 @@
+// SPDX-License-Identifier: MIT
+import AppKit
+import SwiftUI
+import Testing
+
+@testable import NotchUsage
+
+/// Renders the Usage tab with sample data inside a notch-sized black panel. Always checks that it
+/// draws; with SNAPSHOT_DIR set, also writes PNGs there for eyeballing.
+@MainActor
+struct UsageSnapshotTests {
+    private let defaults = UserDefaults(suiteName: "UsageSnapshots.\(UUID().uuidString)")!
+    private let cache = FileManager.default.temporaryDirectory.appending(path: "usage-snap-\(UUID().uuidString).json")
+    /// The content area of the default open notch, and of the largest.
+    private static let size = CGSize(width: 396, height: 192)
+    private static let largest = CGSize(width: 656, height: 382)
+
+    private static let now = Date()
+
+    /// A provider with every kind of line: limits at a given level, spend, a trend, and a note.
+    private static func sample(_ id: String, _ name: String, session: Double, weekly: Double) -> ProviderSnapshot {
+        let trend = (0..<14).map { day in
+            MetricChartPoint(value: Double((day * 37) % 11 + 2) * 1_000_000, label: "Sep \(10 + day)", valueLabel: nil)
+        }
+        return ProviderSnapshot(
+            providerID: id, displayName: name, plan: id == "claude" ? "Max" : "Pro",
+            lines: [
+                .progress(
+                    label: "Session", used: session, limit: 100, format: .percent,
+                    resetsAt: now.addingTimeInterval(2 * 3600 + 780), periodDurationMs: 5 * 3_600_000),
+                .progress(
+                    label: "Weekly", used: weekly, limit: 100, format: .percent,
+                    resetsAt: now.addingTimeInterval(3 * 86_400), periodDurationMs: 7 * 86_400_000),
+                .progress(label: "Extra Usage", used: 12.5, limit: 100, format: .dollars),
+                .values(
+                    label: "Today",
+                    values: [
+                        MetricValue(number: 3.12, kind: .dollars),
+                        MetricValue(number: 1_200_000, kind: .count, label: "tokens"),
+                    ]),
+                .values(label: "Yesterday", values: [MetricValue(number: 8.4, kind: .dollars)]),
+                .values(label: "Last 30 Days", values: [MetricValue(number: 58.2, kind: .dollars)]),
+                .chart(label: "Usage Trend", points: trend),
+            ],
+            refreshedAt: now.addingTimeInterval(-120))
+    }
+
+    private func usage(with snapshots: [ProviderSnapshot]) throws -> UsageFeature {
+        let cached = Dictionary(uniqueKeysWithValues: snapshots.map { ($0.providerID, $0) })
+        try JSONEncoder().encode(cached).write(to: cache)
+        defaults.set(snapshots.map(\.providerID), forKey: "usage.enabledProviders")
+        let runtimes = snapshots.map { FakeRuntime(id: $0.providerID, name: $0.displayName, used: 0) }
+        return UsageFeature(defaults: defaults, cacheURL: cache, runtimes: { runtimes })
+    }
+
+    @Test func theDashboardShowsEachProvidersHeadlineLimit() async throws {
+        let usage = try usage(with: [
+            Self.sample("claude", "Claude", session: 42, weekly: 71),
+            Self.sample("codex", "Codex", session: 86, weekly: 40),
+            Self.sample("cursor", "Cursor", session: 97, weekly: 88),
+            Self.sample("copilot", "Copilot", session: 15, weekly: 5),
+        ])
+        try await render(UsageView(usage: usage), name: "usage-dashboard")
+    }
+
+    @Test func theOnlyProviderShowsEveryLimitSpendAndItsTrend() async throws {
+        let usage = try usage(with: [Self.sample("claude", "Claude", session: 42, weekly: 71)])
+        try await render(UsageView(usage: usage), name: "usage-detail")
+        try await render(UsageView(usage: usage), name: "usage-detail-largest", size: Self.largest)
+    }
+
+    @Test func beforeAnyProviderIsOnItOffersTheSignedInOnes() async throws {
+        let runtimes = ["claude", "codex", "cursor"].map { FakeRuntime(id: $0, name: $0.capitalized, used: 0) }
+        let usage = UsageFeature(defaults: defaults, cacheURL: cache, runtimes: { runtimes })
+        try await render(UsageView(usage: usage), name: "usage-onboarding")
+    }
+
+    private func render(_ view: some View, name: String, size: CGSize = Self.size) async throws {
+        let framed = view.frame(width: size.width, height: size.height).padding(16).background(.black)
+            .foregroundStyle(.white).environment(\.colorScheme, .dark)
+        let host = NSHostingView(rootView: framed)
+        let window = NSWindow(
+            contentRect: CGRect(x: 0, y: 0, width: size.width + 32, height: size.height + 32),
+            styleMask: .borderless, backing: .buffered, defer: false)
+        window.contentView = host
+        host.layoutSubtreeIfNeeded()
+        // Rings fill from empty when they appear: let them get there, without holding up the main actor.
+        try await Task.sleep(for: .seconds(1.5))
+        let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        #expect(bitmap.pixelsWide > 0)
+        if let directory = ProcessInfo.processInfo.environment["SNAPSHOT_DIR"] {
+            try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
+            try bitmap.representation(using: .png, properties: [:])?.write(
+                to: URL(filePath: directory).appending(path: "\(name).png"))
+        }
+    }
+}

@@ -2,7 +2,7 @@
 
 /// A feature that can own the expanded notch.
 public enum FeatureID: String, CaseIterable, Hashable, Sendable {
-    case media, shelf, calendar, tasks, notes, shortcuts, timer, mirror
+    case media, shelf, calendar, tasks, notes, shortcuts, timer, mirror, usage
 
     /// SF Symbol for tabs and settings.
     public var symbol: String {
@@ -15,6 +15,7 @@ public enum FeatureID: String, CaseIterable, Hashable, Sendable {
         case .shortcuts: "square.stack.3d.up"
         case .timer: "timer"
         case .mirror: "web.camera"
+        case .usage: "gauge.with.dots.needle.67percent"
         }
     }
 
@@ -28,6 +29,7 @@ public enum FeatureID: String, CaseIterable, Hashable, Sendable {
         case .shortcuts: "Shortcuts"
         case .timer: "Timer"
         case .mirror: "Mirror"
+        case .usage: "AI Usage"
         }
     }
 }

@@ -98,9 +98,13 @@ public final class NotchPreferences {
     public nonisolated static let offByDefault: Set<FeatureID> = [.mirror]
 
     @ObservationIgnored private let defaults: UserDefaults
+    /// Features this build can offer, in tab order. The App Store edition leaves out the ones the
+    /// App Sandbox can't run.
+    public let available: [FeatureID]
 
-    public init(defaults: UserDefaults = .standard) {
+    public init(defaults: UserDefaults = .standard, unavailable: Set<FeatureID> = []) {
         self.defaults = defaults
+        available = FeatureID.allCases.filter { !unavailable.contains($0) }
         func features(_ key: String) -> Set<FeatureID> {
             Set((defaults.stringArray(forKey: key) ?? []).compactMap(FeatureID.init(rawValue:)))
         }
@@ -144,7 +148,7 @@ public final class NotchPreferences {
     }
 
     /// Enabled features in tab order.
-    public var tabs: [FeatureID] { FeatureID.allCases.filter { !disabledFeatures.contains($0) } }
+    public var tabs: [FeatureID] { available.filter { !disabledFeatures.contains($0) } }
 
     public func isEnabled(_ feature: FeatureID) -> Bool { !disabledFeatures.contains(feature) }
 

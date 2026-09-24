@@ -1,8 +1,12 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.2
 // SPDX-License-Identifier: MIT
 import PackageDescription
 
-// Tools 6.0 builds every target in the Swift 6 language mode: complete strict-concurrency checking.
+// Every target builds in the Swift 6 language mode: complete strict-concurrency checking. OpenNotch's
+// own code treats warnings as errors; the vendored OpenUsage code keeps upstream's warnings as
+// warnings, so it can stay close to upstream.
+let strict: [SwiftSetting] = [.treatAllWarnings(as: .error)]
+
 let package = Package(
     name: "OpenNotchKit",
     platforms: [.macOS("14.6")],
@@ -10,18 +14,32 @@ let package = Package(
         .library(name: "NotchCore", targets: ["NotchCore"]),
         .library(name: "NotchSurface", targets: ["NotchSurface"]),
         .library(name: "NotchFeatures", targets: ["NotchFeatures"]),
+        .library(name: "NotchUsage", targets: ["NotchUsage"]),
     ],
     targets: [
         // State machine, feature lifecycle, diagnostics. No AppKit, so it tests anywhere.
-        .target(name: "NotchCore"),
+        .target(name: "NotchCore", swiftSettings: strict),
         // Panel, SwiftUI surface, and notch geometry.
-        .target(name: "NotchSurface", dependencies: ["NotchCore"]),
+        .target(name: "NotchSurface", dependencies: ["NotchCore"], swiftSettings: strict),
         // Feature modules: each one a NotchFeature plus its views.
-        .target(name: "NotchFeatures", dependencies: ["NotchCore"]),
-        .testTarget(name: "NotchCoreTests", dependencies: ["NotchCore"]),
-        .testTarget(name: "NotchSurfaceTests", dependencies: ["NotchSurface"]),
-        .testTarget(name: "NotchFeaturesTests", dependencies: ["NotchFeatures"]),
+        .target(name: "NotchFeatures", dependencies: ["NotchCore"], swiftSettings: strict),
+        // AI subscription usage: OpenUsage's providers (MIT, in OpenUsage/) with OpenNotch's tab.
+        .target(
+            name: "NotchUsage", dependencies: ["NotchCore", "NotchFeatures"],
+            resources: [
+                .copy("Resources/pricing_litellm_snapshot.json"),
+                .copy("Resources/pricing_models_dev_snapshot.json"),
+                .copy("Resources/pricing_supplement.json"),
+                // Provider marks from theSVG (thesvg.org; CC0 or MIT, see THIRD_PARTY_NOTICES.md).
+                .copy("Resources/Logos"),
+            ]),
+        .testTarget(name: "NotchCoreTests", dependencies: ["NotchCore"], swiftSettings: strict),
+        .testTarget(name: "NotchSurfaceTests", dependencies: ["NotchSurface"], swiftSettings: strict),
+        .testTarget(name: "NotchFeaturesTests", dependencies: ["NotchFeatures"], swiftSettings: strict),
+        .testTarget(name: "NotchUsageTests", dependencies: ["NotchUsage"], swiftSettings: strict),
+        // OpenUsage's own tests (MIT) for the providers, mappers, and pricing we adapted, on its fixtures.
+        .testTarget(name: "OpenUsageTests", dependencies: ["NotchUsage"]),
         // XCTest metrics (clock, CPU, memory, signposts) for the core's hot paths.
-        .testTarget(name: "PerformanceTests", dependencies: ["NotchCore"]),
+        .testTarget(name: "PerformanceTests", dependencies: ["NotchCore"], swiftSettings: strict),
     ]
 )

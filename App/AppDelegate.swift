@@ -5,9 +5,19 @@ import NotchFeatures
 import NotchSurface
 import SwiftUI
 
+#if !APP_STORE
+    import NotchUsage
+#endif
+
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private let preferences = NotchPreferences()
+    #if APP_STORE
+        // The App Sandbox can't read other tools' sign-ins, so the App Store edition has no AI Usage.
+        private let preferences = NotchPreferences(unavailable: [.usage])
+    #else
+        private let preferences = NotchPreferences()
+        private let usage = UsageFeature()
+    #endif
     private let media = MediaFeature()
     private let shelf = ShelfFeature()
     private let calendar: CalendarFeature
@@ -16,7 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let shortcuts = ShortcutsFeature()
     private let timer = TimerFeature()
     private let mirror = MirrorFeature()
-    private lazy var features = FeatureHost([media, shelf, calendar, tasks, notes, shortcuts, timer, mirror])
+    private lazy var features = FeatureHost(featureList)
     // System live activities, which belong to no tab.
     private let volume = VolumeMonitor()
     private let battery = BatteryMonitor()
@@ -36,31 +46,55 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         preferences: preferences,
         updater: updater,
         previewAnimation: { [weak self] in self?.coordinator?.previewAnimation() },
-        featureSettings: { [media, shelf, calendar, tasks, shortcuts] feature in
-            switch feature {
-            case .media: AnyView(media.settingsView)
-            case .shelf: AnyView(shelf.settingsView)
-            case .calendar: AnyView(calendar.settingsView)
-            case .tasks: AnyView(tasks.settingsView)
-            case .shortcuts: AnyView(shortcuts.settingsView)
-            case .notes, .timer, .mirror: nil
-            }
-        })
+        featureSettings: { [unowned self] in self.settingsView(for: $0) })
+
+    private var featureList: [any NotchFeature] {
+        #if APP_STORE
+            [media, shelf, calendar, tasks, notes, shortcuts, timer, mirror]
+        #else
+            [media, shelf, calendar, tasks, notes, shortcuts, timer, mirror, usage]
+        #endif
+    }
+
+    private func tabView(for feature: FeatureID) -> AnyView {
+        switch feature {
+        case .media: return AnyView(media.view)
+        case .shelf: return AnyView(shelf.view)
+        case .calendar: return AnyView(calendar.view)
+        case .tasks: return AnyView(tasks.view)
+        case .notes: return AnyView(notes.view)
+        case .shortcuts: return AnyView(shortcuts.view)
+        case .timer: return AnyView(timer.view)
+        case .mirror: return AnyView(mirror.view)
+        case .usage:
+            #if APP_STORE
+                return AnyView(EmptyView())
+            #else
+                return AnyView(usage.view)
+            #endif
+        }
+    }
+
+    private func settingsView(for feature: FeatureID) -> AnyView? {
+        switch feature {
+        case .media: return AnyView(media.settingsView)
+        case .shelf: return AnyView(shelf.settingsView)
+        case .calendar: return AnyView(calendar.settingsView)
+        case .tasks: return AnyView(tasks.settingsView)
+        case .shortcuts: return AnyView(shortcuts.settingsView)
+        case .notes, .timer, .mirror: return nil
+        case .usage:
+            #if APP_STORE
+                return nil
+            #else
+                return AnyView(usage.settingsView)
+            #endif
+        }
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let content = NotchContent(
-            tab: { [media, shelf, calendar, tasks, notes, shortcuts, timer, mirror] feature in
-                switch feature {
-                case .media: AnyView(media.view)
-                case .shelf: AnyView(shelf.view)
-                case .calendar: AnyView(calendar.view)
-                case .tasks: AnyView(tasks.view)
-                case .notes: AnyView(notes.view)
-                case .shortcuts: AnyView(shortcuts.view)
-                case .timer: AnyView(timer.view)
-                case .mirror: AnyView(mirror.view)
-                }
-            },
+            tab: { [unowned self] in self.tabView(for: $0) },
             dropFiles: { [preferences, shelf] urls in preferences.isEnabled(.shelf) && shelf.add(urls) },
             openSettings: { [weak self] in self?.settings.show() })
         let coordinator = PanelCoordinator(preferences: preferences, content: content)
@@ -75,6 +109,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         volume.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         battery.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         accessories.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
+        #if !APP_STORE
+            usage.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
+        #endif
         volumeKeys.onKey = { [volume] key, fine in
             switch key {
             case .up: volume.step(up: true, fine: fine)

@@ -75,4 +75,7 @@ enum Links {
     static let releases = URL(string: "https://github.com/niyamvora/OpenNotch/releases")!
     static let sponsor = URL(string: "https://github.com/sponsors/niyamvora")!
     static let privacy = URL(string: "https://github.com/niyamvora/OpenNotch/blob/main/PRIVACY.md")!
+    /// Rendered on GitHub; the direct download also carries a copy in its Resources.
+    static let acknowledgements = URL(
+        string: "https://github.com/niyamvora/OpenNotch/blob/main/THIRD_PARTY_NOTICES.md")!
 }

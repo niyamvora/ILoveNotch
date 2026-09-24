@@ -52,6 +52,9 @@ targets:
       # Now-playing helper script, run by /usr/bin/perl (see THIRD_PARTY_NOTICES.md).
       - path: ThirdParty/mediaremote-adapter/bin/mediaremote-adapter.pl
         buildPhase: resources
+      # The licenses of the code this edition ships, which they ask to travel with it.
+      - path: THIRD_PARTY_NOTICES.md
+        buildPhase: resources
     dependencies:
       - package: OpenNotchKit
         product: NotchCore
@@ -59,6 +62,8 @@ targets:
         product: NotchSurface
       - package: OpenNotchKit
         product: NotchFeatures
+      - package: OpenNotchKit
+        product: NotchUsage
       - package: Sparkle
       # Embedded, never linked: the framework is loaded by the perl helper process, not by OpenNotch.
       - target: MediaRemoteAdapter
