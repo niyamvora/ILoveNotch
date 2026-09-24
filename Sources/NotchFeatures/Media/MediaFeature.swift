@@ -34,6 +34,8 @@ public final class MediaFeature: NotchFeature {
     }
     public private(set) var nowPlaying: NowPlaying?
     public private(set) var artwork: NSImage?
+    /// The cover's color, lifted to read on black; tints the seek wave, waveform, and glow.
+    public private(set) var accent: RGB?
     public private(set) var source: Source
     /// Per-feature setting: raise a live activity when the track changes.
     public var announcesTracks: Bool {
@@ -75,6 +77,38 @@ public final class MediaFeature: NotchFeature {
     }
 
     /// Brings the playing app forward.
+    /// Jumps to a point in the track. The stream reports the new position.
+    public func seek(to seconds: TimeInterval) {
+        guard source == .adapter, let adapter else { return }
+        Task { _ = await Subprocess.run(MediaAdapter.perl, adapter.arguments(MediaAdapter.seek(to: seconds))) }
+    }
+
+    /// The cover's average color, lifted so it reads on the black notch: vivid covers keep their hue
+    /// at a floor of saturation and brightness, and grey ones stay grey instead of turning pink.
+    /// Computed once per track from the 256 px thumbnail.
+    nonisolated static func accent(of image: CGImage) -> RGB? {
+        var pixel: [UInt8] = [0, 0, 0, 0]
+        let drawn = pixel.withUnsafeMutableBytes { buffer -> Bool in
+            guard let space = CGColorSpace(name: CGColorSpace.sRGB),
+                let context = CGContext(
+                    data: buffer.baseAddress, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4, space: space,
+                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+            else { return false }
+            context.interpolationQuality = .medium
+            context.draw(image, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+            return true
+        }
+        guard drawn else { return nil }
+        let average = NSColor(
+            srgbRed: CGFloat(pixel[0]) / 255, green: CGFloat(pixel[1]) / 255, blue: CGFloat(pixel[2]) / 255, alpha: 1)
+        let saturation = average.saturationComponent < 0.12 ? 0 : max(average.saturationComponent, 0.45)
+        let lifted = NSColor(
+            hue: average.hueComponent, saturation: saturation, brightness: max(average.brightnessComponent, 0.78),
+            alpha: 1)
+        guard let sRGB = lifted.usingColorSpace(.sRGB) else { return nil }
+        return RGB(red: sRGB.redComponent, green: sRGB.greenComponent, blue: sRGB.blueComponent)
+    }
+
     public func openPlayer() {
         guard let bundleID = nowPlaying?.appBundleID,
             let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
@@ -163,6 +197,7 @@ public final class MediaFeature: NotchFeature {
         nowPlaying = now
         if now?.artwork != previous?.artwork || now?.isDifferentTrack(from: previous) == true {
             artwork = now.flatMap(thumbnail(for:))
+            accent = artwork?.cgImage(forProposedRect: nil, context: nil, hints: nil).flatMap(Self.accent(of:))
         }
         let settled = Date().timeIntervalSince(startedAt) > 1.5  // the first payloads are the current state
         if announcesTracks, Self.shouldAnnounce(now, after: previous, settled: settled, phase: phase), let now {
@@ -212,6 +247,11 @@ struct MediaAdapter: Sendable {
 
     /// perl's arguments for one adapter command.
     func arguments(_ command: [String]) -> [String] { [script.path, framework.path] + command }
+
+    /// The adapter's `seek` command takes whole microseconds.
+    static func seek(to seconds: TimeInterval) -> [String] {
+        ["seek", String(Int((max(0, seconds) * 1_000_000).rounded()))]
+    }
 
     func process(_ command: [String]) -> Process {
         let process = Process()

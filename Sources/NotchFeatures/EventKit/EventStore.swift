@@ -27,25 +27,6 @@ public enum EventAccess: Equatable, Sendable {
     }
 }
 
-/// A calendar's color reduced to sRGB components, so it can cross threads.
-public struct RGB: Hashable, Sendable {
-    public var red: Double
-    public var green: Double
-    public var blue: Double
-
-    init?(_ color: CGColor?) {
-        guard let color, let sRGB = CGColorSpace(name: CGColorSpace.sRGB),
-            let components = color.converted(to: sRGB, intent: .defaultIntent, options: nil)?.components,
-            components.count >= 3
-        else { return nil }
-        red = components[0]
-        green = components[1]
-        blue = components[2]
-    }
-
-    public var color: Color { Color(red: red, green: green, blue: blue) }
-}
-
 /// The view for a tab that needs EventKit access it doesn't have yet.
 struct EventAccessView: View {
     let access: EventAccess
