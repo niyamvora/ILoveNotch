@@ -9,15 +9,18 @@ import SwiftUI
 @MainActor
 final class SettingsWindowController {
     private let preferences: NotchPreferences
+    private let featureSettings: (FeatureID) -> AnyView?
     private var window: NSWindow?
 
-    init(preferences: NotchPreferences) {
+    /// `featureSettings` supplies each feature's own settings, shown under its toggle.
+    init(preferences: NotchPreferences, featureSettings: @escaping (FeatureID) -> AnyView?) {
         self.preferences = preferences
+        self.featureSettings = featureSettings
     }
 
     func show() {
         if window == nil {
-            let root = SettingsView(preferences: preferences)
+            let root = SettingsView(preferences: preferences, featureSettings: featureSettings)
             let window = NSWindow(contentViewController: NSHostingController(rootView: root))
             window.title = "OpenNotch Settings"
             window.styleMask = [.titled, .closable]
@@ -32,12 +35,13 @@ final class SettingsWindowController {
 
 struct SettingsView: View {
     let preferences: NotchPreferences
+    let featureSettings: (FeatureID) -> AnyView?
 
     var body: some View {
         TabView {
             GeneralSettings(preferences: preferences)
                 .tabItem { Label("General", systemImage: "gearshape") }
-            FeatureSettings(preferences: preferences)
+            FeatureSettings(preferences: preferences, featureSettings: featureSettings)
                 .tabItem { Label("Features", systemImage: "square.grid.2x2") }
             AboutSettings()
                 .tabItem { Label("About", systemImage: "info.circle") }
@@ -84,24 +88,30 @@ private struct GeneralSettings: View {
     }
 }
 
+/// One section per feature: whether it shows in the notch, then its own settings while it does.
 private struct FeatureSettings: View {
     let preferences: NotchPreferences
+    let featureSettings: (FeatureID) -> AnyView?
 
     var body: some View {
         Form {
-            Section("Show in the notch") {
-                ForEach(FeatureID.allCases, id: \.self) { feature in
+            ForEach(FeatureID.allCases, id: \.self) { feature in
+                Section {
                     Toggle(
                         isOn: Binding(
                             get: { preferences.isEnabled(feature) },
                             set: { preferences.setEnabled(feature, $0) })
                     ) {
-                        Label(feature.title, systemImage: feature.symbol)
+                        Label(feature.title, systemImage: feature.symbol).font(.headline)
+                    }
+                    if preferences.isEnabled(feature), let settings = featureSettings(feature) {
+                        settings
                     }
                 }
             }
         }
         .formStyle(.grouped)
+        .frame(height: 440)
     }
 }
 

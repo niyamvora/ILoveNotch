@@ -118,8 +118,11 @@ public final class TasksFeature: NotchFeature {
         reload()
     }
 
+    /// Re-reads access, which may have changed in System Settings.
+    public func refreshAccess() { access = EventAccess(.reminder) }
+
     private func activate() {
-        access = EventAccess(.reminder)  // it may have changed in System Settings
+        refreshAccess()
         guard access == .granted else { return }
         if changes == nil {
             changes = NotificationCenter.default.addObserver(
@@ -137,12 +140,18 @@ public final class TasksFeature: NotchFeature {
         tasks = []
     }
 
+    /// Loads the Reminders lists, for the settings picker as well as the tab.
+    public func loadLists() {
+        guard EventAccess(.reminder) == .granted else { return }
+        lists = eventStore.store.calendars(for: .reminder)
+            .map { ReminderList(id: $0.calendarIdentifier, title: $0.title) }
+            .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+    }
+
     private func reload() {
         guard access == .granted, phase == .foreground else { return }
         let store = eventStore.store
-        lists = store.calendars(for: .reminder)
-            .map { ReminderList(id: $0.calendarIdentifier, title: $0.title) }
-            .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+        loadLists()
         let chosen = listID.flatMap(store.calendar(withIdentifier:)).map { [$0] }
         let predicate = store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: chosen)
         store.fetchReminders(matching: predicate) { [weak self] reminders in
