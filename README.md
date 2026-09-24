@@ -92,8 +92,9 @@ log stream --level debug --predicate 'subsystem == "cafe.opennotch.app"'
 2. Quit other notch apps first; two apps can't share the notch.
 3. Hover the notch (or click it, or pull down with two fingers), then try each
    tab. Calendar and Tasks ask for access the first time you tap **Allow Access**.
-   Resize the open notch with − and + in its bottom-right corner, where the pin
-   is too, and pick how it opens and closes in **Settings › General**.
+   Resize the open notch by dragging its bottom-right corner, keep it open with
+   the pin beside Settings, and pick how it opens and closes in
+   **Settings › General**.
 4. To get the latest, choose **Update OpenNotch** from the menu bar item (or run
    `make update`). It pulls `main` when your checkout is clean, rebuilds, and
    relaunches; see [updates](docs/updates.md).

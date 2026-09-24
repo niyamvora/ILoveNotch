@@ -23,8 +23,9 @@ that delivers it.
 - [x] Dragging files over the notch opens it to the shelf
 - [x] Closed, the notch hides behind the camera housing; hovering grows it slightly
 - [x] Switching tabs slides the content across, and the selection moves with a jelly stretch
-- [x] Resize the open notch in proportion with − and + in its bottom-right corner, down to a shorter smallest size
-- [x] Size and pin controls sit in one corner capsule, so the tab row keeps its room for tabs
+- [x] Resize the open notch by dragging its bottom-right corner, between a smallest and a largest size
+- [x] The tab row holds the tabs, the pin, and Settings; more tabs make the tabs narrower, never crowded
+- [x] No scroll bars over the notch's content; long lists and pages fade at their edges instead
 - [x] Tabs adapt to shorter notches: media drops its waveform, then shrinks its artwork; laps move beside the stopwatch
 - [x] Pushing the pointer against the top edge over the notch opens it
 - [x] Choose how the notch opens and closes (spring, jelly, pop, smooth, snappy, or instant), with a preview
@@ -70,6 +71,7 @@ that delivers it.
 - [x] Pace for each limit: plenty left, cutting it close, or when it runs out
 - [x] Spend for today, yesterday, and the last 30 days, and the daily usage trend
 - [x] Live activity when a limit is close or resets
+- [x] Back from a provider's detail to the tiles, where an Add tile offers the other tools signed in on this Mac
 - [x] Provider logos from theSVG
 
 ## Later
