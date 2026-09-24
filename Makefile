@@ -2,7 +2,7 @@
 CONFIGURATION ?= Debug
 ARCH ?= $(shell uname -m)
 DERIVED_DATA := .build/xcode
-APP := $(DERIVED_DATA)/Build/Products/$(CONFIGURATION)/OpenNotch.app
+APP := $(DERIVED_DATA)/Build/Products/$(CONFIGURATION)/ILoveNotch.app
 SWIFT_SOURCES := App Sources Tests Package.swift
 # The commit a build comes from, with "+" when the checkout has uncommitted changes (shown in the menu).
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null)$(shell git diff --quiet HEAD -- 2>/dev/null || echo +)
@@ -33,19 +33,20 @@ build-app-store: project ## Build the sandboxed App Store edition into its own f
 		-destination 'platform=macOS,arch=$(ARCH)' -derivedDataPath .build/xcode-appstore $(SIGNING) -quiet build
 
 run: build ## Build and relaunch the app
-	-osascript -e 'quit app "OpenNotch"'
+	-osascript -e 'quit app "ILoveNotch"'
 	open $(APP)
 
+# The app was called OpenNotch before it was ILoveNotch: installing quits and removes that copy too.
 install: ## Build a Release app into /Applications and (re)launch it
 	$(MAKE) build CONFIGURATION=Release
-	@osascript -e 'quit app "OpenNotch"' >/dev/null 2>&1 || true
-	@for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -x OpenNotch >/dev/null || break; sleep 0.3; done; \
-		pkill -x OpenNotch || true
-	rm -rf /Applications/OpenNotch.app
-	ditto $(DERIVED_DATA)/Build/Products/Release/OpenNotch.app /Applications/OpenNotch.app
-	open /Applications/OpenNotch.app
+	@for name in ILoveNotch OpenNotch; do osascript -e "quit app \"$$name\"" >/dev/null 2>&1 || true; done
+	@for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -x 'ILoveNotch|OpenNotch' >/dev/null || break; sleep 0.3; done; \
+		pkill -x 'ILoveNotch|OpenNotch' || true
+	rm -rf /Applications/ILoveNotch.app /Applications/OpenNotch.app
+	ditto $(DERIVED_DATA)/Build/Products/Release/ILoveNotch.app /Applications/ILoveNotch.app
+	open /Applications/ILoveNotch.app
 
-update: ## Pull main when safe, rebuild, reinstall, relaunch (the app's "Update OpenNotch")
+update: ## Pull main when safe, rebuild, reinstall, relaunch (the app's "Update ILoveNotch")
 	scripts/update.sh
 
 release: ## Sign, notarize, and draft a GitHub release: make release VERSION=0.3.0 (docs/releasing.md)

@@ -38,7 +38,7 @@ final class SettingsWindowController {
                 preferences: preferences, updater: updater, previewAnimation: previewAnimation,
                 featureSettings: featureSettings, usageSettings: usageSettings, selection: selection)
             let window = NSWindow(contentViewController: NSHostingController(rootView: root))
-            window.title = "OpenNotch Settings"
+            window.title = "ILoveNotch Settings"
             window.styleMask = [.titled, .closable]
             window.isReleasedWhenClosed = false
             window.center()
@@ -104,7 +104,7 @@ private struct GeneralSettings: View {
                 Text(loginError).font(.caption).foregroundStyle(.red)
             }
             Toggle("Show on all displays", isOn: $preferences.showOnAllDisplays)
-            Text("Otherwise OpenNotch uses the built-in display's notch, or the main display.")
+            Text("Otherwise ILoveNotch uses the built-in display's notch, or the main display.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Picker("Open and close animation", selection: $preferences.animationStyle) {
@@ -228,13 +228,16 @@ private struct AboutSettings: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            Image(systemName: "rectangle.topthird.inset.filled").font(.system(size: 40))
-            Text("OpenNotch").font(.title2.bold())
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .frame(width: 72, height: 72)
+                .accessibilityHidden(true)
+            Text("ILoveNotch").font(.title2.bold())
             Text("Version \(Updater.version)").foregroundStyle(.secondary)
             #if !APP_STORE  // the App Store updates its edition
                 if updater.sourceDirectory != nil {
                     Button(
-                        updater.state == .updating ? "Updating…" : "Update OpenNotch", action: updater.updateFromSource
+                        updater.state == .updating ? "Updating…" : "Update ILoveNotch", action: updater.updateFromSource
                     )
                     .disabled(updater.state == .updating)
                     if updater.state == .failed {
@@ -252,7 +255,7 @@ private struct AboutSettings: View {
                 Link("GitHub", destination: Links.repository)
                 Link("Privacy", destination: Links.privacy)
                 Link("Acknowledgements", destination: Links.acknowledgements)
-                Link("Sponsor OpenNotch", destination: Links.sponsor)
+                Link("Sponsor ILoveNotch", destination: Links.sponsor)
             }
         }
         .padding()

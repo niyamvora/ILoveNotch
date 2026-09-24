@@ -5,12 +5,12 @@
 	<key>OpenNotchSourceDirectory</key>
 	<string>$(OPENNOTCH_SOURCE)</string>
 	<key>SUFeedURL</key>
-	<string>https://raw.githubusercontent.com/niyamvora/OpenNotch/main/appcast.xml</string>
+	<string>https://raw.githubusercontent.com/niyamvora/ILoveNotch/main/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>rKEETTORw3k063xBn4P4UWHfyHwzEjFsHiXCYqPzPlQ=</string>
 	<key>OpenNotchCommit</key>
 	<string>$(OPENNOTCH_COMMIT)</string>
 	<key>NSAudioCaptureUsageDescription</key>
-	<string>OpenNotch listens to what's playing so the media waveform moves with the music. Audio is analyzed on this Mac as it plays and is never recorded.</string>
+	<string>ILoveNotch listens to what's playing so the media waveform moves with the music. Audio is analyzed on this Mac as it plays and is never recorded.</string>
 </dict>
 </plist>
