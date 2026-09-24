@@ -1,7 +1,7 @@
 # Updates
 
 OpenNotch has two ways to stay current: builds made from a local checkout rebuild themselves
-from it, and public releases will update through Sparkle.
+from it, and public releases update through Sparkle.
 
 ## Builds from a checkout (today)
 
@@ -32,30 +32,22 @@ having no certificate.
 
 ## Public releases (Phase 7)
 
-People who download OpenNotch have no checkout, so their builds link to the Releases page
-(**Check for Updates…**) until in-app updates land. The plan:
+Downloaded copies have no checkout, so they update through [Sparkle 2](https://sparkle-project.org)
+(MIT):
 
-| Piece | Choice |
-|-------|--------|
-| In-app updates | [Sparkle 2](https://sparkle-project.org) (MIT) through `SPUStandardUpdaterController`, behind **Check for Updates…** |
-| Feed | An appcast published with each release, every update signed with an EdDSA (ed25519) key |
-| Distribution | Signed, notarized DMG on GitHub Releases; a Homebrew cask can follow |
-| Automatic checks | Off until the user agrees: Sparkle asks on the second launch, and Settings has the toggle |
+| Piece | How |
+|-------|-----|
+| In-app updates | `SPUStandardUpdaterController`, behind **Check for Updates…** in the menu bar item and Settings › About |
+| Feed | `appcast.xml` on `main` (`SUFeedURL`), updated by each release |
+| Trust | Every update's DMG is signed with an EdDSA (ed25519) key; its public half is `SUPublicEDKey` in `App/Info.plist`, and Sparkle also checks the Developer ID signature |
+| Distribution | A signed, notarized DMG on GitHub Releases; a Homebrew cask can follow |
+| Automatic checks | Off until the user agrees: Sparkle asks on the second launch |
 
-A tagged release (`v*`) runs a GitHub Actions workflow that:
+Release builds record no source checkout (`OPENNOTCH_SOURCE` is empty), so they use Sparkle;
+builds from a checkout keep **Update OpenNotch**. [Releasing](releasing.md) covers cutting a
+release with `make release`, which signs with Developer ID, notarizes, builds the DMG, updates the
+appcast, and drafts the GitHub release.
 
-1. builds a universal (Apple silicon and Intel) Release app;
-2. signs it with a **Developer ID Application** certificate and the hardened runtime;
-3. notarizes it with `notarytool`, then staples the ticket;
-4. packages and signs the DMG;
-5. signs the update and regenerates the appcast with Sparkle's `generate_appcast`;
-6. publishes the DMG and appcast to the GitHub release.
-
-It needs these repository secrets: the Developer ID certificate (`.p12` and its password), an
-App Store Connect API key for notarization, and the Sparkle EdDSA private key. The matching
-public key ships in the app's `Info.plist` as `SUPublicEDKey`. Developer ID signing and
-notarization require a paid Apple Developer Program membership.
-
-A build offers **Update OpenNotch** only when the checkout it records exists on the Mac with
-`scripts/update.sh` in it. A release built by CI records the runner's path, which doesn't exist
-on anyone's Mac, so it uses Sparkle.
+Releases are cut on a maintainer's Mac rather than in CI, so the Developer ID identity, the
+account-wide App Store Connect key, and Sparkle's private key never leave it. A CI release
+workflow can follow once there's a key scoped to this app.
