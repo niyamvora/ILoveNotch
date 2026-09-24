@@ -6,9 +6,10 @@ import Testing
 
 @testable import NotchSurface
 
+/// As measured on hardware: the gap sits half a point left of the display's center.
 private let macBookPro14 = NotchMetrics(
     screen: CGRect(x: 0, y: 0, width: 1512, height: 982), safeAreaTop: 32,
-    left: CGRect(x: 0, y: 950, width: 662, height: 32), right: CGRect(x: 850, y: 950, width: 662, height: 32))
+    left: CGRect(x: 0, y: 950, width: 663, height: 32), right: CGRect(x: 848, y: 950, width: 664, height: 32))
 private let macBookPro16 = NotchMetrics(
     screen: CGRect(x: 0, y: 0, width: 1728, height: 1117), safeAreaTop: 38,
     left: CGRect(x: 0, y: 1079, width: 764, height: 38), right: CGRect(x: 964, y: 1079, width: 764, height: 38))
@@ -26,9 +27,9 @@ struct NotchMetricsTests {
     ]
 
     @Test(arguments: displays)
-    func thePanelIsPinnedToTheTopCenterOfItsDisplay(metrics: NotchMetrics) {
+    func thePanelIsPinnedToTheTopAndCenteredOnTheNotch(metrics: NotchMetrics) {
         let panel = metrics.panelFrame
-        #expect(abs(panel.midX - metrics.screen.midX) < 0.5)
+        #expect(abs(panel.midX - metrics.centerX) < 0.001)
         #expect(abs(panel.maxY - metrics.screen.maxY) < 0.5)
         #expect(metrics.screen.contains(panel))
     }
@@ -46,13 +47,33 @@ struct NotchMetricsTests {
         let hover = metrics.size(for: .hoverArmed)
         let live = metrics.size(for: .transient(song))
         let open = metrics.size(for: .expanded(tab: .media))
-        #expect(hover.width > compact.width && hover.height > compact.height, "hover gives visible feedback")
-        #expect(live.width > compact.width && live.height == compact.height, "activities widen, not deepen")
-        #expect(open.width > live.width && open.height > compact.height)
-        if let notch = metrics.notch {
-            #expect(compact.height == notch.height, "closed, the notch is exactly the camera housing")
-            #expect(compact.width == notch.width + NotchMetrics.flare * 2, "only the flared top corners reach past it")
+        let housing = metrics.housing
+        #expect(compact.width <= housing.width && compact.height <= housing.height)
+        #expect(hover.width > housing.width && hover.height > housing.height, "hover shows past the housing")
+        #expect(live.width > housing.width && live.height == housing.height, "activities widen, not deepen")
+        #expect(open.width > live.width && open.height > housing.height)
+    }
+
+    /// The housing as measured on hardware: the gap between the auxiliary areas, with top corners
+    /// that flare about 4 pt and bottom corners of about 8 pt when it's 32 pt tall.
+    @Test(arguments: [macBookPro14, macBookPro16]) @MainActor
+    func aClosedNotchHidesBehindTheCameraHousing(metrics: NotchMetrics) throws {
+        let notch = try #require(metrics.notch)
+        let housing = NotchShape(topRadius: notch.height / 8, bottomRadius: notch.height / 4)
+            .path(in: CGRect(origin: .zero, size: notch))
+        let size = metrics.size(for: .compact)
+        let resting = NotchView.shape(for: .compact, on: metrics)
+            .path(in: CGRect(x: (notch.width - size.width) / 2, y: 0, width: size.width, height: size.height))
+        // Every Retina pixel the closed notch covers, around and under the housing, must be hidden.
+        var showing: [CGPoint] = []
+        for x in stride(from: -19.75, to: notch.width + 20, by: 0.5) {
+            for y in stride(from: 0.25, to: notch.height + 10, by: 0.5) {
+                let pixel = CGPoint(x: x, y: y)
+                if resting.contains(pixel), !housing.contains(pixel) { showing.append(pixel) }
+            }
         }
+        #expect(showing.isEmpty, "shows past the housing at \(showing.prefix(4))")
+        #expect(resting.contains(CGPoint(x: notch.width / 2, y: 1)), "and it's still there to hover over")
     }
 
     @Test(arguments: displays)
@@ -64,14 +85,16 @@ struct NotchMetricsTests {
         }
     }
 
-    @Test func theChosenSizeIsUsedButNeverNarrowerThanTheLip() {
+    @Test func theChosenSizeIsUsedButLeavesRoomBesideTheNotch() {
         #expect(macBookPro14.size(for: .pinned(tab: .notes), expanded: CGSize(width: 600, height: 380)).width == 600)
         let tiny = macBookPro14.size(for: .expanded(tab: .media), expanded: CGSize(width: 100, height: 300))
-        #expect(tiny.width == macBookPro14.size(for: .compact).width + 80)
+        #expect(tiny.width == macBookPro14.housing.width + 80)
     }
 
     @Test func theNotchIsTheGapBetweenTheAuxiliaryAreas() {
-        #expect(macBookPro14.notch == CGSize(width: 188, height: 32))
+        #expect(macBookPro14.notch == CGSize(width: 185, height: 32))
+        #expect(macBookPro14.centerX == 755.5, "half a point left of the display's center")
+        #expect(external.centerX == external.screen.midX)
         #expect(macBookPro14.topInset == 0)
     }
 
