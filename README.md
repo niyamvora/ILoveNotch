@@ -79,6 +79,21 @@ Watch the state machine live with:
 log stream --level debug --predicate 'subsystem == "cafe.opennotch.app"'
 ```
 
+### Test it on your Mac
+
+1. `make install` builds a Release app into `/Applications` and launches it.
+   There's no Dock icon: look for the notch, and for the OpenNotch item in the
+   menu bar (Settings…, Sponsor, Quit).
+2. Quit other notch apps first; two apps can't share the notch.
+3. Hover the notch (or click it, or pull down with two fingers), then try each
+   tab. Calendar and Tasks ask for access the first time you tap **Allow Access**.
+4. Local builds are ad-hoc signed, so macOS treats each rebuild as a new app and
+   asks for Calendar and Reminders access again. Signed releases won't.
+5. To start at login, turn on **Settings › General › Launch at login**.
+6. To uninstall, choose **Quit** from the menu bar item and delete
+   `/Applications/OpenNotch.app`; data lives in
+   `~/Library/Application Support/OpenNotch`.
+
 ## Roadmap
 
 Phases follow the [implementation plan](docs/plan/implementation-plan.md#7-delivery-phases);
