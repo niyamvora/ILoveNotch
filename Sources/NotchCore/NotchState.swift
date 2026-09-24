@@ -244,6 +244,9 @@ public struct NotchState: Hashable, Sendable {
             presentation = .compact
 
         // Dragging files over the notch opens the shelf to catch them.
+        case (.focused(_, let pinned), .dragEntered) where tabs.contains(.shelf):
+            presentation = .focused(tab: .shelf, pinned: pinned)
+            lastTab = .shelf
         case (_, .dragEntered) where tabs.contains(.shelf):
             let hadGrace = presentation.deadline == .collapseGrace
             open(.shelf, pinned: presentation.isPinned)
@@ -293,7 +296,11 @@ public struct NotchState: Hashable, Sendable {
         case (.focused, .clickedOutside), (.focused, .dismiss):
             presentation = .compact
 
-        // Choosing a tab opens it; in a pinned or focused notch it keeps the pin and ends text input.
+        // Choosing a tab opens it and keeps a pin. While the notch has the keyboard, switching tabs
+        // keeps focus too: text entry ends only when the panel loses the keyboard or is dismissed.
+        case (.focused(_, let pinned), .selectTab(let tab)) where tabs.contains(tab):
+            lastTab = tab
+            presentation = .focused(tab: tab, pinned: pinned)
         case (_, .selectTab(let tab)):
             open(tab, pinned: presentation.isPinned)
 
