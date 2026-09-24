@@ -51,6 +51,34 @@ struct FeatureSnapshotTests {
             .environment(\.colorScheme, .dark)
     }
 
+    @Test func timerPresetsAndARunningCountdown() throws {
+        let timer = TimerFeature()
+        try render(timer.view, name: "timer-presets")
+        timer.start(25 * 60)
+        try render(timer.view, name: "timer-running")
+        timer.mode = .stopwatch
+        timer.toggleStopwatch(now: Date(timeIntervalSinceNow: -83.4))
+        timer.lap(now: Date(timeIntervalSinceNow: -41))
+        try render(timer.view, name: "stopwatch")
+    }
+
+    @Test func notesWithAFewNotes() throws {
+        let notes = NotesFeature(directory: FileManager.default.temporaryDirectory.appending(path: "N-\(UUID())"))
+        notes.phase = .foreground
+        try render(notes.view, name: "notes-empty")
+        for text in ["Groceries\n- oat milk\n- coffee", "Ideas for the notch", "Meeting notes\nShip Phase 4"] {
+            notes.update(notes.add(), text: text)
+        }
+        try render(notes.view, name: "notes")
+    }
+
+    @Test func eventKitTabsBeforeAccess() throws {
+        let store = EventStore()
+        try render(CalendarFeature(eventStore: store).view, name: "calendar-no-access")
+        try render(TasksFeature(eventStore: store).view, name: "tasks-no-access")
+        try render(ShortcutsFeature().view, name: "shortcuts-loading")
+    }
+
     private func render(_ view: some View, name: String) throws {
         let host = NSHostingView(rootView: inNotch(view))
         let window = NSWindow(

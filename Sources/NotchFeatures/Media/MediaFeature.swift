@@ -64,6 +64,9 @@ public final class MediaFeature: NotchFeature {
 
     public var view: some View { MediaView(media: self) }
 
+    /// Whether a now-playing source (helper process or notifications) is running.
+    var isListening: Bool { stream != nil || !notificationTokens.isEmpty }
+
     public func send(_ command: MediaCommand) {
         guard source == .adapter, let adapter else { return }
         // `send` waits up to 2 s for the player, so it runs off the main thread; the stream reports
