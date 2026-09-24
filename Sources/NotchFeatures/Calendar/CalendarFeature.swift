@@ -89,6 +89,9 @@ public final class CalendarFeature: NotchFeature {
         }
     }
 
+    /// Re-reads access, which may have changed in System Settings.
+    public func refreshAccess() { access = EventAccess(.event) }
+
     public func openCalendarApp() {
         let workspace = NSWorkspace.shared
         guard let app = workspace.urlForApplication(withBundleIdentifier: "com.apple.iCal") else { return }
@@ -96,7 +99,7 @@ public final class CalendarFeature: NotchFeature {
     }
 
     private func activate() {
-        access = EventAccess(.event)  // it may have changed in System Settings
+        refreshAccess()
         guard access == .granted else { return }
         if changes == nil {
             changes = NotificationCenter.default.addObserver(

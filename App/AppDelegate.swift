@@ -25,7 +25,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     private var coordinator: PanelCoordinator?
     private var statusItem: StatusItemController?
-    private lazy var settings = SettingsWindowController(preferences: preferences)
+    private lazy var settings = SettingsWindowController(preferences: preferences) {
+        [media, shelf, calendar, tasks, shortcuts] feature in
+        switch feature {
+        case .media: AnyView(media.settingsView)
+        case .shelf: AnyView(shelf.settingsView)
+        case .calendar: AnyView(calendar.settingsView)
+        case .tasks: AnyView(tasks.settingsView)
+        case .shortcuts: AnyView(shortcuts.settingsView)
+        case .notes, .timer: nil
+        }
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let content = NotchContent(

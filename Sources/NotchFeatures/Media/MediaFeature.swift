@@ -35,9 +35,15 @@ public final class MediaFeature: NotchFeature {
     public private(set) var nowPlaying: NowPlaying?
     public private(set) var artwork: NSImage?
     public private(set) var source: Source
+    /// Per-feature setting: raise a live activity when the track changes.
+    public var announcesTracks: Bool {
+        didSet { defaults.set(announcesTracks, forKey: Self.announceKey) }
+    }
     /// Raised when the track changes while the notch shows something else.
     @ObservationIgnored public var onActivity: ((Activity) -> Void)?
 
+    private static let announceKey = "media.announcesTracks"
+    @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let adapter: MediaAdapter?
     @ObservationIgnored private var stream: Process?
     @ObservationIgnored private var startedAt = Date.distantPast
@@ -49,9 +55,11 @@ public final class MediaFeature: NotchFeature {
         return cache
     }()
 
-    public init(bundle: Bundle = .main) {
+    public init(bundle: Bundle = .main, defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         adapter = MediaAdapter.bundled(in: bundle)
         source = adapter == nil ? .fallback : .adapter
+        announcesTracks = defaults.object(forKey: Self.announceKey) as? Bool ?? true
     }
 
     public var view: some View { MediaView(media: self) }
@@ -154,7 +162,7 @@ public final class MediaFeature: NotchFeature {
             artwork = now.flatMap(thumbnail(for:))
         }
         let settled = Date().timeIntervalSince(startedAt) > 1.5  // the first payloads are the current state
-        if Self.shouldAnnounce(now, after: previous, settled: settled, phase: phase), let now {
+        if announcesTracks, Self.shouldAnnounce(now, after: previous, settled: settled, phase: phase), let now {
             onActivity?(Activity(feature: .media, symbol: "music.note", title: now.title, duration: .seconds(3)))
         }
     }
