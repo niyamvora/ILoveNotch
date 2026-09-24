@@ -26,11 +26,14 @@ the installed app. Gates are in the [plan](plan/implementation-plan.md#8-perform
 | Run | CPU median / p95 | Memory (footprint) | Drift |
 |-----|------------------|--------------------|-------|
 | 2026-09-24, idle, 1 min, 14" MacBook Pro (Mac17,9), macOS 26 | 0.0% / 0.0% | 42 MB | 0 MB |
-| 2026-09-24, idle, 30 min, same Mac | running | | |
+| 2026-09-24, 30 min, same Mac, mostly idle | 0.0% / 0.2% | 41–51 MB at rest; 130 MB peak for about a minute while the notch was in use | +3 MB |
 | 8-hour idle | to run | | |
 | 8-hour active | to run | | |
 
-The media helper, a separate process, used about 7 MB.
+The media helper, a separate process, used about 7 MB. In the 30-minute run the notch was used
+once (60% CPU in that sample): memory rose to 130 MB and was back to 41 MB within a minute, so
+it's released, not leaked. The 120 MB gate is for the resting notch; a gate for the open notch is
+still to be set.
 
 ## Hardware checks
 
