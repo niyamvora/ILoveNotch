@@ -8,16 +8,18 @@ import SwiftUI
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let preferences = NotchPreferences()
+    private let media = MediaFeature()
     private let shelf = ShelfFeature()
-    private lazy var features = FeatureHost([shelf])
+    private lazy var features = FeatureHost([media, shelf])
     private var coordinator: PanelCoordinator?
     private var statusItem: StatusItemController?
     private lazy var settings = SettingsWindowController(preferences: preferences)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let content = NotchContent(
-            tab: { [shelf] feature in
+            tab: { [media, shelf] feature in
                 switch feature {
+                case .media: AnyView(media.view)
                 case .shelf: AnyView(shelf.view)
                 default: AnyView(ComingSoonView(feature: feature))
                 }
@@ -29,6 +31,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self else { return }
             features.update(presentations: presentations, enabled: Set(preferences.tabs))
         }
+        media.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         shelf.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         coordinator.start()
         self.coordinator = coordinator
@@ -36,7 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        // Stops every feature.
+        // Stops every feature, including the media helper process.
         features.update(presentations: [], enabled: [])
     }
 }
