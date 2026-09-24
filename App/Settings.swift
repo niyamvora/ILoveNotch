@@ -132,7 +132,7 @@ private struct FeatureSettings: View {
 
     var body: some View {
         Form {
-            ForEach(FeatureID.allCases, id: \.self) { feature in
+            ForEach(preferences.available, id: \.self) { feature in
                 Section {
                     Toggle(
                         isOn: Binding(
@@ -226,6 +226,7 @@ private struct AboutSettings: View {
             HStack(spacing: 16) {
                 Link("GitHub", destination: Links.repository)
                 Link("Privacy", destination: Links.privacy)
+                Link("Acknowledgements", destination: Links.acknowledgements)
                 Link("Sponsor OpenNotch", destination: Links.sponsor)
             }
         }

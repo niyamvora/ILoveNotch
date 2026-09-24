@@ -79,6 +79,149 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
+## OpenUsage (MIT)
+
+https://github.com/robinebers/openusage at commit
+4ce788775e0cb3ec779d353b2ac9f9d7e8765bb4, adapted into
+`Sources/NotchUsage/OpenUsage`: the provider integrations, usage models, pricing
+engine, and services behind the AI Usage tab. Its price supplement ships as
+`Sources/NotchUsage/Resources/pricing_supplement.json`. Each adapted file names
+its origin in its header. OpenNotch's changes: its own cache folder and
+User-Agent, no reset-credit claiming, no Antigravity token renewal (it embeds
+Antigravity's OAuth client secret), and a rebuilt UI. "OpenUsage" and its
+logo are Robin Ebers' trademarks. OpenNotch doesn't use the logo, and isn't
+affiliated with or endorsed by OpenUsage.
+
+```text
+MIT License
+
+Copyright (c) 2026 Robin Ebers
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## LiteLLM price list (MIT)
+
+https://github.com/BerriAI/litellm. `Sources/NotchUsage/Resources/pricing_litellm_snapshot.json`
+is a compacted copy of its `model_prices_and_context_window.json`, as bundled
+by OpenUsage. The app refreshes it from that file.
+
+```text
+MIT License
+
+Copyright (c) 2023 Berri AI
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## models.dev price list (MIT)
+
+https://github.com/sst/models.dev. `Sources/NotchUsage/Resources/pricing_models_dev_snapshot.json`
+is a compacted copy of https://models.dev/api.json, as bundled by OpenUsage.
+The app refreshes it from that address.
+
+```text
+MIT License
+
+Copyright (c) 2025 models.dev
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## theSVG provider logos (MIT and CC0-1.0)
+
+https://thesvg.org (https://github.com/glincker/thesvg). The logos in
+`Sources/NotchUsage/Resources/Logos` are theSVG's mono icons, under the license
+theSVG lists for each:
+
+| File | theSVG icon | License |
+| --- | --- | --- |
+| `claude.svg` | claude | CC0-1.0 |
+| `cursor.svg` | cursor | CC0-1.0 |
+| `ollama.svg` | ollama | CC0-1.0 |
+| `openrouter.svg` | openrouter | CC0-1.0 |
+| `antigravity.svg` | antigravity-google | MIT |
+| `codex.svg` | codex-openai | MIT |
+| `copilot.svg` | github-copilot | MIT |
+| `grok.svg` | grok-xai | MIT |
+| `opencode.svg` | opencode | MIT |
+| `zai.svg` | zhipu | MIT |
+
+Each logo is its owner's trademark. OpenNotch shows them only to identify each
+provider, and doesn't suggest any endorsement.
+
+```text
+MIT License
+
+Copyright (c) 2025 thesvg.org
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
 <!-- Entry format:
 ## Name (License)
 https://github.com/owner/repo

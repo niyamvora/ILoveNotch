@@ -35,6 +35,23 @@ struct NotchSnapshotTests {
     @Test(arguments: snapshotCases.indices)
     func everyStateRenders(index: Int) throws {
         let (name, metrics, events) = snapshotCases[index]
+        try draw(name, metrics: metrics, events: events, preferences: Self.preferences())
+    }
+
+    /// The densest header: every tab and the controls, at the smallest open size.
+    @Test func everyTabFitsTheSmallestSize() throws {
+        let preferences = Self.preferences()
+        preferences.resizeExpanded(to: NotchPreferences.minimumExpandedSize)
+        try draw("expanded-smallest", metrics: notched, events: [.show, .clicked], preferences: preferences)
+    }
+
+    private static func preferences() -> NotchPreferences {
+        NotchPreferences(defaults: UserDefaults(suiteName: "Snapshots.\(UUID().uuidString)")!)
+    }
+
+    private func draw(_ name: String, metrics: NotchMetrics, events: [NotchEvent], preferences: NotchPreferences)
+        throws
+    {
         let engine = NotchEngine()
         events.forEach(engine.send)
         let content = NotchContent(
@@ -44,7 +61,6 @@ struct NotchSnapshotTests {
             dropFiles: { _ in false },
             openSettings: {})
         let panel = metrics.panelFrame.size
-        let preferences = NotchPreferences(defaults: UserDefaults(suiteName: "Snapshots.\(UUID().uuidString)")!)
         let view = NotchView(engine: engine, metrics: metrics, preferences: preferences, content: content)
             .frame(width: panel.width, height: panel.height)
             .background(Color(white: 0.82))  // stands in for the desktop behind the transparent panel

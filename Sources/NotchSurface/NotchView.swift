@@ -206,11 +206,20 @@ struct NotchView: View {
         return EdgeInsets(top: (metrics.notch?.height ?? 0) + 10, leading: side, bottom: 22, trailing: side)
     }
 
+    /// Widths that fit every tab and the controls beside them into the smallest size: the more tabs
+    /// are on, the narrower they and the controls get.
+    private var density: (tab: CGFloat, spacing: CGFloat, control: CGFloat) {
+        switch engine.state.tabs.count {
+        case ...7: (32, 2, 26)
+        case 8: (28, 2, 26)
+        default: (26, 1, 24)
+        }
+    }
+
     private func tabBar(selected: FeatureID) -> some View {
         let tabs = engine.state.tabs
-        // Every tab and the controls beside them fit the smallest size; with all eight on, tabs narrow.
-        let tabWidth: CGFloat = tabs.count > 7 ? 28 : 32
-        return HStack(spacing: 2) {
+        let tabWidth = density.tab
+        return HStack(spacing: density.spacing) {
             ForEach(tabs, id: \.self) { tab in
                 Button {
                     // Content slides the same way the selection travels.
@@ -279,7 +288,7 @@ struct NotchView: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 12, weight: .medium))
-                .frame(width: 26, height: 26)
+                .frame(width: density.control, height: 26)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

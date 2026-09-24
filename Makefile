@@ -10,6 +10,8 @@ COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null)$(shell git diff --quie
 # Reminders, folders) to the signature, and an ad-hoc one changes with every build, so updates would
 # ask again each time. Without a certificate (CI, most contributors) builds stay ad-hoc signed.
 SIGNING_IDENTITY ?= $(shell security find-identity -v -p codesigning 2>/dev/null | awk -F'"' '/Apple Development/ {print $$2; exit}')
+# Manual style on every target, including SwiftPM's resource bundles, so none of them asks for a team.
+SIGNING = $(if $(SIGNING_IDENTITY),CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY='$(SIGNING_IDENTITY)')
 
 .PHONY: setup project build build-app-store run install update release app-store test lint format licenses secrets check clean
 
@@ -24,12 +26,11 @@ project: ## Generate OpenNotch.xcodeproj from project.yml
 build: project ## Build the app; CONFIGURATION=Debug|Release
 	xcodebuild -project OpenNotch.xcodeproj -scheme OpenNotch -configuration $(CONFIGURATION) \
 		-destination 'platform=macOS,arch=$(ARCH)' -derivedDataPath $(DERIVED_DATA) \
-		OPENNOTCH_COMMIT='$(COMMIT)' $(if $(SIGNING_IDENTITY),CODE_SIGN_IDENTITY='$(SIGNING_IDENTITY)') -quiet build
+		OPENNOTCH_COMMIT='$(COMMIT)' $(SIGNING) -quiet build
 
 build-app-store: project ## Build the sandboxed App Store edition into its own folder
 	xcodebuild -project OpenNotch.xcodeproj -scheme "OpenNotch App Store" -configuration $(CONFIGURATION) \
-		-destination 'platform=macOS,arch=$(ARCH)' -derivedDataPath .build/xcode-appstore \
-		$(if $(SIGNING_IDENTITY),CODE_SIGN_IDENTITY='$(SIGNING_IDENTITY)') -quiet build
+		-destination 'platform=macOS,arch=$(ARCH)' -derivedDataPath .build/xcode-appstore $(SIGNING) -quiet build
 
 run: build ## Build and relaunch the app
 	-osascript -e 'quit app "OpenNotch"'
@@ -53,8 +54,8 @@ release: ## Sign, notarize, and draft a GitHub release: make release VERSION=0.3
 app-store: ## Upload the App Store edition to App Store Connect: make app-store VERSION=0.3.0
 	scripts/app-store.sh $(VERSION)
 
-test: ## Run unit and performance tests
-	swift test -Xswiftc -warnings-as-errors
+test: ## Run unit and performance tests (warnings are errors in OpenNotch's own targets: Package.swift)
+	swift test
 
 lint: ## Fail on formatting drift (config: .swift-format)
 	swift format lint --strict --recursive $(SWIFT_SOURCES)
