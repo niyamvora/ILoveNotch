@@ -9,14 +9,18 @@ let package = Package(
     products: [
         .library(name: "NotchCore", targets: ["NotchCore"]),
         .library(name: "NotchSurface", targets: ["NotchSurface"]),
+        .library(name: "NotchFeatures", targets: ["NotchFeatures"]),
     ],
     targets: [
         // State machine, feature lifecycle, diagnostics. No AppKit, so it tests anywhere.
         .target(name: "NotchCore"),
         // Panel, SwiftUI surface, and notch geometry.
         .target(name: "NotchSurface", dependencies: ["NotchCore"]),
+        // Feature modules: each one a NotchFeature plus its views.
+        .target(name: "NotchFeatures", dependencies: ["NotchCore"]),
         .testTarget(name: "NotchCoreTests", dependencies: ["NotchCore"]),
         .testTarget(name: "NotchSurfaceTests", dependencies: ["NotchSurface"]),
+        .testTarget(name: "NotchFeaturesTests", dependencies: ["NotchFeatures"]),
         // XCTest metrics (clock, CPU, memory, signposts) for the core's hot paths.
         .testTarget(name: "PerformanceTests", dependencies: ["NotchCore"]),
     ]

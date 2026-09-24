@@ -13,12 +13,15 @@ targets:
   OpenNotch:
     type: application
     platform: macOS
-    sources: [App]
+    sources:
+      - App
     dependencies:
       - package: OpenNotchKit
         product: NotchCore
       - package: OpenNotchKit
         product: NotchSurface
+      - package: OpenNotchKit
+        product: NotchFeatures
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: cafe.opennotch.app
@@ -30,6 +33,10 @@ targets:
         INFOPLIST_KEY_LSUIElement: YES # accessory app: no Dock icon, no menu bar
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         INFOPLIST_KEY_NSHumanReadableCopyright: Copyright © 2026 Niyam Vora. MIT License.
+        # Shelf files dropped from protected folders are checked again on later launches.
+        INFOPLIST_KEY_NSDesktopFolderUsageDescription: OpenNotch keeps files you drop on the shelf so you can drag them out later.
+        INFOPLIST_KEY_NSDocumentsFolderUsageDescription: OpenNotch keeps files you drop on the shelf so you can drag them out later.
+        INFOPLIST_KEY_NSDownloadsFolderUsageDescription: OpenNotch keeps files you drop on the shelf so you can drag them out later.
         ENABLE_HARDENED_RUNTIME: YES
         # Ad-hoc signing builds and runs without an Apple team. Developer ID
         # signing and notarization belong to the release pipeline.
@@ -46,6 +53,7 @@ schemes:
       targets:
         - package: OpenNotchKit/NotchCoreTests
         - package: OpenNotchKit/NotchSurfaceTests
+        - package: OpenNotchKit/NotchFeaturesTests
         - package: OpenNotchKit/PerformanceTests
     archive:
       config: Release
