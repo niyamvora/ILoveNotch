@@ -44,7 +44,11 @@ targets:
         INFOPLIST_KEY_NSDesktopFolderUsageDescription: OpenNotch keeps files you drop on the shelf so you can drag them out later.
         INFOPLIST_KEY_NSDocumentsFolderUsageDescription: OpenNotch keeps files you drop on the shelf so you can drag them out later.
         INFOPLIST_KEY_NSDownloadsFolderUsageDescription: OpenNotch keeps files you drop on the shelf so you can drag them out later.
+        INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: OpenNotch shows today's events in the notch. Your calendars stay on this Mac.
+        INFOPLIST_KEY_NSRemindersFullAccessUsageDescription: OpenNotch shows, adds, and completes your reminders in the notch.
         ENABLE_HARDENED_RUNTIME: YES
+        # Hardened Runtime resource access: EventKit (Calendar and Reminders).
+        CODE_SIGN_ENTITLEMENTS: App/OpenNotch.entitlements
         # Ad-hoc signing builds and runs without an Apple team. Developer ID
         # signing and notarization belong to the release pipeline.
         CODE_SIGN_STYLE: Manual
