@@ -12,6 +12,32 @@ public enum AppSupport {
     }
 }
 
+/// Runs command-line tools off the main thread.
+public enum Subprocess {
+    /// Runs `executable` to completion and returns its exit status and standard output.
+    public static func run(_ executable: String, _ arguments: [String]) async -> (status: Int32, output: String) {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let process = Process()
+                process.executableURL = URL(filePath: executable)
+                process.arguments = arguments
+                let output = Pipe()
+                process.standardOutput = output
+                process.standardError = FileHandle.nullDevice
+                do {
+                    try process.run()
+                    // Drain before waiting, or a chatty tool fills the pipe and never exits.
+                    let data = output.fileHandleForReading.readDataToEndOfFile()
+                    process.waitUntilExit()
+                    continuation.resume(returning: (process.terminationStatus, String(decoding: data, as: UTF8.self)))
+                } catch {
+                    continuation.resume(returning: (-1, ""))
+                }
+            }
+        }
+    }
+}
+
 /// Shown instead of a feature when it can't work: unavailable on this Mac, or a permission denied.
 /// Always says why and, when there is one, offers the fix.
 public struct FeatureUnavailableView: View {
