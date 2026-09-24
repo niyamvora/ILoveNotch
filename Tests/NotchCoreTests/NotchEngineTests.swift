@@ -21,8 +21,7 @@ struct NotchEngineTests {
         engine.send(.show)
         engine.send(.pointerEntered)
         #expect(engine.pendingDeadlines == [.hoverDwell])
-        try await Task.sleep(for: NotchTiming.hoverDwell * 5)
-        #expect(engine.state.presentation == .expanded(tab: .media))
+        #expect(await eventually { engine.state.presentation == .expanded(tab: .media) })
         #expect(engine.pendingDeadlines.isEmpty)
     }
 
