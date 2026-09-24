@@ -21,8 +21,9 @@ Core principles:
 - Public macOS APIs first; unstable integrations remain optional adapters.
 - Performance, accessibility, and failure recovery are release requirements.
 - Original or permissively licensed code and assets only.
-- GitHub Releases are the primary distribution channel; a Mac App Store release
-  is not required or part of the v1 launch plan.
+- GitHub Releases are the primary distribution channel, with the full feature
+  set. A sandboxed Mac App Store edition with a smaller feature set follows it
+  (see [§10](#app-store-edition)).
 
 `OpenNotch` is a working name. Check repository, domain, and trademark
 availability before the first public release.
@@ -215,6 +216,7 @@ source is organized internally.
 | Brightness control          | Replaceable compatibility adapter                      |        High | Experimental    |
 | Bluetooth accessory battery | Device-specific adapter                                |        High | Experimental    |
 | General notification mirror | No clean general public API                            |   Very high | Deferred        |
+| AI subscription usage       | OpenUsage's provider runtime (MIT), opt-in providers   |      Medium | Phase 8         |
 
 Candidate dependencies:
 
@@ -298,9 +300,15 @@ Exit: capture sessions, audio work, helpers, and event taps stop when hidden.
 ### Phase 6: visual and motion polish
 
 - Finalize motion tokens.
-- Create original icon and brand assets.
+- Create original icon and brand assets: the exact files are listed in
+  [brand assets](../brand-assets.md).
 - Add symbol effects, haptics, themes, and optional original mascot.
 - Complete accessibility and localization infrastructure.
+
+Already done: open and close animation styles, tab motion, the media redesign
+with an audio-reactive waveform, and Reduce Motion, Reduce Transparency, and
+Increase Contrast support. Waiting on design: the final name, app icon, menu bar
+icon, logo, and DMG and store artwork.
 
 ### Phase 7: hardening and public beta
 
@@ -310,7 +318,44 @@ Exit: capture sessions, audio work, helpers, and event taps stop when hidden.
 - Produce signed beta builds and test upgrade/rollback behavior.
 
 A useful beta is realistic in 1-2 days. Broad parity and a hardened release
-should be planned as approximately 3-4 dats of focused work.
+should be planned as approximately 3-4 days of focused work.
+
+### Phase 8 (upcoming): AI usage in the notch
+
+Bring [OpenUsage](https://github.com/robinebers/openusage) into the notch: how
+much of each AI coding subscription is used, with session and weekly limits,
+credits, spend, and reset countdowns, as a native Usage tab with better icons
+and UI than a menu bar popover.
+
+- **Source.** OpenUsage is MIT-licensed Swift (SwiftPM, Swift 6 strict
+  concurrency, macOS 15+). Absorb its provider runtime (auth store → usage
+  client → mapper → snapshot) for Antigravity, Claude, Codex, Copilot, Cursor,
+  Devin, Grok, Ollama, OpenCode, OpenRouter, and Z.ai into a `NotchUsage`
+  module, keep its license notice in `THIRD_PARTY_NOTICES.md`, and credit it in
+  the README.
+- **Brand.** OpenUsage's trademark policy covers its name and logo: the tab
+  gets our own name, UI, and icon, never "OpenUsage" or its logo, and the README
+  says the usage code is adapted from OpenUsage, not that it is OpenUsage.
+- **Provider icons.** Provider logos come from [theSVG](https://thesvg.org)
+  (`glincker/thesvg`, MIT; `@thesvg/icons` on npm), using the mono variant in
+  the notch and color where a provider is selected, bundled as SVG in the asset
+  catalog. The logos stay their owners' trademarks and only identify each
+  provider; `THIRD_PARTY_NOTICES.md` says so.
+- **UI.** A Usage tab with one row per provider (logo, used/limit meters, reset
+  countdown, pace), a detail view per provider, a live activity when a limit is
+  close or resets, and optional usage rings in the closed notch's wings.
+- **Privacy.** Leave out OpenUsage's anonymous summaries, PostHog crash
+  reporting, and Sparkle setup. Each provider is off until turned on, reads only
+  credentials already on the Mac, and talks only to that provider. Refresh on
+  opening the tab, plus an optional background interval; that interval is the
+  one exception to "no network while idle", so PRIVACY.md must list it.
+- **Distribution.** Reading other apps' credentials doesn't fit the App Sandbox,
+  so the Usage tab ships in the GitHub (Developer ID) build only.
+- **Minimum macOS.** OpenUsage needs macOS 15. Backport to 14.6 or raise the
+  minimum for this module.
+
+Exit: parity with OpenUsage's providers and metrics, per-provider opt-in, no
+refresh while hidden unless enabled, and mapper tests on recorded fixtures.
 
 ## 8. Performance gates
 
@@ -405,9 +450,34 @@ Release and clearly distinguish:
 - Nightly build: optional, clearly marked as unsupported and potentially
   unsigned.
 
-Mac App Store packaging, sandbox review, and App Review are explicitly out of
-scope for v1. They may be reconsidered only if the required system integrations
-can work within App Store and sandbox restrictions without weakening the app.
+### App Store edition
+
+The project owner has asked for a Mac App Store release, reconsidering the
+earlier decision to keep it out of v1. The App Store requires the App Sandbox
+and forbids private APIs and self-updating, so the App Store build is a separate
+edition of the same code with a smaller feature set, and the GitHub build stays
+the full one:
+
+| Feature | GitHub build | App Store edition |
+| ------- | ------------ | ----------------- |
+| Notch, tabs, click-away, launch at login | Yes | Yes |
+| Media from any app, with controls | Yes, through the mediaremote-adapter helper | No: the helper reaches a private framework. Music and Spotify's public notifications show what's playing, and Music can be controlled through its scripting access group. |
+| Audio-reactive waveform | Yes | If Core Audio taps work in the sandbox (to verify); otherwise the stand-in motion |
+| Shelf | Yes | Yes, with security-scoped bookmarks so files survive relaunch |
+| Calendar, Tasks, Notes, Timer | Yes | Yes |
+| Shortcuts | Lists and runs them in the background | Runs them by name through `shortcuts://`, which opens Shortcuts |
+| Camera mirror, volume and battery activities | Yes | Yes |
+| Volume display replacement (event tap) | Opt-in | No: needs Accessibility, unavailable to sandboxed apps |
+| Bluetooth accessory battery | Experimental | No |
+| AI usage (Phase 8) | Yes | No: reads other apps' credentials |
+| Updates | Update OpenNotch (local builds) or Sparkle | The App Store |
+
+The edition builds from an `AppStore` configuration that sets a compile-time
+flag, uses sandbox entitlements, and leaves out the helper, Sparkle, and the
+local updater. Signing, the upload to App Store Connect, and TestFlight use the
+team's App Store Connect API key with cloud-managed certificates. Creating the
+app record and answering App Privacy are one-time steps in the App Store Connect
+website.
 
 ## 11. First development sprint
 

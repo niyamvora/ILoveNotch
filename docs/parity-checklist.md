@@ -33,7 +33,8 @@ that delivers it.
 
 - [x] Shows now-playing title, artist, artwork, and progress, from any app
 - [x] Play/pause, next, and previous controls; clicking the artwork opens the player
-- [x] Wavy seek bar you can drag to seek, and a waveform that moves while music plays
+- [x] Wavy seek bar you can drag to seek
+- [x] Waveform that follows the music's loudness across frequencies (with system audio permission)
 - [x] Brief live activity when the track changes
 - [x] Drop files onto the notch to hold them on a shelf
 - [x] Drag shelf files back out, preview with Quick Look, and send with AirDrop
@@ -57,9 +58,18 @@ that delivers it.
 - [ ] Volume change indicator
 - [ ] Charging and battery activity
 
+## v0.5: AI usage (Phase 8)
+
+- [ ] Usage tab: session and weekly limits, credits, spend, and reset countdowns per AI coding subscription
+- [ ] Providers: Antigravity, Claude, Codex, Copilot, Cursor, Devin, Grok, Ollama, OpenCode, OpenRouter, Z.ai
+- [ ] Each provider off until turned on; no refresh while hidden unless a background interval is chosen
+- [ ] Live activity when a limit is close or resets
+- [ ] Provider logos from theSVG
+
 ## Later
 
 - [ ] Replace the system volume HUD (v0.4)
 - [ ] Brightness HUD and Bluetooth accessory battery (experimental)
 - [ ] General notification mirror (deferred: no clean public API)
 - [ ] Signed, notarized DMG on GitHub Releases with in-app updates ([Phase 7](updates.md#public-releases-phase-7))
+- [ ] Sandboxed Mac App Store edition ([Phase 7](plan/implementation-plan.md#app-store-edition))
