@@ -1,29 +1,42 @@
 // SPDX-License-Identifier: MIT
 import AppKit
 import NotchCore
+import NotchFeatures
 import NotchSurface
 import SwiftUI
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let preferences = NotchPreferences()
-    private let features = FeatureHost([])
+    private let shelf = ShelfFeature()
+    private lazy var features = FeatureHost([shelf])
     private var coordinator: PanelCoordinator?
     private var statusItem: StatusItemController?
     private lazy var settings = SettingsWindowController(preferences: preferences)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let content = NotchContent(
-            tab: { AnyView(ComingSoonView(feature: $0)) },
-            dropFiles: { _ in false },
+            tab: { [shelf] feature in
+                switch feature {
+                case .shelf: AnyView(shelf.view)
+                default: AnyView(ComingSoonView(feature: feature))
+                }
+            },
+            dropFiles: { [preferences, shelf] urls in preferences.isEnabled(.shelf) && shelf.add(urls) },
             openSettings: { [weak self] in self?.settings.show() })
         let coordinator = PanelCoordinator(preferences: preferences, content: content)
         coordinator.onPresentationsChange = { [weak self] presentations in
             guard let self else { return }
             features.update(presentations: presentations, enabled: Set(preferences.tabs))
         }
+        shelf.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         coordinator.start()
         self.coordinator = coordinator
         statusItem = StatusItemController { [weak self] in self?.settings.show() }
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        // Stops every feature.
+        features.update(presentations: [], enabled: [])
     }
 }

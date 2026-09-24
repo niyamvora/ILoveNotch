@@ -56,6 +56,7 @@ struct NotchView: View {
             }
         }
         .frame(width: size.width, height: size.height, alignment: .top)
+        .environment(\.colorScheme, .dark)  // the notch is always black
         .contentShape(outline)
         .onHover { engine.send($0 ? .pointerEntered : .pointerExited) }
         .onTapGesture { engine.send(.clicked) }
