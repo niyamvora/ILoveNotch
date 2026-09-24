@@ -26,8 +26,8 @@ maintained, efficient alternative anyone can inspect and improve.
 1. **No polling timers.** State changes come from events (hover, clicks, system
    notifications). The only timers are one-shot deadlines, like the hover dwell,
    cancelled the moment they stop mattering. Idle app = idle CPU.
-2. **Accessory app.** No Dock icon, no menu bar (`LSUIElement`), never steals
-   focus (`nonactivatingPanel`).
+2. **Accessory app.** No Dock icon (`LSUIElement`), one small menu bar item for
+   Settings and Quit, and the notch never steals focus (`nonactivatingPanel`).
 3. **Lazy features.** Each feature module is `stopped`, `background` (cheap
    event observers only), or `foreground` (on screen). Hidden tabs cost nothing.
 4. **Native, no Electron/webview.** Pure SwiftUI/AppKit.
@@ -38,19 +38,20 @@ maintained, efficient alternative anyone can inspect and improve.
 ## Architecture
 
 ```text
-hover, clicks, system callbacks
+hover, clicks, drags, sleep/lock, display changes
   → NotchEvent
   → NotchState.handle(_:)   pure reducer: next state + effects
-  → NotchEngine             runs deadline timers, drives the feature lifecycle
-  → NotchController         mirrors the presentation onto the panel
+  → NotchEngine             one per display: runs deadline timers
+  → FeatureHost             runs each feature at the highest phase any display asks for
+  → NotchView               one animatable notch shape inside a fixed panel
 ```
 
 | Module | Role |
 |--------|------|
-| `App/` | App target generated from `project.yml`: entry point, picks the notched screen |
-| `NotchCore` | State machine, feature lifecycle, `NotchEngine`, typed logging and signposts. No AppKit. |
-| `NotchSurface` | Non-activating `NSPanel`, SwiftUI notch view, notch geometry from **public** APIs (`safeAreaInsets`, `auxiliaryTop*Area`) |
-| `Tests/` | Unit tests (reducer transitions and fuzzing, engine, geometry) and XCTest performance tests |
+| `App/` | App target generated from `project.yml`: wires features in, menu bar item, Settings |
+| `NotchCore` | State machine, `NotchEngine`, `FeatureHost` lifecycle, preferences, typed logging and signposts. No AppKit. |
+| `NotchSurface` | Fixed click-through `NSPanel` per display, animatable `NotchShape`, `PanelCoordinator` (displays, sleep, lock), notch geometry from **public** APIs (`safeAreaInsets`, `auxiliaryTop*Area`) |
+| `Tests/` | Unit tests (reducer transitions and fuzzing, engine, feature host, preferences, geometry, shape) and XCTest performance tests |
 
 The full design is in the [implementation plan](docs/plan/implementation-plan.md)
 and the [architecture diagram](docs/plan/architecture.html).
@@ -81,7 +82,7 @@ user-visible behaviors are tracked in the [parity checklist](docs/parity-checkli
 
 - [x] **Phase 0 — Repository and governance:** MIT license, contribution, security, and privacy policies, third-party notices
 - [x] **Phase 1 — Build system and core:** XcodeGen app target, SwiftPM core libraries, Swift 6 strict concurrency, presentation state machine, feature lifecycle, logging and signposts, unit and performance tests, CI
-- [ ] **Phase 2 — Production notch surface:** fixed panel with one animatable shape, click-away, Escape, drag, multi-display, menu-bar recovery, accessibility
+- [x] **Phase 2 — Production notch surface:** fixed panel with one animatable shape, click-away, Escape, drag, multi-display, menu-bar recovery, accessibility
 - [ ] **Phase 3 — Useful core (v0.2):** media now-playing and controls, file shelf with Quick Look and AirDrop
 - [ ] **Phase 4 — Productivity:** calendar, Reminders-backed tasks, local notes, shortcuts, timer
 - [ ] **Phase 5 — Camera and system:** camera mirror, volume and battery activities, optional HUD replacement
