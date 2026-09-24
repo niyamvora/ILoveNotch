@@ -297,6 +297,12 @@ Exit: every module starts, suspends, resumes, and releases resources correctly.
 
 Exit: capture sessions, audio work, helpers, and event taps stop when hidden.
 
+Done: the Mirror tab (off by default; the camera runs only while it's open),
+volume, battery, and Bluetooth accessory activities from Core Audio and IOKit
+callbacks, and an opt-in volume-key event tap that replaces the macOS volume
+display. Brightness stays with macOS, since Apple silicon has no public API to
+read or set it.
+
 ### Phase 6: visual and motion polish
 
 - Finalize motion tokens.

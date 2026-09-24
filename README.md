@@ -51,7 +51,7 @@ hover, clicks, drags, sleep/lock, display changes
 | `App/` | App target generated from `project.yml`: wires features in, menu bar item, Settings |
 | `NotchCore` | State machine, `NotchEngine`, `FeatureHost` lifecycle, preferences, typed logging and signposts. No AppKit. |
 | `NotchSurface` | Fixed click-through `NSPanel` per display, animatable `NotchShape`, `PanelCoordinator` (displays, sleep, lock), notch geometry from **public** APIs (`safeAreaInsets`, `auxiliaryTop*Area`) |
-| `NotchFeatures` | Feature modules (Media, Shelf, Calendar, Tasks, Notes, Shortcuts, Timer), each a `NotchFeature` with its views and settings |
+| `NotchFeatures` | Feature modules (Media, Shelf, Calendar, Tasks, Notes, Shortcuts, Timer, Mirror), each a `NotchFeature` with its views and settings, and the event-driven system monitors (volume, battery, accessories, volume keys) |
 | `ThirdParty/` | [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter) (BSD-3-Clause) as a git submodule |
 | `Tests/` | Unit tests (reducer transitions and fuzzing, engine, feature host, preferences, geometry, features), offscreen snapshot tests, and XCTest performance tests |
 
@@ -112,7 +112,7 @@ user-visible behaviors are tracked in the [parity checklist](docs/parity-checkli
 - [x] **Phase 2 — Production notch surface:** fixed panel with one animatable shape, click-away, Escape, drag, multi-display, menu-bar recovery, accessibility
 - [x] **Phase 3 — Useful core (v0.2):** media now-playing and controls, file shelf with Quick Look and AirDrop
 - [x] **Phase 4 — Productivity:** calendar, Reminders-backed tasks, local notes, shortcuts, timer, per-feature settings
-- [ ] **Phase 5 — Camera and system:** camera mirror, volume and battery activities, optional HUD replacement
+- [x] **Phase 5 — Camera and system:** camera mirror, volume, battery, and Bluetooth accessory activities, optional replacement for the macOS volume display
 - [ ] **Phase 6 — Visual and motion polish:** motion tokens, original icon and brand ([assets needed](docs/brand-assets.md)), themes, localization
 - [ ] **Phase 7 — Hardening and public beta:** soak tests, signed and notarized releases, [Sparkle updates](docs/updates.md#public-releases-phase-7), a sandboxed [App Store edition](docs/plan/implementation-plan.md#app-store-edition)
 - [ ] **Phase 8 — AI usage (upcoming):** how much of each AI coding subscription you've used, in the notch, adapted from [OpenUsage](https://github.com/robinebers/openusage) (MIT) with provider icons from [theSVG](https://thesvg.org) ([plan](docs/plan/implementation-plan.md#phase-8-upcoming-ai-usage-in-the-notch))

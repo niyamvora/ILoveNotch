@@ -9,6 +9,11 @@ OpenNotch is local-first.
 - System permissions (Calendar, Reminders, Camera, and so on) are requested only
   when you enable the feature that needs them. Denying one disables only that
   feature.
+- The Mirror tab is off until you turn it on, and uses the camera only while
+  that tab is open. Nothing is recorded or saved.
+- Replacing the macOS volume display is off until you turn it on. It asks for
+  Accessibility access to catch the volume keys; OpenNotch takes only the three
+  volume keys and passes every other event through untouched.
 - To move the media waveform with the music, OpenNotch listens to your Mac's
   audio output, and macOS asks for "system audio recording" permission the first
   time. It listens only while the Media tab is open and something plays, turns
