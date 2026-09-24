@@ -47,7 +47,7 @@ struct NotchView: View {
     var body: some View {
         let presentation = engine.state.presentation
         let size = metrics.size(for: presentation, expanded: preferences.expandedSize)
-        let outline = shape(for: presentation)
+        let outline = Self.shape(for: presentation, on: metrics)
         ZStack(alignment: .top) {
             outline.fill(.black)
             if let tab = presentation.openTab {
@@ -101,7 +101,7 @@ struct NotchView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
-    private func shape(for presentation: NotchPresentationState) -> NotchShape {
+    static func shape(for presentation: NotchPresentationState, on metrics: NotchMetrics) -> NotchShape {
         let open = presentation.openTab != nil
         guard metrics.notch != nil else {
             return NotchShape(topRadius: 0, bottomRadius: open ? 24 : Self.pillRadius, flushTop: false)
@@ -110,8 +110,8 @@ struct NotchView: View {
         case .expanded, .pinned, .focused:
             return NotchShape(topRadius: Self.expandedTopRadius, bottomRadius: Self.expandedBottomRadius)
         case .hoverArmed, .transient: return NotchShape(topRadius: NotchMetrics.flare, bottomRadius: 13)
-        // Closed: the camera housing's own corners, so the shape disappears into it.
-        default: return NotchShape(topRadius: NotchMetrics.flare, bottomRadius: 9)
+        // Closed: rounder than the housing's own corners, so the shape stays hidden behind it.
+        default: return NotchShape(topRadius: NotchMetrics.flare, bottomRadius: 10)
         }
     }
 
@@ -308,13 +308,13 @@ struct NotchView: View {
         HStack(spacing: 0) {
             Image(systemName: activity.symbol)
                 .font(.system(size: 13, weight: .semibold))
-            Spacer(minLength: metrics.compactSize.width)
+            Spacer(minLength: metrics.housing.width)
             Text(activity.title)
                 .font(.system(size: 12, weight: .medium))
                 .lineLimit(1)
         }
         .padding(.horizontal, 14)
-        .frame(height: metrics.compactSize.height)
+        .frame(height: metrics.housing.height)
         .foregroundStyle(.white)
         .accessibilityElement(children: .combine)
     }
