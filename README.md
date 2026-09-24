@@ -9,9 +9,10 @@ idle CPU**.
 
 > **Not affiliated with, endorsed by, or derived from any commercial notch app.**
 > This is a clean-room implementation written from scratch. It contains no
-> disassembled, decompiled, or copied third-party code or assets. Features are
-> common-idea reimplementations; all code and art here are original or from
-> permissively licensed (MIT) open-source libraries.
+> disassembled or decompiled code, and nothing from any commercial notch app.
+> Features are common-idea reimplementations. Everything here is original or
+> comes from permissively licensed open-source projects (MIT, BSD, CC0), listed
+> in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 _Working name — pick a final name/logo before public release._
 
@@ -52,8 +53,9 @@ hover, clicks, drags, sleep/lock, display changes
 | `NotchCore` | State machine, `NotchEngine`, `FeatureHost` lifecycle, preferences, typed logging and signposts. No AppKit. |
 | `NotchSurface` | Fixed click-through `NSPanel` per display, animatable `NotchShape`, `PanelCoordinator` (displays, sleep, lock), notch geometry from **public** APIs (`safeAreaInsets`, `auxiliaryTop*Area`) |
 | `NotchFeatures` | Feature modules (Media, Shelf, Calendar, Tasks, Notes, Shortcuts, Timer, Mirror), each a `NotchFeature` with its views and settings, and the event-driven system monitors (volume, battery, accessories, volume keys) |
+| `NotchUsage` | The AI Usage tab: provider tiles, rings, pace, spend, and trends, over providers adapted from [OpenUsage](https://github.com/robinebers/openusage) (MIT) in `NotchUsage/OpenUsage` |
 | `ThirdParty/` | [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter) (BSD-3-Clause) as a git submodule |
-| `Tests/` | Unit tests (reducer transitions and fuzzing, engine, feature host, preferences, geometry, features), offscreen snapshot tests, and XCTest performance tests |
+| `Tests/` | Unit tests (reducer transitions and fuzzing, engine, feature host, preferences, geometry, features), offscreen snapshot tests, XCTest performance tests, and OpenUsage's provider tests on its fixtures (`OpenUsageTests`) |
 
 The full design is in the [implementation plan](docs/plan/implementation-plan.md)
 and the [architecture diagram](docs/plan/architecture.html).
@@ -117,7 +119,7 @@ user-visible behaviors are tracked in the [parity checklist](docs/parity-checkli
 - [x] **Phase 5 — Camera and system:** camera mirror, volume, battery, and Bluetooth accessory activities, optional replacement for the macOS volume display
 - [ ] **Phase 6 — Visual and motion polish:** motion tokens, original icon and brand ([assets needed](docs/brand-assets.md)), themes, localization
 - [ ] **Phase 7 — Hardening and public beta:** [Sparkle updates](docs/updates.md#public-releases-phase-7), a [release pipeline](docs/releasing.md) that signs, notarizes, and drafts GitHub releases, a sandboxed [App Store edition](docs/plan/implementation-plan.md#app-store-edition), soak tooling and a [QA checklist](docs/qa.md) are in; the first signed release waits on a Developer ID certificate, and the App Store upload on the app record and icon
-- [ ] **Phase 8 — AI usage (upcoming):** how much of each AI coding subscription you've used, in the notch, adapted from [OpenUsage](https://github.com/robinebers/openusage) (MIT) with provider icons from [theSVG](https://thesvg.org) ([plan](docs/plan/implementation-plan.md#phase-8-upcoming-ai-usage-in-the-notch))
+- [x] **Phase 8 — AI usage:** how much of each AI coding plan you've used, in the notch: limits as rings and bars with reset countdowns and pace, spend and daily trends, and alerts at 80% and 95%, over providers adapted from [OpenUsage](https://github.com/robinebers/openusage) (MIT) with logos from [theSVG](https://thesvg.org) ([plan](docs/plan/implementation-plan.md#phase-8-ai-usage-in-the-notch))
 
 ## Now playing
 
@@ -131,6 +133,18 @@ The waveform under the player moves with the music. It listens to your Mac's
 audio output only while Media is open and playing, so macOS asks once for
 permission to capture system audio. Nothing is recorded; see
 [PRIVACY.md](PRIVACY.md). Turn it off in **Settings › Features › Media**.
+
+## AI usage
+
+The AI Usage tab shows how much of your AI coding plans you've used: Claude,
+Codex, Cursor, Copilot, Antigravity, Devin, Grok, Ollama, OpenCode, OpenRouter,
+and Z.ai. Each provider is off until you turn it on, from the tab or
+**Settings › Features › AI Usage**. Each one reads the sign-in its own tool
+keeps on this Mac and sends it only to its own service. The provider code is
+adapted from [OpenUsage](https://github.com/robinebers/openusage) (MIT);
+OpenNotch isn't affiliated with it. The tab is in the GitHub build only: reading
+other tools' sign-ins doesn't fit the App Store's sandbox. What it reads and
+sends is in [PRIVACY.md](PRIVACY.md#ai-usage).
 
 ## Tasks and notes
 

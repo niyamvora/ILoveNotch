@@ -63,11 +63,13 @@ that delivers it.
 
 ## v0.5: AI usage (Phase 8)
 
-- [ ] Usage tab: session and weekly limits, credits, spend, and reset countdowns per AI coding subscription
-- [ ] Providers: Antigravity, Claude, Codex, Copilot, Cursor, Devin, Grok, Ollama, OpenCode, OpenRouter, Z.ai
-- [ ] Each provider off until turned on; no refresh while hidden unless a background interval is chosen
-- [ ] Live activity when a limit is close or resets
-- [ ] Provider logos from theSVG
+- [x] Usage tab: session and weekly limits, credits, spend, and reset countdowns per AI coding subscription
+- [x] Providers: Antigravity, Claude, Codex, Copilot, Cursor, Devin, Grok, Ollama, OpenCode, OpenRouter, Z.ai
+- [x] Each provider off until turned on; no refresh while hidden unless a background interval is chosen
+- [x] Pace for each limit: plenty left, cutting it close, or when it runs out
+- [x] Spend for today, yesterday, and the last 30 days, and the daily usage trend
+- [x] Live activity when a limit is close or resets
+- [x] Provider logos from theSVG
 
 ## Later
 
