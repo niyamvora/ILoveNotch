@@ -64,11 +64,14 @@ public final class NotchPreferences {
     /// Narrowest that still fits every tab and the controls beside them.
     public nonisolated static let minimumExpandedSize = CGSize(width: 414, height: 230)
     public nonisolated static let maximumExpandedSize = CGSize(width: 720, height: 480)
-    /// What − and + step through: the default size scaled down and up, so the height follows the width.
-    public nonisolated static let expandedSizeSteps = ([0.9, 1, 1.12, 1.25, 1.4, 1.56] as [CGFloat]).map { scale in
-        let size = defaultExpandedSize
-        return CGSize(width: (size.width * scale).rounded(), height: (size.height * scale).rounded())
-    }
+    /// What − and + step through, smallest first: the minimum size, as narrow as the next step but
+    /// shorter, then the default size scaled down and up, so the height follows the width.
+    public nonisolated static let expandedSizeSteps =
+        [minimumExpandedSize]
+        + ([0.9, 1, 1.12, 1.25, 1.4, 1.56] as [CGFloat]).map { scale in
+            let size = defaultExpandedSize
+            return CGSize(width: (size.width * scale).rounded(), height: (size.height * scale).rounded())
+        }
 
     @ObservationIgnored private let defaults: UserDefaults
 
@@ -90,11 +93,13 @@ public final class NotchPreferences {
         expandedSize = Self.clamped(size)
     }
 
-    /// The next size up or down from the current one, or nil at the largest or smallest.
+    /// The next size up or down from the current one, or nil at the largest or smallest. Steps are
+    /// ordered by area, since the two smallest share a width.
     public func expandedSizeStep(larger: Bool) -> CGSize? {
+        let area = expandedSize.width * expandedSize.height
         let steps = Self.expandedSizeSteps
         return larger
-            ? steps.first { $0.width > expandedSize.width + 1 } : steps.last { $0.width < expandedSize.width - 1 }
+            ? steps.first { $0.width * $0.height > area + 1 } : steps.last { $0.width * $0.height < area - 1 }
     }
 
     nonisolated static func clamped(_ size: CGSize) -> CGSize {
