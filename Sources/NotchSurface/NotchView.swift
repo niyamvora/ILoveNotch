@@ -1,39 +1,38 @@
 // SPDX-License-Identifier: MIT
+import NotchCore
 import SwiftUI
 
-enum NotchTab: String, CaseIterable, Identifiable {
-    case media, tray, tasks, notes
-    var id: String { rawValue }
-    var icon: String {
+extension FeatureID {
+    var symbol: String {
         switch self {
-        case .media: return "play.circle"
-        case .tray: return "tray.full"
-        case .tasks: return "checklist"
-        case .notes: return "note.text"
+        case .media: "play.circle"
+        case .shelf: "tray.full"
+        case .tasks: "checklist"
+        case .notes: "note.text"
         }
     }
+
     var title: String { rawValue.capitalized }
 }
 
 struct NotchView: View {
-    @EnvironmentObject var controller: NotchController
-    @State private var tab: NotchTab = .media
-
-    private var notchTop: CGFloat { NotchGeometry.notchSize(for: controller.screen).height }
+    let engine: NotchEngine
+    let notchHeight: CGFloat
 
     var body: some View {
+        let presentation = engine.state.presentation
         ZStack(alignment: .top) {
-            RoundedRectangle(cornerRadius: controller.isOpen ? 22 : 12, style: .continuous)
+            RoundedRectangle(cornerRadius: presentation.openTab == nil ? 12 : 22, style: .continuous)
                 .fill(Color.black)
 
-            if controller.isOpen {
+            if let tab = presentation.openTab {
                 VStack(spacing: 10) {
-                    tabBar
+                    tabBar(selected: tab)
                     Divider().overlay(Color.white.opacity(0.12))
-                    content
+                    placeholder(for: tab)
                     Spacer(minLength: 0)
                 }
-                .padding(.top, notchTop + 8)
+                .padding(.top, notchHeight + 8)
                 .padding(.horizontal, 14)
                 .padding(.bottom, 12)
                 .foregroundStyle(.white)
@@ -42,38 +41,36 @@ struct NotchView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
-        // Event-driven only: no timers. Hover in = open, hover out = close.
-        .onHover { hovering in
-            withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
-                controller.isOpen = hovering
-            }
-        }
+        // Event-driven only: hover and clicks go to the engine, which owns every timer.
+        .onHover { engine.send($0 ? .pointerEntered : .pointerExited) }
+        .onTapGesture { engine.send(.clicked) }
+        .animation(.spring(response: 0.32, dampingFraction: 0.82), value: presentation)
         .ignoresSafeArea()
     }
 
-    private var tabBar: some View {
+    private func tabBar(selected: FeatureID) -> some View {
         HStack(spacing: 6) {
-            ForEach(NotchTab.allCases) { t in
+            ForEach(FeatureID.allCases, id: \.self) { tab in
                 Button {
-                    tab = t
+                    engine.send(.selectTab(tab))
                 } label: {
-                    Image(systemName: t.icon)
+                    Image(systemName: tab.symbol)
                         .font(.system(size: 15, weight: .medium))
                         .frame(width: 34, height: 28)
                         .background(
-                            tab == t ? Color.white.opacity(0.18) : .clear,
+                            tab == selected ? Color.white.opacity(0.18) : .clear,
                             in: RoundedRectangle(cornerRadius: 8))
                 }
                 .buttonStyle(.plain)
-                .help(t.title)
+                .help(tab.title)
             }
         }
     }
 
-    @ViewBuilder private var content: some View {
-        // v1 placeholders — each becomes a real module (see README roadmap).
+    // Placeholder until each feature module lands (Phase 3 onward).
+    private func placeholder(for tab: FeatureID) -> some View {
         VStack(spacing: 6) {
-            Image(systemName: tab.icon).font(.system(size: 26, weight: .semibold))
+            Image(systemName: tab.symbol).font(.system(size: 26, weight: .semibold))
             Text(tab.title).font(.headline)
             Text("Coming soon").font(.caption).foregroundStyle(.white.opacity(0.5))
         }
