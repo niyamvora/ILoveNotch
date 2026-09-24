@@ -11,7 +11,7 @@ struct NotchMetrics: Equatable {
     /// The physical notch, or nil on a notchless display.
     var notch: CGSize?
 
-    static let lip = CGSize(width: 20, height: 6)  // black lip around the physical notch
+    static let flare: CGFloat = 6  // the outline's flared top corners, which meet the screen edge
     static let pill = CGSize(width: 180, height: 26)  // resting shape on a notchless display
     static let pillInset: CGFloat = 3  // gap above the floating pill
     static let hoverGrowth = CGSize(width: 12, height: 4)  // hover feedback
@@ -35,10 +35,12 @@ struct NotchMetrics: Equatable {
         )
     }
 
-    /// Resting shape: a black lip hugging the physical notch, or a small pill on notchless displays.
+    /// Resting shape: exactly the physical notch, so a closed notch never shows past the camera
+    /// housing. Its body matches the notch's width and height; only the flared top corners reach past
+    /// the sides, as the real cutout's do. On notchless displays, a small pill.
     var compactSize: CGSize {
         guard let notch else { return Self.pill }
-        return CGSize(width: notch.width + Self.lip.width * 2, height: notch.height + Self.lip.height)
+        return CGSize(width: notch.width + Self.flare * 2, height: notch.height)
     }
 
     /// The open notch at the user's chosen size: never narrower than the lip plus room for the tabs,

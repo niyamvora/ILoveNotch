@@ -50,7 +50,8 @@ struct NotchMetricsTests {
         #expect(live.width > compact.width && live.height == compact.height, "activities widen, not deepen")
         #expect(open.width > live.width && open.height > compact.height)
         if let notch = metrics.notch {
-            #expect(compact.width > notch.width && compact.height > notch.height, "the lip covers the notch")
+            #expect(compact.height == notch.height, "closed, the notch is exactly the camera housing")
+            #expect(compact.width == notch.width + NotchMetrics.flare * 2, "only the flared top corners reach past it")
         }
     }
 
