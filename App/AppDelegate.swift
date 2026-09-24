@@ -10,24 +10,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let preferences = NotchPreferences()
     private let media = MediaFeature()
     private let shelf = ShelfFeature()
+    private let calendar: CalendarFeature
+    private let tasks: TasksFeature
     private let notes = NotesFeature()
     private let shortcuts = ShortcutsFeature()
     private let timer = TimerFeature()
-    private lazy var features = FeatureHost([media, shelf, notes, shortcuts, timer])
+    private lazy var features = FeatureHost([media, shelf, calendar, tasks, notes, shortcuts, timer])
+
+    override init() {
+        let eventStore = EventStore()  // shared, and only created when Calendar or Tasks first needs it
+        calendar = CalendarFeature(eventStore: eventStore)
+        tasks = TasksFeature(eventStore: eventStore)
+        super.init()
+    }
     private var coordinator: PanelCoordinator?
     private var statusItem: StatusItemController?
     private lazy var settings = SettingsWindowController(preferences: preferences)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let content = NotchContent(
-            tab: { [media, shelf, notes, shortcuts, timer] feature in
+            tab: { [media, shelf, calendar, tasks, notes, shortcuts, timer] feature in
                 switch feature {
                 case .media: AnyView(media.view)
                 case .shelf: AnyView(shelf.view)
+                case .calendar: AnyView(calendar.view)
+                case .tasks: AnyView(tasks.view)
                 case .notes: AnyView(notes.view)
                 case .shortcuts: AnyView(shortcuts.view)
                 case .timer: AnyView(timer.view)
-                default: AnyView(ComingSoonView(feature: feature))
                 }
             },
             dropFiles: { [preferences, shelf] urls in preferences.isEnabled(.shelf) && shelf.add(urls) },
