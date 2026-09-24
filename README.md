@@ -71,6 +71,8 @@ make install                      # build a Release app into /Applications and l
 make update                       # pull main when it's clean, then reinstall and relaunch
 make test                         # unit, snapshot, and performance tests (plain SwiftPM)
 make check                        # everything CI runs: lint, tests, build, license check
+make build-app-store              # the sandboxed App Store edition
+scripts/soak.sh                   # sample the running app's CPU and memory against the budgets
 ```
 
 `make project` generates `OpenNotch.xcodeproj` (git-ignored) for working in Xcode.
@@ -114,7 +116,7 @@ user-visible behaviors are tracked in the [parity checklist](docs/parity-checkli
 - [x] **Phase 4 — Productivity:** calendar, Reminders-backed tasks, local notes, shortcuts, timer, per-feature settings
 - [x] **Phase 5 — Camera and system:** camera mirror, volume, battery, and Bluetooth accessory activities, optional replacement for the macOS volume display
 - [ ] **Phase 6 — Visual and motion polish:** motion tokens, original icon and brand ([assets needed](docs/brand-assets.md)), themes, localization
-- [ ] **Phase 7 — Hardening and public beta:** soak tests, signed and notarized releases, [Sparkle updates](docs/updates.md#public-releases-phase-7), a sandboxed [App Store edition](docs/plan/implementation-plan.md#app-store-edition)
+- [ ] **Phase 7 — Hardening and public beta:** [Sparkle updates](docs/updates.md#public-releases-phase-7), a [release pipeline](docs/releasing.md) that signs, notarizes, and drafts GitHub releases, a sandboxed [App Store edition](docs/plan/implementation-plan.md#app-store-edition), soak tooling and a [QA checklist](docs/qa.md) are in; the first signed release waits on a Developer ID certificate, and the App Store upload on the app record and icon
 - [ ] **Phase 8 — AI usage (upcoming):** how much of each AI coding subscription you've used, in the notch, adapted from [OpenUsage](https://github.com/robinebers/openusage) (MIT) with provider icons from [theSVG](https://thesvg.org) ([plan](docs/plan/implementation-plan.md#phase-8-upcoming-ai-usage-in-the-notch))
 
 ## Now playing
