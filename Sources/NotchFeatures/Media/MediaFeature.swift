@@ -30,7 +30,10 @@ public final class MediaFeature: NotchFeature {
 
     public let id = FeatureID.media
     public var phase: FeaturePhase = .stopped {
-        didSet { phase == .stopped ? stop() : start() }
+        didSet {
+            phase == .stopped ? stop() : start()
+            updateAudio()
+        }
     }
     public private(set) var nowPlaying: NowPlaying?
     public private(set) var artwork: NSImage?
@@ -41,10 +44,20 @@ public final class MediaFeature: NotchFeature {
     public var announcesTracks: Bool {
         didSet { defaults.set(announcesTracks, forKey: Self.announceKey) }
     }
+    /// Per-feature setting: the waveform follows what's playing, which asks to capture system audio.
+    public var waveformFollowsAudio: Bool {
+        didSet {
+            defaults.set(waveformFollowsAudio, forKey: Self.followsAudioKey)
+            updateAudio()
+        }
+    }
     /// Raised when the track changes while the notch shows something else.
     @ObservationIgnored public var onActivity: ((Activity) -> Void)?
+    /// What the waveform hears, while Media is on screen and playing.
+    let audio = AudioSpectrum()
 
     private static let announceKey = "media.announcesTracks"
+    private static let followsAudioKey = "media.waveformFollowsAudio"
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let adapter: MediaAdapter?
     @ObservationIgnored private var stream: Process?
@@ -62,6 +75,22 @@ public final class MediaFeature: NotchFeature {
         adapter = MediaAdapter.bundled(in: bundle)
         source = adapter == nil ? .fallback : .adapter
         announcesTracks = defaults.object(forKey: Self.announceKey) as? Bool ?? true
+        waveformFollowsAudio = defaults.object(forKey: Self.followsAudioKey) as? Bool ?? true
+    }
+
+    /// The audio tap runs only while its bars can be seen moving: Media on screen, something playing,
+    /// the setting on, and Reduce Motion off.
+    nonisolated static func listensToAudio(phase: FeaturePhase, enabled: Bool, playing: Bool, reduceMotion: Bool)
+        -> Bool
+    {
+        phase == .foreground && enabled && playing && !reduceMotion
+    }
+
+    private func updateAudio() {
+        let listens = Self.listensToAudio(
+            phase: phase, enabled: waveformFollowsAudio, playing: nowPlaying?.isPlaying == true,
+            reduceMotion: NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
+        listens ? audio.start() : audio.stop()
     }
 
     public var view: some View { MediaView(media: self) }
@@ -195,6 +224,7 @@ public final class MediaFeature: NotchFeature {
         guard now != nowPlaying else { return }
         let previous = nowPlaying
         nowPlaying = now
+        if now?.isPlaying != previous?.isPlaying { updateAudio() }
         if now?.artwork != previous?.artwork || now?.isDifferentTrack(from: previous) == true {
             artwork = now.flatMap(thumbnail(for:))
             accent = artwork?.cgImage(forProposedRect: nil, context: nil, hints: nil).flatMap(Self.accent(of:))

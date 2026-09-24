@@ -45,15 +45,17 @@ struct WavySeekBar: View, Animatable {
     }
 }
 
-/// A decorative waveform along the bottom of the player. It is driven by layered sine waves, not by
-/// the audio: reading system audio would need a recording permission OpenNotch doesn't ask for.
-/// Bars sway while playing and settle flat when paused.
+/// The waveform along the bottom of the player. While OpenNotch can hear what's playing, each bar
+/// follows the loudness of a band of frequencies, bass in the middle and treble at the ends;
+/// otherwise layered sine waves stand in. Bars settle flat when paused.
 struct Waveform: View, Animatable {
     /// 1 while playing, 0 when paused; animating it settles the bars.
     var level: Double
     /// Seconds; advances while playing.
     var time: Double
     var tint: Color
+    /// Loudness per band, 0...1, lowest frequencies first; empty for the stand-in motion.
+    var bands: [Float] = []
 
     nonisolated var animatableData: Double {
         get { level }
@@ -64,12 +66,11 @@ struct Waveform: View, Animatable {
         Canvas { context, size in
             let step: CGFloat = 5
             let barWidth: CGFloat = 3
-            for index in 0..<Int(size.width / step) {
-                let i = Double(index)
-                let motion =
-                    0.55 + 0.25 * sin(time * 3.1 + i * 0.35) + 0.15 * sin(time * 5.7 + i * 0.83)
-                    + 0.05 * sin(time * 11.3 + i * 2.1)
-                let energy = motion * level
+            let count = Int(size.width / step)
+            let middle = Double(count - 1) / 2
+            for index in 0..<count {
+                let fromMiddle = middle > 0 ? abs(Double(index) - middle) / middle : 0
+                let energy = (bands.isEmpty ? motion(at: index) : loudness(at: fromMiddle)) * level
                 let height = max(3, size.height * (0.1 + 0.9 * energy))
                 let top = (size.height - height) / 2
                 let bar = CGRect(x: CGFloat(index) * step, y: top, width: barWidth, height: height)
@@ -77,6 +78,22 @@ struct Waveform: View, Animatable {
                     Path(roundedRect: bar, cornerRadius: barWidth / 2), with: .color(tint.opacity(0.3 + 0.5 * energy)))
             }
         }
+    }
+
+    /// The stand-in: layered sine waves travelling across the bars.
+    private func motion(at index: Int) -> Double {
+        let i = Double(index)
+        return 0.55 + 0.25 * sin(time * 3.1 + i * 0.35) + 0.15 * sin(time * 5.7 + i * 0.83)
+            + 0.05 * sin(time * 11.3 + i * 2.1)
+    }
+
+    /// The band at `position` from the middle (0) to either end (1), blended between neighbours.
+    private func loudness(at position: Double) -> Double {
+        let place = min(max(position, 0), 1) * Double(bands.count - 1)
+        let lower = Int(place)
+        let upper = min(lower + 1, bands.count - 1)
+        let blend = place - Double(lower)
+        return Double(bands[lower]) * (1 - blend) + Double(bands[upper]) * blend
     }
 }
 

@@ -6,7 +6,15 @@ import SwiftUI
 extension MediaFeature {
     public var settingsView: some View {
         @Bindable var media = self
-        return Toggle("Show track changes as a live activity", isOn: $media.announcesTracks)
+        return Group {
+            Toggle("Show track changes as a live activity", isOn: $media.announcesTracks)
+            Toggle(isOn: $media.waveformFollowsAudio) {
+                Text("Waveform follows the music")
+                Text(
+                    "Listens to your Mac's audio output while Media is open and playing. It's analyzed on this "
+                        + "Mac as it plays and never recorded. macOS asks for permission the first time.")
+            }
+        }
     }
 }
 

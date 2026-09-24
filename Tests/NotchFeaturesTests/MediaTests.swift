@@ -168,3 +168,42 @@ struct MediaFeatureTests {
 }
 
 private final class BundleMarker {}
+
+struct SpectrumAnalyzerTests {
+    private let rate = 48_000.0
+
+    private func tone(_ frequency: Double, amplitude: Float = 1) -> [Float] {
+        (0..<SpectrumAnalyzer.size).map { amplitude * Float(sin(2 * .pi * frequency * Double($0) / rate)) }
+    }
+
+    private func loudest(_ bands: [Float]) -> Int { bands.indices.max { bands[$0] < bands[$1] }! }
+
+    @Test func silenceIsFlat() throws {
+        let analyzer = try #require(SpectrumAnalyzer(sampleRate: rate))
+        #expect(analyzer.bands(of: [Float](repeating: 0, count: SpectrumAnalyzer.size)).allSatisfy { $0 == 0 })
+    }
+
+    @Test(arguments: [100.0, 1_000.0, 8_000.0])
+    func aToneLightsTheBandItFallsIn(frequency: Double) throws {
+        let analyzer = try #require(SpectrumAnalyzer(sampleRate: rate))
+        let bands = analyzer.bands(of: tone(frequency))
+        let bin = Int((frequency / (rate / Double(SpectrumAnalyzer.size))).rounded())
+        #expect(analyzer.bins[loudest(bands)].overlaps((bin - 1)..<(bin + 2)), "the band holding \(frequency) Hz")
+        #expect(bands[loudest(bands)] > 0.6, "a full-scale tone is loud")
+    }
+
+    @Test func quieterSoundShowsLower() throws {
+        let analyzer = try #require(SpectrumAnalyzer(sampleRate: rate))
+        let loud = analyzer.bands(of: tone(1_000))
+        let quiet = analyzer.bands(of: tone(1_000, amplitude: 0.01))  // 40 dB down
+        #expect(quiet[loudest(loud)] < loud[loudest(loud)] - 0.5)
+    }
+
+    @Test func theTapOnlyRunsWhileItsBarsCanBeSeen() {
+        #expect(MediaFeature.listensToAudio(phase: .foreground, enabled: true, playing: true, reduceMotion: false))
+        #expect(!MediaFeature.listensToAudio(phase: .background, enabled: true, playing: true, reduceMotion: false))
+        #expect(!MediaFeature.listensToAudio(phase: .foreground, enabled: false, playing: true, reduceMotion: false))
+        #expect(!MediaFeature.listensToAudio(phase: .foreground, enabled: true, playing: false, reduceMotion: false))
+        #expect(!MediaFeature.listensToAudio(phase: .foreground, enabled: true, playing: true, reduceMotion: true))
+    }
+}
