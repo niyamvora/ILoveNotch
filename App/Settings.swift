@@ -58,7 +58,9 @@ struct SettingsView: View {
             AboutSettings(updater: updater)
                 .tabItem { Label("About", systemImage: "info.circle") }
         }
-        .frame(width: 460)
+        // One size for every tab. A grouped Form has almost no height of its own, so a window sized
+        // from the tab it opens on came up collapsed with General blank until you switched tabs.
+        .frame(width: 460, height: 480)
         .padding()
     }
 }
@@ -149,7 +151,6 @@ private struct FeatureSettings: View {
             SystemSettings(preferences: preferences)
         }
         .formStyle(.grouped)
-        .frame(height: 440)
     }
 }
 
