@@ -61,7 +61,9 @@ xcodebuild -exportArchive -archivePath "$out/OpenNotch.xcarchive" -exportPath "$
     -exportOptionsPlist "$out/ExportOptions.plist" -allowProvisioningUpdates -quiet
 app="$out/export/ILoveNotch.app"
 codesign --verify --deep --strict "$app"
-codesign -dv "$app" 2>&1 | grep -q "Authority=Developer ID Application" || {
+# The Authority lines only print at -vv. Captured rather than piped to grep -q: under pipefail, grep's
+# early exit can kill codesign with SIGPIPE and fail a correctly signed export.
+[[ $(codesign -dvv "$app" 2>&1) == *"Authority=Developer ID Application"* ]] || {
     echo "The export isn't signed with Developer ID" >&2
     exit 1
 }
