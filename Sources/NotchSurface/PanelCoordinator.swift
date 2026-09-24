@@ -49,7 +49,7 @@ public final class PanelCoordinator {
         for controller in controllers { controller.close() }
         let screens = showingAllDisplays ? NSScreen.screens : [NSScreen.preferredForNotch].compactMap { $0 }
         controllers = screens.map { screen in
-            let controller = NotchController(screen: screen, content: content)
+            let controller = NotchController(screen: screen, content: content, preferences: preferences)
             controller.onPresentationChange = { [weak self] in
                 guard let self else { return }
                 onPresentationsChange?(presentations)

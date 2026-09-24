@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import CoreGraphics
 import Foundation
 import Testing
 
@@ -35,9 +36,30 @@ struct NotchPreferencesTests {
         let preferences = NotchPreferences(defaults: defaults)
         preferences.setEnabled(.shelf, false)
         preferences.showOnAllDisplays = true
+        preferences.resizeExpanded(to: CGSize(width: 600, height: 400))
         preferences.reset()
         #expect(preferences.tabs == FeatureID.allCases)
+        #expect(preferences.expandedSize == NotchPreferences.defaultExpandedSize)
         #expect(!NotchPreferences(defaults: defaults).showOnAllDisplays)
+    }
+
+    @Test func theNotchSizePersistsWithinItsLimits() {
+        let preferences = NotchPreferences(defaults: defaults)
+        preferences.resizeExpanded(to: CGSize(width: 600, height: 380))
+        #expect(NotchPreferences(defaults: defaults).expandedSize == CGSize(width: 600, height: 380))
+        preferences.resizeExpanded(to: CGSize(width: 5000, height: 10))
+        #expect(preferences.expandedSize == CGSize(width: 720, height: 230))
+        defaults.set([10.0, 9999.0], forKey: "expandedSize")  // a hand-edited value is clamped too
+        #expect(NotchPreferences(defaults: defaults).expandedSize == CGSize(width: 400, height: 480))
+    }
+
+    @Test func clickingResizeStepsThroughThePresets() {
+        let preferences = NotchPreferences(defaults: defaults)
+        let widths = (0..<4).map { _ in
+            preferences.cycleExpandedSize()
+            return preferences.expandedSize.width
+        }
+        #expect(widths == [560, 420, 460, 560], "medium → large → small → medium → large")
     }
 
     @Test func observersRerunAfterEveryChange() async throws {

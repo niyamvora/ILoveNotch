@@ -41,7 +41,8 @@ struct NotchSnapshotTests {
             dropFiles: { _ in false },
             openSettings: {})
         let panel = metrics.panelFrame.size
-        let view = NotchView(engine: engine, metrics: metrics, content: content)
+        let preferences = NotchPreferences(defaults: UserDefaults(suiteName: "Snapshots.\(UUID().uuidString)")!)
+        let view = NotchView(engine: engine, metrics: metrics, preferences: preferences, content: content)
             .frame(width: panel.width, height: panel.height)
             .background(Color(white: 0.82))  // stands in for the desktop behind the transparent panel
         let image = try #require(Self.render(view, size: panel, name: name))
