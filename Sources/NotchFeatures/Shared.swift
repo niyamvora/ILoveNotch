@@ -104,6 +104,30 @@ public struct RollingTime: View {
     }
 }
 
+extension View {
+    /// Fades scrolling content out at its edges instead of cutting it off, so a long list reads as
+    /// continuing past the fold.
+    public func fadingEdges(_ axis: Axis = .vertical, length: CGFloat = 12) -> some View {
+        mask {
+            if axis == .vertical {
+                VStack(spacing: 0) {
+                    LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom).frame(height: length)
+                    Color.black
+                    LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: length)
+                }
+            } else {
+                HStack(spacing: 0) {
+                    LinearGradient(colors: [.clear, .black], startPoint: .leading, endPoint: .trailing)
+                        .frame(width: length)
+                    Color.black
+                    LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing)
+                        .frame(width: length)
+                }
+            }
+        }
+    }
+}
+
 extension URL {
     /// Opens a System Settings privacy pane, e.g. "Privacy_Calendars".
     public static func privacySettings(_ pane: String) -> URL {

@@ -21,7 +21,9 @@ struct ShelfView: View {
                             ShelfItemView(shelf: shelf, item: item)
                         }
                     }
+                    .padding(.horizontal, 6)
                 }
+                .fadingEdges(.horizontal)
                 HStack(spacing: 12) {
                     Text(shelf.items.count == 1 ? "1 item" : "\(shelf.items.count) items")
                         .foregroundStyle(.white.opacity(0.5))

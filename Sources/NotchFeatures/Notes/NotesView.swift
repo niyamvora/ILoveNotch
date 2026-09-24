@@ -54,7 +54,9 @@ struct NotesView: View {
                         }
                     }
                 }
+                .padding(.vertical, 6)
             }
+            .fadingEdges()
         }
     }
 
