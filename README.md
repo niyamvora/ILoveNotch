@@ -113,8 +113,9 @@ user-visible behaviors are tracked in the [parity checklist](docs/parity-checkli
 - [x] **Phase 3 — Useful core (v0.2):** media now-playing and controls, file shelf with Quick Look and AirDrop
 - [x] **Phase 4 — Productivity:** calendar, Reminders-backed tasks, local notes, shortcuts, timer, per-feature settings
 - [ ] **Phase 5 — Camera and system:** camera mirror, volume and battery activities, optional HUD replacement
-- [ ] **Phase 6 — Visual and motion polish:** motion tokens, original icon and brand, themes, localization
-- [ ] **Phase 7 — Hardening and public beta:** soak tests, signed and notarized releases, [Sparkle updates](docs/updates.md#public-releases-phase-7)
+- [ ] **Phase 6 — Visual and motion polish:** motion tokens, original icon and brand ([assets needed](docs/brand-assets.md)), themes, localization
+- [ ] **Phase 7 — Hardening and public beta:** soak tests, signed and notarized releases, [Sparkle updates](docs/updates.md#public-releases-phase-7), a sandboxed [App Store edition](docs/plan/implementation-plan.md#app-store-edition)
+- [ ] **Phase 8 — AI usage (upcoming):** how much of each AI coding subscription you've used, in the notch, adapted from [OpenUsage](https://github.com/robinebers/openusage) (MIT) with provider icons from [theSVG](https://thesvg.org) ([plan](docs/plan/implementation-plan.md#phase-8-upcoming-ai-usage-in-the-notch))
 
 ## Now playing
 
@@ -123,6 +124,11 @@ information. OpenNotch uses [mediaremote-adapter](https://github.com/ungive/medi
 which runs in the system `perl` (an Apple process) as a separate helper, so the
 private framework never loads into OpenNotch. If a future macOS breaks it, Media
 falls back to Music and Spotify's public notifications and says so.
+
+The waveform under the player moves with the music. It listens to your Mac's
+audio output only while Media is open and playing, so macOS asks once for
+permission to capture system audio. Nothing is recorded; see
+[PRIVACY.md](PRIVACY.md). Turn it off in **Settings › Features › Media**.
 
 ## Tasks and notes
 
