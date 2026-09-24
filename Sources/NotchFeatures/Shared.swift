@@ -104,6 +104,30 @@ public struct RollingTime: View {
     }
 }
 
+/// A color reduced to sRGB components, so it can cross threads: a calendar's color, or the tint
+/// taken from album art.
+public struct RGB: Hashable, Sendable {
+    public var red: Double
+    public var green: Double
+    public var blue: Double
+
+    public init(red: Double, green: Double, blue: Double) {
+        self.red = red
+        self.green = green
+        self.blue = blue
+    }
+
+    init?(_ color: CGColor?) {
+        guard let color, let sRGB = CGColorSpace(name: CGColorSpace.sRGB),
+            let components = color.converted(to: sRGB, intent: .defaultIntent, options: nil)?.components,
+            components.count >= 3
+        else { return nil }
+        self.init(red: components[0], green: components[1], blue: components[2])
+    }
+
+    public var color: Color { Color(red: red, green: green, blue: blue) }
+}
+
 extension View {
     /// Fades scrolling content out at its edges instead of cutting it off, so a long list reads as
     /// continuing past the fold.

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import CoreGraphics
 import Foundation
 import NotchCore
 import Testing
@@ -103,6 +104,39 @@ struct PlayerNotificationTests {
         let update = PlayerNotification(info, name: "com.spotify.client.PlaybackStateChanged")
         let now = try #require(update.merge(into: nil))
         #expect(now.appBundleID == "com.spotify.client" && now.duration == 1)
+    }
+}
+
+struct MediaAccentTests {
+    /// A 4×4 image filled with one sRGB color.
+    private func solid(_ red: CGFloat, _ green: CGFloat, _ blue: CGFloat) throws -> CGImage {
+        let context = try #require(
+            CGContext(
+                data: nil, width: 4, height: 4, bitsPerComponent: 8, bytesPerRow: 0,
+                space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.setFillColor(CGColor(srgbRed: red, green: green, blue: blue, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: 4, height: 4))
+        return try #require(context.makeImage())
+    }
+
+    @Test func vividCoversKeepTheirHue() throws {
+        let accent = try #require(MediaFeature.accent(of: try solid(0.8, 0.1, 0.1)))
+        #expect(accent.red > 0.7 && accent.green < 0.5 && accent.blue < 0.5)
+    }
+
+    @Test func darkCoversAreLiftedToReadOnBlack() throws {
+        let accent = try #require(MediaFeature.accent(of: try solid(0.1, 0.05, 0.25)))
+        #expect(max(accent.red, accent.green, accent.blue) >= 0.75)
+    }
+
+    @Test func greyCoversStayGrey() throws {
+        let accent = try #require(MediaFeature.accent(of: try solid(0.2, 0.2, 0.2)))
+        #expect(abs(accent.red - accent.green) < 0.02 && abs(accent.green - accent.blue) < 0.02)
+    }
+
+    @Test func seekingSendsWholeMicroseconds() {
+        #expect(MediaAdapter.seek(to: 61.5) == ["seek", "61500000"])
+        #expect(MediaAdapter.seek(to: -3) == ["seek", "0"])
     }
 }
 
