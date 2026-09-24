@@ -24,9 +24,7 @@ public final class NotchController: ObservableObject {
         self.window = window
 
         // Resize the window whenever open/closed flips.
-        cancellable = $isOpen
-            .removeDuplicates()
-            .sink { [weak self] open in self?.applyFrame(open: open) }
+        cancellable = $isOpen.removeDuplicates().sink { [weak self] open in self?.applyFrame(open: open) }
     }
 
     private func applyFrame(open: Bool) {

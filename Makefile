@@ -4,7 +4,9 @@ ARCH ?= $(shell uname -m)
 DERIVED_DATA := .build/xcode
 APP := $(DERIVED_DATA)/Build/Products/$(CONFIGURATION)/OpenNotch.app
 
-.PHONY: project build run test clean
+SWIFT_SOURCES := App Sources Tests Package.swift
+
+.PHONY: project build run test lint format clean
 
 project: ## Generate OpenNotch.xcodeproj from project.yml
 	xcodegen generate --quiet
@@ -19,6 +21,12 @@ run: build ## Build and relaunch the app
 
 test: ## Run unit and performance tests
 	swift test -Xswiftc -warnings-as-errors
+
+lint: ## Fail on formatting drift (config: .swift-format)
+	swift format lint --strict --recursive $(SWIFT_SOURCES)
+
+format: ## Apply formatting in place
+	swift format --in-place --recursive $(SWIFT_SOURCES)
 
 clean:
 	rm -rf .build OpenNotch.xcodeproj
