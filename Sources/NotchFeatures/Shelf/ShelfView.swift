@@ -47,10 +47,11 @@ private struct ShelfItemView: View {
                 .resizable()
                 .frame(width: 44, height: 44)
                 .opacity(url == nil ? 0.35 : 1)
+            // One line, middle-truncated, so the extension stays readable (never "Screenshot.p-ng").
             Text(item.name)
                 .font(.caption2)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
+                .lineLimit(1)
+                .truncationMode(.middle)
             if url == nil {
                 Text("Missing").font(.caption2.bold()).foregroundStyle(.orange)
             }
