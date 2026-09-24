@@ -27,7 +27,9 @@ struct ShortcutsView: View {
                         tile(name)
                     }
                 }
+                .padding(.vertical, 6)
             }
+            .fadingEdges()
         }
     }
 

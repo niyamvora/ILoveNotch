@@ -26,7 +26,9 @@ struct CalendarView: View {
                         LazyVStack(alignment: .leading, spacing: 4) {
                             ForEach(calendar.events) { event in row(event) }
                         }
+                        .padding(.vertical, 6)
                     }
+                    .fadingEdges()
                 }
             }
         }
