@@ -12,22 +12,20 @@ concurrency:
 permissions:
   contents: read
 
+# Three jobs run side by side, so a run takes about as long as its slowest compile rather than
+# every compile in a row. The app builds are Release only: no code is Debug-only, and the tests
+# already compile every package in Debug.
 jobs:
   check:
-    name: Lint, test, build, licenses
+    name: Secrets, lint, tests
     # macos-26 ships Xcode 26.6 by default: the toolchain the project is developed with.
     runs-on: macos-26
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
-        with:
-          submodules: true
 
       - name: Toolchain
         run: xcodebuild -version && swift --version
-
-      - name: Install XcodeGen
-        run: brew install xcodegen
 
       - name: No keys or credentials
         run: make secrets
@@ -38,14 +36,36 @@ jobs:
       - name: Unit and performance tests
         run: make test
 
-      - name: Debug build
-        run: make build CONFIGURATION=Debug
+  app:
+    name: App and licenses
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
 
       - name: Release build
         run: make build CONFIGURATION=Release
 
-      - name: App Store edition build
-        run: make build-app-store CONFIGURATION=Release
-
+      # After the build, so Xcode has resolved the app's packages (Sparkle) for the check.
       - name: License check
         run: make licenses
+
+  app-store:
+    name: App Store edition
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Release build
+        run: make build-app-store CONFIGURATION=Release
