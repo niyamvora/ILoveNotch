@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # License gate, run by `make licenses` and CI:
 #   1. every Swift file carries the MIT SPDX header (provenance of original code)
-#   2. every resolved package dependency is listed in THIRD_PARTY_NOTICES.md
+#   2. every resolved package and git submodule is listed in THIRD_PARTY_NOTICES.md
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -24,6 +24,15 @@ for resolved in Package.resolved OpenNotch.xcodeproj/project.xcworkspace/xcshare
         fi
     done < <(sed -n 's/.*"identity" *: *"\([^"]*\)".*/\1/p' "$resolved")
 done
+
+if [[ -f .gitmodules ]]; then
+    while IFS= read -r path; do
+        if ! grep -qi -- "$(basename "$path")" THIRD_PARTY_NOTICES.md; then
+            echo "error: submodule '$path' is not listed in THIRD_PARTY_NOTICES.md"
+            status=1
+        fi
+    done < <(git config --file .gitmodules --get-regexp 'submodule\..*\.path' | awk '{print $2}')
+fi
 
 [[ $status -eq 0 ]] && echo "licenses OK"
 exit $status

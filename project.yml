@@ -15,6 +15,9 @@ targets:
     platform: macOS
     sources:
       - App
+      # Now-playing helper script, run by /usr/bin/perl (see THIRD_PARTY_NOTICES.md).
+      - path: ThirdParty/mediaremote-adapter/bin/mediaremote-adapter.pl
+        buildPhase: resources
     dependencies:
       - package: OpenNotchKit
         product: NotchCore
@@ -22,6 +25,10 @@ targets:
         product: NotchSurface
       - package: OpenNotchKit
         product: NotchFeatures
+      # Embedded, never linked: the framework is loaded by the perl helper process, not by OpenNotch.
+      - target: MediaRemoteAdapter
+        embed: true
+        link: false
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: cafe.opennotch.app
@@ -43,6 +50,38 @@ targets:
         CODE_SIGN_STYLE: Manual
         CODE_SIGN_IDENTITY: "-"
         DEVELOPMENT_TEAM: ""
+
+  # mediaremote-adapter (BSD-3-Clause, git submodule pinned to v0.7.7), built the way its
+  # CMakeLists.txt does: Objective-C with ARC and default symbol visibility so perl can call it.
+  MediaRemoteAdapter:
+    type: framework
+    platform: macOS
+    sources:
+      - path: ThirdParty/mediaremote-adapter/src
+        excludes: ["test/**"]
+      - path: ThirdParty/mediaremote-adapter/include
+        headerVisibility: public
+    dependencies:
+      - sdk: Foundation.framework
+      - sdk: AppKit.framework
+      - sdk: UniformTypeIdentifiers.framework
+    settings:
+      base:
+        PRODUCT_NAME: MediaRemoteAdapter
+        PRODUCT_BUNDLE_IDENTIFIER: com.vandenbe.MediaRemoteAdapter
+        MARKETING_VERSION: 0.7.7
+        CURRENT_PROJECT_VERSION: 1
+        GENERATE_INFOPLIST_FILE: YES
+        CLANG_ENABLE_OBJC_ARC: YES
+        GCC_SYMBOLS_PRIVATE_EXTERN: NO
+        GCC_WARN_INHIBIT_ALL_WARNINGS: YES # vendored code: its warnings are upstream's to fix
+        HEADER_SEARCH_PATHS: ["$(SRCROOT)/ThirdParty/mediaremote-adapter/include", "$(SRCROOT)/ThirdParty/mediaremote-adapter/src"]
+        DEFINES_MODULE: NO
+        SKIP_INSTALL: YES
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "-"
+        DEVELOPMENT_TEAM: ""
+
 schemes:
   OpenNotch:
     build:

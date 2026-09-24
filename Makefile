@@ -3,12 +3,16 @@ CONFIGURATION ?= Debug
 ARCH ?= $(shell uname -m)
 DERIVED_DATA := .build/xcode
 APP := $(DERIVED_DATA)/Build/Products/$(CONFIGURATION)/OpenNotch.app
-
 SWIFT_SOURCES := App Sources Tests Package.swift
 
-.PHONY: project build run test lint format licenses check clean
+.PHONY: setup project build run install test lint format licenses check clean
+
+setup: ## Install developer tools (Brewfile) and fetch submodules
+	brew bundle
+	git submodule update --init --recursive
 
 project: ## Generate OpenNotch.xcodeproj from project.yml
+	git submodule update --init --recursive
 	xcodegen generate --quiet
 
 build: project ## Build the app; CONFIGURATION=Debug|Release
@@ -16,8 +20,15 @@ build: project ## Build the app; CONFIGURATION=Debug|Release
 		-destination 'platform=macOS,arch=$(ARCH)' -derivedDataPath $(DERIVED_DATA) -quiet build
 
 run: build ## Build and relaunch the app
-	-pkill -x OpenNotch
+	-osascript -e 'quit app "OpenNotch"'
 	open $(APP)
+
+install: ## Build a Release app into /Applications and launch it
+	$(MAKE) build CONFIGURATION=Release
+	-osascript -e 'quit app "OpenNotch"'
+	rm -rf /Applications/OpenNotch.app
+	ditto $(DERIVED_DATA)/Build/Products/Release/OpenNotch.app /Applications/OpenNotch.app
+	open /Applications/OpenNotch.app
 
 test: ## Run unit and performance tests
 	swift test -Xswiftc -warnings-as-errors
