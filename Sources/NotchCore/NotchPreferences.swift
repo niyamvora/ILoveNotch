@@ -76,7 +76,8 @@ public final class NotchPreferences {
         didSet { defaults.set(showsAccessoryBattery, forKey: Key.showsAccessoryBattery) }
     }
 
-    /// The open notch's size, set with − and + beside the pin. Always within the minimum and maximum.
+    /// The open notch's size, set with − and + in its bottom-right corner. Always within the minimum
+    /// and maximum.
     public private(set) var expandedSize: CGSize {
         didSet { defaults.set([expandedSize.width, expandedSize.height], forKey: Key.expandedSize) }
     }

@@ -104,7 +104,7 @@ private struct GeneralSettings: View {
                         .disabled(preferences.expandedSize == NotchPreferences.defaultExpandedSize)
                 }
             }
-            Text("Use − and + beside the pin to make the open notch smaller or larger.")
+            Text("Use − and + in the open notch's bottom-right corner to make it smaller or larger.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Button("Reset to Defaults", role: .destructive) { preferences.reset() }

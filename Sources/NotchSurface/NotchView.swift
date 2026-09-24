@@ -174,17 +174,21 @@ struct NotchView: View {
 
     private func expanded(tab: FeatureID, pinned: Bool) -> some View {
         VStack(spacing: 8) {
-            HStack(spacing: 4) {
+            HStack(spacing: Self.tabSpacing) {
                 tabBar(selected: tab)
                 Spacer(minLength: 0)
-                HStack(spacing: 0) {
-                    sizeButton(larger: false)
-                    sizeButton(larger: true)
-                    iconButton(pinned ? "pin.fill" : "pin", label: pinned ? "Unpin" : "Pin") {
-                        engine.send(.togglePin)
-                    }
-                    iconButton("gearshape", label: "Settings") { content.openSettings() }
+                Button {
+                    content.openSettings()
+                } label: {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 12, weight: .medium))
+                        .frame(width: Self.settingsWidth, height: 26)
+                        .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .foregroundStyle(.white.opacity(0.75))
+                .help("Settings")
+                .accessibilityLabel("Settings")
             }
             content.tab(tab)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -193,6 +197,11 @@ struct NotchView: View {
                 .animation(reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.74), value: tab)
         }
         .padding(contentPadding)
+        .overlay(alignment: .bottomTrailing) {
+            windowControls(pinned: pinned)
+                .padding(.trailing, contentPadding.trailing)
+                .padding(.bottom, (contentPadding.bottom - Self.controlHeight) / 2)
+        }
         .foregroundStyle(.white)
     }
 
@@ -206,20 +215,24 @@ struct NotchView: View {
         return EdgeInsets(top: (metrics.notch?.height ?? 0) + 10, leading: side, bottom: 22, trailing: side)
     }
 
-    /// Widths that fit every tab and the controls beside them into the smallest size: the more tabs
-    /// are on, the narrower they and the controls get.
-    private var density: (tab: CGFloat, spacing: CGFloat, control: CGFloat) {
-        switch engine.state.tabs.count {
-        case ...7: (32, 2, 26)
-        case 8: (28, 2, 26)
-        default: (26, 1, 24)
-        }
+    private static let tabSpacing: CGFloat = 2
+    private static let settingsWidth: CGFloat = 26
+
+    /// The widest tab that still fits every tab and the settings button into the smallest open size,
+    /// up to 32 pt. Tabs keep that width at every size, and each tab added makes them a little
+    /// narrower instead of crowding the row.
+    private var tabWidth: CGFloat {
+        let room =
+            NotchPreferences.minimumExpandedSize.width - contentPadding.leading - contentPadding.trailing
+            - Self.settingsWidth - Self.tabSpacing
+        let count = CGFloat(max(engine.state.tabs.count, 1))
+        return min(32, ((room - Self.tabSpacing * (count - 1)) / count).rounded(.down))
     }
 
     private func tabBar(selected: FeatureID) -> some View {
         let tabs = engine.state.tabs
-        let tabWidth = density.tab
-        return HStack(spacing: density.spacing) {
+        let tabWidth = tabWidth
+        return HStack(spacing: Self.tabSpacing) {
             ForEach(tabs, id: \.self) { tab in
                 Button {
                     // Content slides the same way the selection travels.
@@ -274,25 +287,45 @@ struct NotchView: View {
             removal: .move(edge: outgoing).combined(with: .opacity))
     }
 
+    /// Fits the margin under the content, so the corner controls never cover a tab's own controls.
+    private static let controlHeight: CGFloat = 18
+
+    /// Size and pin, as one small capsule in the bottom-right corner: out of the tab row, which keeps
+    /// its room for tabs.
+    private func windowControls(pinned: Bool) -> some View {
+        HStack(spacing: 0) {
+            sizeButton(larger: false)
+            sizeButton(larger: true)
+            Rectangle().fill(.white.opacity(0.18)).frame(width: 1, height: Self.controlHeight - 8)
+            cornerButton(pinned ? "pin.fill" : "pin", label: pinned ? "Unpin" : "Pin", lit: pinned) {
+                engine.send(.togglePin)
+            }
+        }
+        .padding(.horizontal, 3)
+        .background(.white.opacity(0.09), in: Capsule())
+    }
+
     /// − and + step the open notch through sizes in proportion, so its height follows its width.
     private func sizeButton(larger: Bool) -> some View {
         let next = preferences.expandedSizeStep(larger: larger)
-        return iconButton(larger ? "plus" : "minus", label: larger ? "Make Larger" : "Make Smaller") {
+        return cornerButton(larger ? "plus" : "minus", label: larger ? "Make Larger" : "Make Smaller") {
             guard let next else { return }
             withAnimation(motion(for: engine.state.presentation)) { preferences.resizeExpanded(to: next) }
         }
         .disabled(next == nil)
     }
 
-    private func iconButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
+    private func cornerButton(_ symbol: String, label: String, lit: Bool = false, action: @escaping () -> Void)
+        -> some View
+    {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 12, weight: .medium))
-                .frame(width: density.control, height: 26)
+                .font(.system(size: 9, weight: .bold))
+                .frame(width: 21, height: Self.controlHeight)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .foregroundStyle(.white.opacity(0.75))
+        .buttonStyle(CornerButtonStyle())
+        .foregroundStyle(.white.opacity(lit ? 0.95 : 0.65))
         .help(label)
         .accessibilityLabel(label)
     }
@@ -345,5 +378,25 @@ struct NotchView: View {
         .padding(.horizontal, 16)
         .frame(height: metrics.notch == nil ? metrics.housing.height : NotchMetrics.meterDepth)
         .padding(.top, metrics.notch == nil ? 0 : metrics.housing.height)
+    }
+}
+
+/// The corner capsule's buttons: a soft round highlight under the pointer, a dip while pressed, and
+/// dimmed when there's no step left.
+private struct CornerButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View { Highlighted(configuration: configuration) }
+
+    private struct Highlighted: View {
+        let configuration: Configuration
+        @Environment(\.isEnabled) private var isEnabled
+        @State private var hovering = false
+
+        var body: some View {
+            configuration.label
+                .background(Circle().fill(.white.opacity(hovering && isEnabled ? 0.16 : 0)))
+                .opacity(isEnabled ? (configuration.isPressed ? 0.6 : 1) : 0.35)
+                .onHover { hovering = $0 }
+                .animation(.easeOut(duration: 0.12), value: hovering)
+        }
     }
 }

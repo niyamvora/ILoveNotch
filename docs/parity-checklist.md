@@ -23,7 +23,8 @@ that delivers it.
 - [x] Dragging files over the notch opens it to the shelf
 - [x] Closed, the notch hides behind the camera housing; hovering grows it slightly
 - [x] Switching tabs slides the content across, and the selection moves with a jelly stretch
-- [x] Resize the open notch in proportion with − and + beside the pin, down to a shorter smallest size
+- [x] Resize the open notch in proportion with − and + in its bottom-right corner, down to a shorter smallest size
+- [x] Size and pin controls sit in one corner capsule, so the tab row keeps its room for tabs
 - [x] Tabs adapt to shorter notches: media drops its waveform, then shrinks its artwork; laps move beside the stopwatch
 - [x] Pushing the pointer against the top edge over the notch opens it
 - [x] Choose how the notch opens and closes (spring, jelly, pop, smooth, snappy, or instant), with a preview
