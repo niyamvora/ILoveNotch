@@ -136,6 +136,15 @@ struct UsageFeatureTests {
         #expect(UsageFeature.alert(from: at30, to: at10) == nil, "a limit nowhere near its end isn't news")
     }
 
+    @Test func eachProviderLinksToItsUsagePageNotItsStatusPage() {
+        let usage = UsageFeature(
+            defaults: defaults, cacheURL: cache, runtimes: { [defaults] in ProviderCatalog.make(defaults: defaults) })
+        let pages = Dictionary(uniqueKeysWithValues: usage.providers.map { ($0.id, $0.dashboard?.absoluteString) })
+        #expect(pages["claude"] == "https://claude.ai/settings/usage")
+        #expect(pages["codex"] == "https://chatgpt.com/codex/settings/usage")
+        #expect(pages["ollama"] == "https://ollama.com/settings", "not its API keys")
+    }
+
     @Test func openUsagesCatalogBuildsEveryProvider() {
         let ids = ProviderCatalog.make(defaults: defaults).map(\.provider.id)
         #expect(

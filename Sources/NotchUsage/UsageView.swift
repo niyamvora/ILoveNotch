@@ -4,9 +4,9 @@ import NotchCore
 import NotchFeatures
 import SwiftUI
 
-/// The Usage tab: a tile per provider with its headline limit as a ring, a provider's full detail,
-/// or, before any provider is on, the tools signed in on this Mac to choose from. With one provider
-/// on, its detail is the whole tab.
+/// The Usage tab: a tile per provider with its headline limit as a ring, then the other tools signed
+/// in on this Mac to add; a provider's full detail, with a way back; or, before any provider is on,
+/// the tools signed in on this Mac to choose from.
 struct UsageView: View {
     let usage: UsageFeature
 
@@ -15,15 +15,13 @@ struct UsageView: View {
 
     var body: some View {
         let providers = usage.enabledProviders
-        let only = providers.count == 1 ? providers.first : nil
         // Relative times ("Resets in 2h 13m") move on once a minute, only while the tab is on screen.
         TimelineView(.periodic(from: .now, by: 60)) { context in
             Group {
                 if providers.isEmpty {
                     UsageOnboarding(usage: usage)
-                } else if let provider = only ?? providers.first(where: { $0.id == selected }) {
-                    let back: (() -> Void)? = only == nil ? { selected = nil } : nil
-                    ProviderDetail(usage: usage, provider: provider, now: context.date, back: back)
+                } else if let provider = providers.first(where: { $0.id == selected }) {
+                    ProviderDetail(usage: usage, provider: provider, now: context.date) { selected = nil }
                         .transition(.move(edge: .trailing).combined(with: .opacity))
                 } else {
                     dashboard(now: context.date)
@@ -35,7 +33,8 @@ struct UsageView: View {
     }
 
     private func dashboard(now: Date) -> some View {
-        VStack(spacing: 8) {
+        let more = usage.providers.filter { usage.detected.contains($0.id) && !usage.isEnabled($0.id) }
+        return VStack(spacing: 8) {
             UsageHeader(usage: usage, now: now)
             ScrollView {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 158), spacing: 8)], spacing: 8) {
@@ -49,12 +48,18 @@ struct UsageView: View {
                                 now: now)
                         }
                         .buttonStyle(.plain)
+                        .contextMenu {
+                            Button("Turn Off \(provider.name)") { usage.setEnabled(provider.id, false) }
+                        }
                     }
+                    if !more.isEmpty { AddTile(usage: usage, providers: more) }
                 }
                 .padding(.vertical, 4)
             }
             .fadingEdges(length: 8)
         }
+        // The same local check onboarding runs, for the tools that aren't on yet.
+        .task { if !usage.hasDetected { await usage.detect() } }
     }
 }
 
@@ -210,38 +215,41 @@ private struct ProviderTile: View {
 }
 
 /// Everything a provider reports: each limit with its reset and pace, spend, and the daily trend.
-/// `back` returns to the tiles; there's none when this is the only provider.
-private struct ProviderDetail: View {
+/// `back` returns to the tiles.
+struct ProviderDetail: View {
     let usage: UsageFeature
     let provider: UsageProvider
     let now: Date
-    let back: (() -> Void)?
+    let back: () -> Void
 
     var body: some View {
         let style = ProviderStyle.of(provider.id)
         let snapshot = usage.snapshots[provider.id]
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 7) {
-                if let back {
-                    Button(action: back) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 11, weight: .semibold))
-                            .frame(width: 20, height: 20)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Back")
+                Button(action: back) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 11, weight: .semibold))
+                        .frame(width: 20, height: 20)
+                        .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .help("All providers")
+                .accessibilityLabel("Back")
                 ProviderLogo(providerID: provider.id, name: provider.name, size: 15).foregroundStyle(style.end)
                 Text(provider.name).font(.system(size: 13, weight: .semibold))
                 if let plan = snapshot?.plan, !plan.isEmpty { PlanPill(plan: plan, style: style) }
                 Spacer(minLength: 0)
-                ForEach(provider.links, id: \.url) { link in
-                    if let url = URL(string: link.url) {
-                        Link(link.label, destination: url)
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.6))
+                if let dashboard = provider.dashboard {
+                    Link(destination: dashboard) {
+                        HStack(spacing: 2) {
+                            Text("Dashboard")
+                            Image(systemName: "arrow.up.right").font(.system(size: 7, weight: .bold))
+                        }
                     }
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.6))
+                    .help("Open \(provider.name)'s usage page")
                 }
                 RefreshButton(spinning: usage.refreshing.contains(provider.id)) {
                     Task { await usage.refresh(provider.id, force: true) }
@@ -441,17 +449,51 @@ private struct UsageOnboarding: View {
                     .multilineTextAlignment(.center)
             } else {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: 6)], spacing: 6) {
-                    ForEach(found) { provider in chip(provider) }
+                    ForEach(found) { provider in AddProviderChip(usage: usage, provider: provider) }
                 }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task { if !usage.hasDetected { await usage.detect() } }
     }
+}
 
-    private func chip(_ provider: UsageProvider) -> some View {
+/// After the tiles: the tools signed in on this Mac that are off, one tap each to add. Tile-sized, so
+/// it fills the space beside a lone tile; past three tools, the rest are in Settings.
+private struct AddTile: View {
+    let usage: UsageFeature
+    let providers: [UsageProvider]
+
+    var body: some View {
+        let shown = providers.count > 3 ? 2 : providers.count
+        VStack(alignment: .leading, spacing: 6) {
+            Label("Add", systemImage: "plus").font(.system(size: 12, weight: .semibold))
+            ForEach(providers.prefix(shown)) { provider in AddProviderChip(usage: usage, provider: provider) }
+            if providers.count > shown {
+                Text("\(providers.count - shown) more in Settings")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: ProviderTile.height, alignment: .top)
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(.white.opacity(0.16), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+        }
+    }
+}
+
+/// A tool signed in on this Mac that's off: one tap turns it on.
+private struct AddProviderChip: View {
+    let usage: UsageFeature
+    let provider: UsageProvider
+
+    var body: some View {
         let style = ProviderStyle.of(provider.id)
-        return Button {
+        Button {
             usage.setEnabled(provider.id, true)
         } label: {
             HStack(spacing: 6) {

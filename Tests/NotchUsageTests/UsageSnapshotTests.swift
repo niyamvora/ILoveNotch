@@ -63,10 +63,23 @@ struct UsageSnapshotTests {
         try await render(UsageView(usage: usage), name: "usage-dashboard")
     }
 
-    @Test func theOnlyProviderShowsEveryLimitSpendAndItsTrend() async throws {
+    @Test func aProviderShowsEveryLimitSpendAndItsTrend() async throws {
         let usage = try usage(with: [Self.sample("claude", "Claude", session: 42, weekly: 71)])
-        try await render(UsageView(usage: usage), name: "usage-detail")
-        try await render(UsageView(usage: usage), name: "usage-detail-largest", size: Self.largest)
+        let provider = try #require(usage.enabledProviders.first)
+        let detail = ProviderDetail(usage: usage, provider: provider, now: Self.now) {}
+        try await render(detail, name: "usage-detail")
+        try await render(detail, name: "usage-detail-largest", size: Self.largest)
+    }
+
+    @Test func withOneProviderOnTheOthersSignedInCanBeAdded() async throws {
+        try JSONEncoder().encode(["claude": Self.sample("claude", "Claude", session: 42, weekly: 71)]).write(to: cache)
+        defaults.set(["claude"], forKey: "usage.enabledProviders")
+        let runtimes = [("claude", "Claude"), ("codex", "Codex"), ("cursor", "Cursor")].map {
+            FakeRuntime(id: $0.0, name: $0.1, used: 0)
+        }
+        let usage = UsageFeature(defaults: defaults, cacheURL: cache, runtimes: { runtimes })
+        try await render(UsageView(usage: usage), name: "usage-one-provider")
+        #expect(usage.detected == ["claude", "codex", "cursor"], "the dashboard looks for the others")
     }
 
     @Test func beforeAnyProviderIsOnItOffersTheSignedInOnes() async throws {

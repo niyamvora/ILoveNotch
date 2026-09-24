@@ -9,8 +9,8 @@ import SwiftUI
 public struct UsageProvider: Identifiable, Hashable, Sendable {
     public let id: String
     public let name: String
-    /// Its status page and usage dashboard, opened in the browser.
-    let links: [ProviderLink]
+    /// Its usage page on the web, opened in the browser.
+    let dashboard: URL?
 }
 
 /// How much of each AI coding subscription is used, in the notch.
@@ -103,8 +103,12 @@ public final class UsageFeature: NotchFeature {
 
     /// Every provider, in OpenUsage's order.
     public var providers: [UsageProvider] {
-        allRuntimes().map {
-            UsageProvider(id: $0.provider.id, name: $0.provider.displayName, links: $0.provider.visibleLinks)
+        allRuntimes().map { runtime in
+            // Its usage page; a status page or API key settings aren't what the tab is about.
+            let page = runtime.provider.visibleLinks.first { !["Status", "API Keys"].contains($0.label) }
+            return UsageProvider(
+                id: runtime.provider.id, name: runtime.provider.displayName,
+                dashboard: page.flatMap { URL(string: $0.url) })
         }
     }
 
