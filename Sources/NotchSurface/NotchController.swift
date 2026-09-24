@@ -1,23 +1,24 @@
+// SPDX-License-Identifier: MIT
 import AppKit
-import SwiftUI
 import Combine
+import SwiftUI
 
-/// Owns the window and the open/closed state. Purely event-driven —
+/// Owns the window and the open/closed state. Purely event-driven:
 /// there is NO polling timer anywhere. Hover events flip `isOpen`,
 /// which resizes the window. That is the whole engine.
 @MainActor
-final class NotchController: ObservableObject {
+public final class NotchController: ObservableObject {
     @Published var isOpen = false
 
     let screen: NSScreen
     private var window: NotchWindow?
     private var cancellable: AnyCancellable?
 
-    init(screen: NSScreen) { self.screen = screen }
+    public init(screen: NSScreen) { self.screen = screen }
 
-    func show() {
+    public func show() {
         let root = NotchView().environmentObject(self)
-        let window = NotchWindow(contentRect: NotchGeometry.closedWindowFrame(for: screen))
+        let window = NotchWindow(contentRect: NotchGeometry.closedFrame(for: screen))
         window.contentView = NSHostingView(rootView: root)
         window.orderFrontRegardless()
         self.window = window
@@ -30,8 +31,7 @@ final class NotchController: ObservableObject {
 
     private func applyFrame(open: Bool) {
         guard let window else { return }
-        let target = open ? NotchGeometry.openWindowFrame(for: screen)
-                          : NotchGeometry.closedWindowFrame(for: screen)
+        let target = open ? NotchGeometry.openFrame(for: screen) : NotchGeometry.closedFrame(for: screen)
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.22
             ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import SwiftUI
 
 enum NotchTab: String, CaseIterable, Identifiable {
@@ -18,7 +19,7 @@ struct NotchView: View {
     @EnvironmentObject var controller: NotchController
     @State private var tab: NotchTab = .media
 
-    private var notchTop: CGFloat { NotchGeometry.notchHeight(for: controller.screen) }
+    private var notchTop: CGFloat { NotchGeometry.notchSize(for: controller.screen).height }
 
     var body: some View {
         ZStack(alignment: .top) {
