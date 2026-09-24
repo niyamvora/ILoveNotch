@@ -16,6 +16,8 @@ targets:
     sources: [App]
     dependencies:
       - package: OpenNotchKit
+        product: NotchCore
+      - package: OpenNotchKit
         product: NotchSurface
     settings:
       base:
