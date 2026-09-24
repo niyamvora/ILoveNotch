@@ -16,5 +16,7 @@ let package = Package(
         .target(name: "NotchSurface", dependencies: ["NotchCore"]),
         .testTarget(name: "NotchCoreTests", dependencies: ["NotchCore"]),
         .testTarget(name: "NotchSurfaceTests", dependencies: ["NotchSurface"]),
+        // XCTest metrics (clock, CPU, memory, signposts) for the core's hot paths.
+        .testTarget(name: "PerformanceTests", dependencies: ["NotchCore"]),
     ]
 )

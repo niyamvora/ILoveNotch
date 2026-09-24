@@ -44,5 +44,6 @@ schemes:
       targets:
         - package: OpenNotchKit/NotchCoreTests
         - package: OpenNotchKit/NotchSurfaceTests
+        - package: OpenNotchKit/PerformanceTests
     archive:
       config: Release
