@@ -78,6 +78,15 @@ struct NotchMetrics: Equatable {
     /// Gap between the top of the display and the shape: none on a notch, a little above a pill.
     var topInset: CGFloat { notch == nil ? Self.pillInset : 0 }
 
+    /// Where the pointer counts as over a notch of `size` in `panel`, in screen coordinates. It
+    /// reaches past the top of the display: a pointer pushed against the top edge sits at exactly the
+    /// display's maxY, which a rect ending there doesn't contain. The gap above a pill counts too.
+    func hoverFrame(for size: CGSize, in panel: CGRect) -> CGRect {
+        CGRect(
+            x: panel.midX - size.width / 2, y: panel.maxY - topInset - size.height,
+            width: size.width, height: size.height + topInset + 1)
+    }
+
     /// The fixed panel: big enough for every state at the largest size the notch can be resized to,
     /// with room for springy overshoot, pinned to the top and centered on the notch. The window never
     /// moves or resizes; only the shape inside it animates.

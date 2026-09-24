@@ -88,13 +88,10 @@ final class NotchController {
         }
     }
 
-    /// Where the notch is drawn right now, in screen coordinates.
+    /// Where the pointer counts as over the notch as it's drawn right now, in screen coordinates.
     private func notchFrame() -> CGRect {
         let size = metrics.size(for: engine.state.presentation, expanded: preferences.expandedSize)
-        let frame = panel.frame
-        return CGRect(
-            x: frame.midX - size.width / 2, y: frame.maxY - metrics.topInset - size.height,
-            width: size.width, height: size.height)
+        return metrics.hoverFrame(for: size, in: panel.frame)
     }
 
     private func handleScroll(_ event: NSEvent) {

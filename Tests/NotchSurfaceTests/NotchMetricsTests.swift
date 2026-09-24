@@ -34,6 +34,15 @@ struct NotchMetricsTests {
         #expect(metrics.screen.contains(panel))
     }
 
+    @Test(arguments: displays)
+    func aPointerPushedAgainstTheTopEdgeIsOverTheNotch(metrics: NotchMetrics) {
+        let compact = metrics.size(for: .compact)
+        let frame = metrics.hoverFrame(for: compact, in: metrics.panelFrame)
+        #expect(frame.contains(CGPoint(x: metrics.centerX, y: metrics.screen.maxY)), "the top edge is exactly maxY")
+        let below = metrics.screen.maxY - metrics.topInset - compact.height - 0.5
+        #expect(!frame.contains(CGPoint(x: metrics.centerX, y: below)), "below the notch is not over it")
+    }
+
     @Test(arguments: displays, presentations)
     func everyStateFitsInsideTheFixedPanel(metrics: NotchMetrics, presentation: NotchPresentationState) {
         let size = metrics.size(for: presentation)
