@@ -45,6 +45,20 @@ public final class PanelCoordinator {
         for controller in controllers { controller.engine.send(event) }
     }
 
+    /// Opens every closed notch and closes it again, to preview the open and close animation. Only
+    /// notches the preview opened are closed, and only if nothing (like a pin) changed them since.
+    public func previewAnimation() {
+        let engines = controllers.map(\.engine).filter { $0.state.presentation.openTab == nil }
+        for engine in engines { engine.send(.clicked) }
+        let opened = engines.map { ($0, $0.state.presentation) }
+        Task {
+            try? await Task.sleep(for: .seconds(1.4))
+            for (engine, presentation) in opened where engine.state.presentation == presentation {
+                engine.send(.dismiss)
+            }
+        }
+    }
+
     private func rebuild() {
         for controller in controllers { controller.close() }
         let screens = showingAllDisplays ? NSScreen.screens : [NSScreen.preferredForNotch].compactMap { $0 }

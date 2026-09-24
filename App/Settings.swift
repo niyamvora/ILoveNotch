@@ -9,18 +9,24 @@ import SwiftUI
 @MainActor
 final class SettingsWindowController {
     private let preferences: NotchPreferences
+    private let previewAnimation: () -> Void
     private let featureSettings: (FeatureID) -> AnyView?
     private var window: NSWindow?
 
     /// `featureSettings` supplies each feature's own settings, shown under its toggle.
-    init(preferences: NotchPreferences, featureSettings: @escaping (FeatureID) -> AnyView?) {
+    init(
+        preferences: NotchPreferences, previewAnimation: @escaping () -> Void,
+        featureSettings: @escaping (FeatureID) -> AnyView?
+    ) {
         self.preferences = preferences
+        self.previewAnimation = previewAnimation
         self.featureSettings = featureSettings
     }
 
     func show() {
         if window == nil {
-            let root = SettingsView(preferences: preferences, featureSettings: featureSettings)
+            let root = SettingsView(
+                preferences: preferences, previewAnimation: previewAnimation, featureSettings: featureSettings)
             let window = NSWindow(contentViewController: NSHostingController(rootView: root))
             window.title = "OpenNotch Settings"
             window.styleMask = [.titled, .closable]
@@ -35,11 +41,12 @@ final class SettingsWindowController {
 
 struct SettingsView: View {
     let preferences: NotchPreferences
+    let previewAnimation: () -> Void
     let featureSettings: (FeatureID) -> AnyView?
 
     var body: some View {
         TabView {
-            GeneralSettings(preferences: preferences)
+            GeneralSettings(preferences: preferences, previewAnimation: previewAnimation)
                 .tabItem { Label("General", systemImage: "gearshape") }
             FeatureSettings(preferences: preferences, featureSettings: featureSettings)
                 .tabItem { Label("Features", systemImage: "square.grid.2x2") }
@@ -53,6 +60,7 @@ struct SettingsView: View {
 
 private struct GeneralSettings: View {
     @Bindable var preferences: NotchPreferences
+    let previewAnimation: () -> Void
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginError: String?
 
@@ -68,6 +76,18 @@ private struct GeneralSettings: View {
             Text("Otherwise OpenNotch uses the built-in display's notch, or the main display.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            Picker("Open and close animation", selection: $preferences.animationStyle) {
+                ForEach(NotchAnimationStyle.allCases) { style in
+                    Text(style.title).tag(style)
+                }
+            }
+            HStack {
+                Text(preferences.animationStyle.summary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button("Preview", action: previewAnimation)
+            }
             LabeledContent("Open notch size") {
                 HStack {
                     Text("\(Int(preferences.expandedSize.width)) × \(Int(preferences.expandedSize.height))")

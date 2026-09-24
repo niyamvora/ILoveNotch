@@ -2,6 +2,36 @@
 import Foundation
 import Observation
 
+/// How the notch opens and closes. Hover feedback and live activities keep their own subtle
+/// motion, and Reduce Motion overrides every style.
+public enum NotchAnimationStyle: String, CaseIterable, Identifiable, Sendable {
+    case spring, jelly, pop, smooth, snappy, instant
+
+    public var id: Self { self }
+
+    public var title: String {
+        switch self {
+        case .spring: "Spring"
+        case .jelly: "Jelly"
+        case .pop: "Pop"
+        case .smooth: "Smooth"
+        case .snappy: "Snappy"
+        case .instant: "Instant"
+        }
+    }
+
+    public var summary: String {
+        switch self {
+        case .spring: "A balanced spring with a hint of bounce."
+        case .jelly: "Squashes wide, stretches down, and wobbles into place."
+        case .pop: "Springs up from slightly smaller with a quick bounce."
+        case .smooth: "Eases in and out, no bounce."
+        case .snappy: "Quick and crisp."
+        case .instant: "No animation."
+        }
+    }
+}
+
 /// User preferences, persisted in UserDefaults. The settings UI binds to these directly.
 @MainActor
 @Observable
@@ -15,6 +45,11 @@ public final class NotchPreferences {
     /// Show a notch on every display, not just the built-in (or main) one.
     public var showOnAllDisplays: Bool {
         didSet { defaults.set(showOnAllDisplays, forKey: Key.showOnAllDisplays) }
+    }
+
+    /// How the notch opens and closes.
+    public var animationStyle: NotchAnimationStyle {
+        didSet { defaults.set(animationStyle.rawValue, forKey: Key.animationStyle) }
     }
 
     /// The open notch's size, set with its resize control. Always within the minimum and maximum.
@@ -37,6 +72,7 @@ public final class NotchPreferences {
         let stored = defaults.stringArray(forKey: Key.disabledFeatures) ?? []
         disabledFeatures = Set(stored.compactMap(FeatureID.init(rawValue:)))
         showOnAllDisplays = defaults.bool(forKey: Key.showOnAllDisplays)
+        animationStyle = defaults.string(forKey: Key.animationStyle).flatMap(NotchAnimationStyle.init) ?? .spring
         if let size = defaults.array(forKey: Key.expandedSize) as? [Double], size.count == 2 {
             expandedSize = Self.clamped(CGSize(width: size[0], height: size[1]))
         } else {
@@ -74,12 +110,14 @@ public final class NotchPreferences {
     public func reset() {
         disabledFeatures = []
         showOnAllDisplays = false
+        animationStyle = .spring
         expandedSize = Self.defaultExpandedSize
     }
 
     private enum Key {
         static let disabledFeatures = "disabledFeatures"
         static let showOnAllDisplays = "showOnAllDisplays"
+        static let animationStyle = "animationStyle"
         static let expandedSize = "expandedSize"
     }
 }

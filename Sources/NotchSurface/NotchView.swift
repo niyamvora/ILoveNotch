@@ -22,6 +22,12 @@ public struct NotchContent {
     }
 }
 
+/// Horizontal and vertical scale for the squash-and-stretch animation styles.
+struct Squash {
+    var x: CGFloat = 1
+    var y: CGFloat = 1
+}
+
 /// One display's notch. The panel around it never moves; this view animates one shape between
 /// every presentation, so SwiftUI is the only animation owner.
 struct NotchView: View {
@@ -61,6 +67,11 @@ struct NotchView: View {
             if dropTargeted {
                 outline.stroke(Color.accentColor, lineWidth: 2).shadow(color: .accentColor, radius: 6)
             }
+        }
+        .keyframeAnimator(initialValue: Squash(), trigger: presentation.openTab != nil) { notch, squash in
+            notch.scaleEffect(x: squash.x, y: squash.y, anchor: .top)  // anchored to the screen edge
+        } keyframes: { _ in
+            squashKeyframes(opening: presentation.openTab != nil)
         }
         .environment(\.colorScheme, .dark)  // the notch is always black
         .contentShape(outline)
@@ -105,15 +116,59 @@ struct NotchView: View {
 
     private static let pillRadius: CGFloat = 100  // clamped to a capsule
 
-    /// Expanding springs open (~320 ms); collapsing is faster with little bounce; hover only nudges.
-    /// Reduce Motion swaps all of it for a short crossfade-speed ease.
-    private func motion(for presentation: NotchPresentationState) -> Animation {
+    /// Opening and closing in the user's chosen style. Hover only nudges and live activities keep
+    /// their own spring; Reduce Motion swaps everything for a short ease.
+    private func motion(for presentation: NotchPresentationState) -> Animation? {
         if reduceMotion { return .easeInOut(duration: 0.12) }
+        let style = preferences.animationStyle
         switch presentation {
-        case .expanded, .pinned, .focused: return .spring(response: 0.32, dampingFraction: 0.78)
-        case .hoverArmed: return .easeOut(duration: 0.12)
-        case .transient: return .spring(response: 0.3, dampingFraction: 0.85)
-        default: return .spring(response: 0.24, dampingFraction: 0.95)
+        case .hoverArmed: return style == .instant ? nil : .easeOut(duration: 0.12)
+        case .transient: return style == .instant ? nil : .spring(response: 0.3, dampingFraction: 0.85)
+        default: break
+        }
+        let opening = presentation.openTab != nil
+        switch style {
+        case .spring:
+            return opening
+                ? .spring(response: 0.32, dampingFraction: 0.78) : .spring(response: 0.24, dampingFraction: 0.95)
+        case .jelly:
+            return opening
+                ? .spring(response: 0.5, dampingFraction: 0.55) : .spring(response: 0.38, dampingFraction: 0.66)
+        case .pop:
+            return opening
+                ? .spring(response: 0.3, dampingFraction: 0.6) : .spring(response: 0.22, dampingFraction: 0.82)
+        case .smooth: return .easeInOut(duration: opening ? 0.34 : 0.26)
+        case .snappy: return .snappy(duration: opening ? 0.2 : 0.15)
+        case .instant: return nil
+        }
+    }
+
+    /// Squash-and-stretch beats layered on the size change. Jelly squashes wide, stretches down, and
+    /// wobbles into place; Pop springs up from slightly smaller. Other styles hold still.
+    @KeyframesBuilder<Squash>
+    private func squashKeyframes(opening: Bool) -> some Keyframes<Squash> {
+        let style = reduceMotion ? NotchAnimationStyle.smooth : preferences.animationStyle
+        let (x, y): ([CGFloat], [CGFloat]) =
+            switch (style, opening) {
+            case (.jelly, true): ([1, 1.06, 0.97, 1.01], [1, 0.9, 1.04, 0.99])
+            case (.jelly, false): ([1, 1.04, 0.98, 1], [1, 0.94, 1.02, 1])
+            case (.pop, true): ([0.92, 1.03, 0.995, 1], [0.92, 1.03, 0.995, 1])
+            case (.pop, false): ([1, 0.96, 1.01, 1], [1, 0.96, 1.01, 1])
+            default: ([1, 1, 1, 1], [1, 1, 1, 1])
+            }
+        KeyframeTrack(\.x) {
+            MoveKeyframe(x[0])
+            SpringKeyframe(x[1], duration: 0.12)
+            SpringKeyframe(x[2], duration: 0.16)
+            SpringKeyframe(x[3], duration: 0.14)
+            SpringKeyframe(1, duration: 0.2)
+        }
+        KeyframeTrack(\.y) {
+            MoveKeyframe(y[0])
+            SpringKeyframe(y[1], duration: 0.12)
+            SpringKeyframe(y[2], duration: 0.16)
+            SpringKeyframe(y[3], duration: 0.14)
+            SpringKeyframe(1, duration: 0.2)
         }
     }
 

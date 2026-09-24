@@ -53,6 +53,14 @@ struct NotchPreferencesTests {
         #expect(NotchPreferences(defaults: defaults).expandedSize == CGSize(width: 400, height: 480))
     }
 
+    @Test func theAnimationStylePersistsAndFallsBackToSpring() {
+        #expect(NotchPreferences(defaults: defaults).animationStyle == .spring)
+        NotchPreferences(defaults: defaults).animationStyle = .jelly
+        #expect(NotchPreferences(defaults: defaults).animationStyle == .jelly)
+        defaults.set("wobbly-from-the-future", forKey: "animationStyle")
+        #expect(NotchPreferences(defaults: defaults).animationStyle == .spring)
+    }
+
     @Test func clickingResizeStepsThroughThePresets() {
         let preferences = NotchPreferences(defaults: defaults)
         let widths = (0..<4).map { _ in
