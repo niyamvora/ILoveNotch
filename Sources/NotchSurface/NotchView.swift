@@ -7,7 +7,7 @@ enum NotchTab: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .media: return "play.circle"
-        case .tray:  return "tray.full"
+        case .tray: return "tray.full"
         case .tasks: return "checklist"
         case .notes: return "note.text"
         }
@@ -60,8 +60,9 @@ struct NotchView: View {
                     Image(systemName: t.icon)
                         .font(.system(size: 15, weight: .medium))
                         .frame(width: 34, height: 28)
-                        .background(tab == t ? Color.white.opacity(0.18) : .clear,
-                                    in: RoundedRectangle(cornerRadius: 8))
+                        .background(
+                            tab == t ? Color.white.opacity(0.18) : .clear,
+                            in: RoundedRectangle(cornerRadius: 8))
                 }
                 .buttonStyle(.plain)
                 .help(t.title)

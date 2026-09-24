@@ -5,10 +5,11 @@ import AppKit
 /// nonactivatingPanel = clicks/hover work without stealing focus from your frontmost app.
 final class NotchWindow: NSPanel {
     init(contentRect: NSRect) {
-        super.init(contentRect: contentRect,
-                   styleMask: [.borderless, .nonactivatingPanel],
-                   backing: .buffered,
-                   defer: false)
+        super.init(
+            contentRect: contentRect,
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false)
         isFloatingPanel = true
         level = .statusBar
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
