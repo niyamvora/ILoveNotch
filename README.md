@@ -91,6 +91,14 @@ Tasks use Apple **Reminders**, notes use Apple **Notes**. Both already sync to
 your iPhone through iCloud for free — no server to run. (Google **Keep** is
 intentionally not used: it has no official API.)
 
+## Sponsors
+
+OpenNotch is free and open source. If it's useful to you,
+[sponsor the project](https://github.com/sponsors/niyamvora) to help keep it
+maintained.
+
+<!-- ponytail: add a tiered logo table here (like chanhdai.com's README) once there are sponsors -->
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
