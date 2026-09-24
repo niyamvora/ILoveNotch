@@ -3,6 +3,14 @@
 Thanks for helping. ILoveNotch is a clean-room, MIT-licensed project, so a few
 rules matter more than usual.
 
+## Where to start
+
+- **Question or idea?** Open a [Discussion](https://github.com/niyamvora/ILoveNotch/discussions).
+- **Bug or feature request?** Open an [issue](https://github.com/niyamvora/ILoveNotch/issues/new/choose)
+  with its template. For anything bigger than a small fix, agree on the approach in the
+  issue before writing the PR.
+- **Looking for something to do?** Try [good first issues](https://github.com/niyamvora/ILoveNotch/labels/good%20first%20issue).
+
 ## Clean-room rules
 
 - Write original code. Never copy code, assets, icons, or strings from

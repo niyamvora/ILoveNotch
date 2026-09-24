@@ -218,6 +218,8 @@ Access** in their tab.
 
 ## Contributing
 
+Questions and ideas go in [Discussions](https://github.com/niyamvora/ILoveNotch/discussions);
+bugs and feature requests in [Issues](https://github.com/niyamvora/ILoveNotch/issues/new/choose).
 See [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities privately as
 described in [SECURITY.md](SECURITY.md); privacy commitments are in
 [PRIVACY.md](PRIVACY.md).
