@@ -7,7 +7,8 @@ let package = Package(
     name: "OpenNotchKit",
     platforms: [.macOS("14.6")],
     products: [
-        .library(name: "NotchSurface", targets: ["NotchSurface"])
+        .library(name: "NotchCore", targets: ["NotchCore"]),
+        .library(name: "NotchSurface", targets: ["NotchSurface"]),
     ],
     targets: [
         // State machine, feature lifecycle, diagnostics. No AppKit, so it tests anywhere.

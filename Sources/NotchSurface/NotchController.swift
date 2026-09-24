@@ -3,52 +3,115 @@ import AppKit
 import NotchCore
 import SwiftUI
 
-/// Owns the panel and mirrors the engine's presentation onto it. Purely event-driven:
-/// hover and clicks go into the engine, presentation changes come back out. No polling.
+/// One display's notch: owns its engine and fixed panel, turns AppKit input into engine events,
+/// and mirrors presentation changes onto the panel. Purely event-driven: no polling.
 @MainActor
-public final class NotchController {
-    private let screen: NSScreen
-    private let engine = NotchEngine()
-    private var window: NotchWindow?
+final class NotchController {
+    let engine = NotchEngine()
+    let displayID: CGDirectDisplayID
+    /// Called after every presentation change.
+    var onPresentationChange: (() -> Void)?
 
-    public init(screen: NSScreen) { self.screen = screen }
+    private let panel: NotchWindow
+    private var scrollMonitor: Any?
+    private var clickAwayMonitors: [Any] = []
+    private var keyObservers: [NSObjectProtocol] = []
 
-    public func show() {
-        let window = NotchWindow(contentRect: NotchGeometry.closedFrame(for: screen))
-        let notchHeight = NotchGeometry.notchSize(for: screen).height
-        window.contentView = NSHostingView(rootView: NotchView(engine: engine, notchHeight: notchHeight))
-        self.window = window
+    init(screen: NSScreen, content: NotchContent) {
+        displayID = screen.displayID
+        let metrics = NotchMetrics(screen: screen)
+        panel = NotchWindow(frame: metrics.panelFrame)
+        panel.contentView = NotchHostingView(rootView: NotchView(engine: engine, metrics: metrics, content: content))
+        panel.onCancel = { [weak self] in self?.engine.send(.dismiss) }
         engine.onPresentationChange = { [weak self] old, new in self?.render(from: old, to: new) }
-        Log.surface.info("Showing the notch on \(self.screen.localizedName, privacy: .public)")
-        engine.send(.show)
+
+        // The panel only becomes key for text entry, so key status is the focused state.
+        let center = NotificationCenter.default
+        keyObservers = [
+            center.addObserver(forName: NSWindow.didBecomeKeyNotification, object: panel, queue: .main) {
+                [weak self] _ in MainActor.assumeIsolated { self?.engine.send(.beginTextInput) }
+            },
+            center.addObserver(forName: NSWindow.didResignKeyNotification, object: panel, queue: .main) {
+                [weak self] _ in MainActor.assumeIsolated { self?.engine.send(.endTextInput) }
+            },
+        ]
+        // A two-finger pull down on the resting notch opens it. Local monitors only see events
+        // already addressed to this app, so this costs nothing while the pointer is elsewhere.
+        scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
+            MainActor.assumeIsolated { self?.handleScroll(event) }
+            return event
+        }
+        Log.surface.info("Notch on display \(self.displayID, privacy: .public), notch: \(metrics.notch != nil)")
+    }
+
+    /// Tears the notch down. Call before dropping the controller.
+    func close() {
+        stopClickAway()
+        if let scrollMonitor { NSEvent.removeMonitor(scrollMonitor) }
+        keyObservers.forEach(NotificationCenter.default.removeObserver)
+        engine.send(.hide)
+        panel.close()
     }
 
     private func render(from old: NotchPresentationState, to new: NotchPresentationState) {
-        guard let window else { return }
         switch new {
-        case .hidden, .suspended:
-            window.orderOut(nil)
-            return
+        case .hidden, .suspended: panel.orderOut(nil)
+        default: if !panel.isVisible { panel.orderFrontRegardless() }
+        }
+        let open = new.openTab != nil
+        if open != (old.openTab != nil) {
+            open ? startClickAway() : stopClickAway()
+        }
+        // Leaving text entry (Escape, or closing while typing): hand the keyboard back to the
+        // app the user was in. Ordering the panel out and in drops its key status.
+        if case .focused = old, panel.isKeyWindow, !Self.isFocused(new), panel.isVisible {
+            panel.orderOut(nil)
+            panel.orderFrontRegardless()
+        }
+        onPresentationChange?()
+    }
+
+    private static func isFocused(_ presentation: NotchPresentationState) -> Bool {
+        if case .focused = presentation { true } else { false }
+    }
+
+    private func handleScroll(_ event: NSEvent) {
+        guard event.window === panel else { return }
+        switch engine.state.presentation {
+        case .compact, .hoverArmed, .transient:
+            // With natural scrolling the delta follows the fingers; otherwise it's inverted.
+            let delta = event.isDirectionInvertedFromDevice ? event.scrollingDeltaY : -event.scrollingDeltaY
+            let fingersDown = delta > 4
+            if fingersDown { engine.send(.clicked) }
         default:
             break
         }
-        let open = new.openTab != nil
-        let target = open ? NotchGeometry.openFrame(for: screen) : NotchGeometry.closedFrame(for: screen)
-        guard window.isVisible else {
-            // Reappearing after hide or suspend: snap to the right size, don't animate from a stale one.
-            window.setFrame(target, display: false)
-            window.orderFrontRegardless()
-            return
-        }
-        guard open != (old.openTab != nil) else { return }
+    }
 
-        Log.signposter.emitEvent("panel frame", "\(open ? "open" : "closed", privacy: .public)")
-        // ponytail: AppKit animates the frame while SwiftUI springs the content, two animation owners.
-        // Phase 2 replaces this with a fixed-size panel and one animatable notch shape.
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.22
-            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            window.animator().setFrame(target, display: true)
+    /// Watches for clicks outside the notch only while it's open, so a resting notch never wakes
+    /// for other apps' clicks. Global monitors see other apps; the local one sees our other windows.
+    private func startClickAway() {
+        let clicks: NSEvent.EventTypeMask = [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+        let global = NSEvent.addGlobalMonitorForEvents(matching: clicks) { [weak self] _ in
+            MainActor.assumeIsolated { self?.engine.send(.clickedOutside) }
         }
+        let local = NSEvent.addLocalMonitorForEvents(matching: clicks) { [weak self] event in
+            MainActor.assumeIsolated {
+                if let self, event.window !== self.panel { self.engine.send(.clickedOutside) }
+            }
+            return event
+        }
+        clickAwayMonitors = [global, local].compactMap { $0 }
+    }
+
+    private func stopClickAway() {
+        clickAwayMonitors.forEach(NSEvent.removeMonitor)
+        clickAwayMonitors = []
+    }
+}
+
+extension NSScreen {
+    var displayID: CGDirectDisplayID {
+        (deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? 0
     }
 }
