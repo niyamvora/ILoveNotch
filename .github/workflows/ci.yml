@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint, test, build, licenses
+    # macos-26 ships Xcode 26.6 by default: the toolchain the project is developed with.
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Toolchain
+        run: xcodebuild -version && swift --version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Formatting
+        run: make lint
+
+      - name: Unit and performance tests
+        run: make test
+
+      - name: Debug build
+        run: make build CONFIGURATION=Debug
+
+      - name: Release build
+        run: make build CONFIGURATION=Release
+
+      - name: License check
+        run: make licenses
