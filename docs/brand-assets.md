@@ -1,12 +1,14 @@
-# Brand assets (Phase 6)
+# Brand assets
 
-Everything Phase 6 needs from design, with the exact files and sizes. Make them in any tool, put
-them in a `Brand/` folder at the repository root with the names below, and open a pull request (or
-hand the folder over). The code side (asset catalog, `project.yml`, the About screen, the menu bar
-item, the DMG) is wired up from these files, so nothing else needs editing.
+The design files the app and its listings use, with the exact files and sizes. Make them in any
+tool, put them in a `Brand/` folder at the repository root with the names below, and open a pull
+request (or hand the folder over). The code side (asset catalog, `project.yml`, the About screen,
+the menu bar item, the DMG) is wired up from these files, so nothing else needs editing.
 
-Decide the name first: it appears in the icon's wordmark, the App Store listing, and the bundle ID,
-which can't change once the app is on the App Store. `OpenNotch` is still a working name.
+**Done:** the name, ILoveNotch; the app icon, in `App/Assets.xcassets/AppIcon.appiconset` and on
+the About screen; nine 1440 × 900 marketing screenshots, six of them in the README. **Still
+wanted:** the menu bar icon (section 3), the logo SVGs (4), the social preview (5), the DMG
+background (6), the accent colors (1), and optionally a layered Icon Composer icon (2).
 
 ## 1. Name and identity
 

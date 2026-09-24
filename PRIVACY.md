@@ -1,21 +1,21 @@
 # Privacy
 
-OpenNotch is local-first.
+ILoveNotch is local-first.
 
 - No accounts, analytics, telemetry, or device fingerprinting.
 - The network is used for two things only: the update check against GitHub
   Releases, and the AI Usage providers you turn on (below). With no provider
   on, the AI Usage tab never touches the network.
-- Everything OpenNotch creates (settings, notes, shelf items) stays on your Mac.
+- Everything ILoveNotch creates (settings, notes, shelf items) stays on your Mac.
 - System permissions (Calendar, Reminders, Camera, and so on) are requested only
   when you enable the feature that needs them. Denying one disables only that
   feature.
 - The Mirror tab is off until you turn it on, and uses the camera only while
   that tab is open. Nothing is recorded or saved.
 - Replacing the macOS volume display is off until you turn it on. It asks for
-  Accessibility access to catch the volume keys; OpenNotch takes only the three
+  Accessibility access to catch the volume keys; ILoveNotch takes only the three
   volume keys and passes every other event through untouched.
-- To move the media waveform with the music, OpenNotch listens to your Mac's
+- To move the media waveform with the music, ILoveNotch listens to your Mac's
   audio output, and macOS asks for "system audio recording" permission the first
   time. It listens only while the Media tab is open and something plays, turns
   the sound into loudness per frequency band as it plays, and never records,
@@ -29,7 +29,7 @@ provider is off until you turn it on, and nothing reaches the network before
 that.
 
 To find which tools are signed in on this Mac, when you open the tab or its
-settings, and to read a provider's sign-in when it refreshes, OpenNotch:
+settings, and to read a provider's sign-in when it refreshes, ILoveNotch:
 
 - Reads the sign-in each tool keeps on this Mac: its files (like
   `~/.codex/auth.json` or Cursor's settings database) and its keychain items,
@@ -39,10 +39,10 @@ settings, and to read a provider's sign-in when it refreshes, OpenNotch:
   keys you export there, such as `CLAUDE_CONFIG_DIR` or `OPENROUTER_API_KEY`.
   Only non-secret settings (config folders, sign-in endpoints) are remembered.
 - Keeps an API key you paste in **Settings › AI Usage** (for OpenRouter or
-  Z.ai) in your login keychain, as "OpenNotch AI Usage", never in a file.
+  Z.ai) in your login keychain, as "ILoveNotch AI Usage", never in a file.
   **Remove** there deletes it.
 
-For each provider you turn on, OpenNotch:
+For each provider you turn on, ILoveNotch:
 
 - Sends your sign-in only to that provider's own service, to ask for your
   usage. Antigravity is asked through its language server on this Mac, found
@@ -53,7 +53,7 @@ For each provider you turn on, OpenNotch:
 - Reads the tool's local session logs (Claude Code, Codex, and others) to
   estimate what you've spent. Prices come from public price lists: LiteLLM
   (raw.githubusercontent.com), models.dev, and OpenUsage's price supplement
-  (robinebers.github.io). OpenNotch downloads them about once an hour while a
+  (robinebers.github.io). ILoveNotch downloads them about once an hour while a
   provider refreshes. These requests carry nothing about you or your usage.
 
 Refreshes happen when you open the tab, every five minutes while it stays open,

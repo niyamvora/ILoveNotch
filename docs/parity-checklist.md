@@ -1,6 +1,6 @@
 # Parity checklist
 
-User-visible behaviors OpenNotch should cover, grouped by target release. This
+User-visible behaviors ILoveNotch should cover, grouped by target release. This
 list describes behavior only. How any other app implements these features is
 out of scope and must not be copied.
 
@@ -29,7 +29,7 @@ that delivers it.
 - [x] Tabs adapt to shorter notches: media drops its waveform, then shrinks its artwork; laps move beside the stopwatch
 - [x] Pushing the pointer against the top edge over the notch opens it
 - [x] Choose how the notch opens and closes (spring, jelly, pop, smooth, snappy, or instant), with a preview
-- [x] Builds from a checkout update themselves from the menu bar (**Update OpenNotch**)
+- [x] Builds from a checkout update themselves from the menu bar (**Update ILoveNotch**)
 
 ## v0.2: media and shelf (Phase 3)
 
