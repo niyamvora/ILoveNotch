@@ -2,7 +2,7 @@
 
 /// A feature that can own the expanded notch.
 public enum FeatureID: String, CaseIterable, Hashable, Sendable {
-    case media, shelf, calendar, tasks, notes, shortcuts, timer
+    case media, shelf, calendar, tasks, notes, shortcuts, timer, mirror
 
     /// SF Symbol for tabs and settings.
     public var symbol: String {
@@ -14,6 +14,7 @@ public enum FeatureID: String, CaseIterable, Hashable, Sendable {
         case .notes: "note.text"
         case .shortcuts: "square.stack.3d.up"
         case .timer: "timer"
+        case .mirror: "web.camera"
         }
     }
 
@@ -26,23 +27,30 @@ public enum FeatureID: String, CaseIterable, Hashable, Sendable {
         case .notes: "Notes"
         case .shortcuts: "Shortcuts"
         case .timer: "Timer"
+        case .mirror: "Mirror"
         }
     }
 }
 
-/// A one-shot live activity shown on the compact notch, such as a track change or a file drop.
+/// A one-shot live activity shown on the compact notch, such as a track change, a file drop, or
+/// the volume changing.
 public struct Activity: Hashable, Sendable {
-    public var feature: FeatureID
+    /// The tab that raised it, which opens when it's hovered or clicked. Nil for a system activity,
+    /// such as volume or battery, that belongs to no tab and shows whatever tabs are enabled.
+    public var feature: FeatureID?
     /// SF Symbol shown on the leading side of the notch.
     public var symbol: String
     /// Short text shown on the trailing side of the notch.
     public var title: String
+    /// 0...1 for a meter beside the title, such as the volume or the battery's charge.
+    public var level: Double?
     public var duration: Duration
 
-    public init(feature: FeatureID, symbol: String, title: String, duration: Duration) {
+    public init(feature: FeatureID?, symbol: String, title: String, level: Double? = nil, duration: Duration) {
         self.feature = feature
         self.symbol = symbol
         self.title = title
+        self.level = level
         self.duration = duration
     }
 }
@@ -199,7 +207,7 @@ public struct NotchState: Hashable, Sendable {
                 } else {
                     presentation = .compact
                 }
-            case .transient(let activity) where !tabs.contains(activity.feature):
+            case .transient(let activity) where !shows(activity):
                 presentation = .compact
             case .hoverArmed where tabs.isEmpty:
                 presentation = .compact
@@ -231,15 +239,16 @@ public struct NotchState: Hashable, Sendable {
         case (.compact, .pointerEntered) where !tabs.isEmpty:
             presentation = .hoverArmed
             return [.schedule(.hoverDwell, after: NotchTiming.hoverDwell)]
-        case (.transient(let activity), .pointerEntered):
-            // Hovering a live activity opens the feature that raised it.
-            lastTab = activity.feature
+        case (.transient(let activity), .pointerEntered) where !tabs.isEmpty:
+            // Hovering a live activity opens the feature that raised it, or the last tab for a
+            // system activity.
+            lastTab = activity.feature ?? lastTab
             presentation = .hoverArmed
             return [.schedule(.hoverDwell, after: NotchTiming.hoverDwell)]
         case (.compact, .clicked), (.hoverArmed, .clicked), (.hoverArmed, .deadline(.hoverDwell)):
             open(lastTab)
         case (.transient(let activity), .clicked):
-            open(activity.feature)
+            open(activity.feature ?? lastTab)
         case (.hoverArmed, .pointerExited), (.hoverArmed, .dragExited), (.hoverArmed, .dismiss):
             presentation = .compact
 
@@ -257,8 +266,8 @@ public struct NotchState: Hashable, Sendable {
             return [.cancel(.collapseGrace)]
 
         // Live activities show only while the notch is closed, and only for enabled features.
-        case (.compact, .activity(let activity)) where tabs.contains(activity.feature),
-            (.transient, .activity(let activity)) where tabs.contains(activity.feature):
+        case (.compact, .activity(let activity)) where shows(activity),
+            (.transient, .activity(let activity)) where shows(activity):
             presentation = .transient(activity)
             return [.schedule(.activityEnd, after: activity.duration)]
         case (.transient, .deadline(.activityEnd)), (.transient, .dismiss):
@@ -308,6 +317,11 @@ public struct NotchState: Hashable, Sendable {
             break
         }
         return []
+    }
+
+    /// A feature's activity shows while its tab is enabled; a system activity always does.
+    private func shows(_ activity: Activity) -> Bool {
+        activity.feature.map(tabs.contains) ?? true
     }
 
     /// Opens `tab`, or the first enabled tab if `tab` is disabled. With no tabs enabled, nothing opens.

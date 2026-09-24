@@ -9,27 +9,45 @@ import Testing
 struct NotchPreferencesTests {
     /// A throwaway defaults domain per test.
     private let defaults = UserDefaults(suiteName: "NotchPreferencesTests.\(UUID().uuidString)")!
+    /// Every tab except those that start off, like the camera mirror.
+    private let defaultTabs = FeatureID.allCases.filter { !NotchPreferences.offByDefault.contains($0) }
 
-    @Test func everythingIsEnabledOnOneDisplayByDefault() {
+    @Test func everythingButTheMirrorIsEnabledOnOneDisplayByDefault() {
         let preferences = NotchPreferences(defaults: defaults)
-        #expect(preferences.tabs == FeatureID.allCases)
+        #expect(preferences.tabs == defaultTabs)
+        #expect(!preferences.isEnabled(.mirror))
         #expect(!preferences.showOnAllDisplays)
+        #expect(preferences.showsVolume && preferences.showsBattery)
+        #expect(!preferences.replacesVolumeDisplay && !preferences.showsAccessoryBattery)
     }
 
     @Test func choicesPersistAcrossLaunches() {
         let first = NotchPreferences(defaults: defaults)
         first.setEnabled(.media, false)
         first.showOnAllDisplays = true
+        first.showsBattery = false
 
         let second = NotchPreferences(defaults: defaults)
         #expect(!second.isEnabled(.media))
-        #expect(second.tabs == FeatureID.allCases.filter { $0 != .media })
+        #expect(second.tabs == defaultTabs.filter { $0 != .media })
         #expect(second.showOnAllDisplays)
+        #expect(!second.showsBattery)
+    }
+
+    @Test func aFeatureThatStartsOffDoesSoOnceThenFollowsTheUser() {
+        // An update from before the mirror existed: some choices stored, the mirror never seen.
+        defaults.set(["notes"], forKey: "disabledFeatures")
+        let updated = NotchPreferences(defaults: defaults)
+        #expect(!updated.isEnabled(.mirror) && !updated.isEnabled(.notes))
+
+        updated.setEnabled(.mirror, true)
+        #expect(NotchPreferences(defaults: defaults).isEnabled(.mirror), "turned on, it stays on")
     }
 
     @Test func unknownStoredFeaturesAreIgnored() {
         defaults.set(["notes", "a-feature-from-the-future"], forKey: "disabledFeatures")
-        #expect(NotchPreferences(defaults: defaults).disabledFeatures == [.notes])
+        let disabled = NotchPreferences(defaults: defaults).disabledFeatures
+        #expect(disabled == [.notes, .mirror], "and the mirror starts off")
     }
 
     @Test func resetRestoresTheDefaults() {
@@ -37,9 +55,12 @@ struct NotchPreferencesTests {
         preferences.setEnabled(.shelf, false)
         preferences.showOnAllDisplays = true
         preferences.resizeExpanded(to: CGSize(width: 600, height: 400))
+        preferences.setEnabled(.mirror, true)
+        preferences.replacesVolumeDisplay = true
         preferences.reset()
-        #expect(preferences.tabs == FeatureID.allCases)
+        #expect(preferences.tabs == defaultTabs)
         #expect(preferences.expandedSize == NotchPreferences.defaultExpandedSize)
+        #expect(!preferences.replacesVolumeDisplay)
         #expect(!NotchPreferences(defaults: defaults).showOnAllDisplays)
     }
 
@@ -93,6 +114,6 @@ struct NotchPreferencesTests {
         #expect(await eventually { seen.count == 2 })
         preferences.setEnabled(.tasks, true)
         #expect(await eventually { seen.count == 3 })
-        #expect(seen.last == FeatureID.allCases)
+        #expect(seen.last == defaultTabs)
     }
 }

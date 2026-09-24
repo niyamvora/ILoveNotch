@@ -5,6 +5,9 @@ import Testing
 
 private let song = Activity(feature: .media, symbol: "music.note", title: "Song", duration: .seconds(2))
 private let drop = Activity(feature: .shelf, symbol: "tray.full", title: "2 files", duration: .seconds(1))
+/// A system activity: it belongs to no tab.
+private let volume = Activity(
+    feature: nil, symbol: "speaker.wave.2.fill", title: "50%", level: 0.5, duration: .seconds(1))
 
 /// The state a fresh reducer reaches after `events`.
 private func after(_ events: NotchEvent...) -> NotchState { after(events) }
@@ -144,6 +147,20 @@ struct NotchReducerTests {
         #expect(after(.show, .activity(drop), .clicked).presentation == .expanded(tab: .shelf))
     }
 
+    @Test func aSystemActivityShowsWhateverTabsAreEnabledAndOpensTheLastTab() {
+        #expect(after(.show, .setTabs([.notes]), .activity(volume)).presentation == .transient(volume))
+        #expect(after(.show, .setTabs([]), .activity(volume)).presentation == .transient(volume))
+        let retabbed = after(.show, .activity(volume), .setTabs([.notes]))
+        #expect(retabbed.presentation == .transient(volume), "it has no tab to lose")
+        let opened = after(.show, .clicked, .selectTab(.tasks), .dismiss, .activity(volume), .clicked)
+        #expect(opened.presentation == .expanded(tab: .tasks), "a system activity opens the last tab")
+        var hovered = after(.show, .activity(volume))
+        _ = hovered.handle(.pointerEntered)
+        _ = hovered.handle(.deadline(.hoverDwell))
+        #expect(hovered.presentation == .expanded(tab: .media))
+        #expect(after(.show, .setTabs([]), .activity(volume), .pointerEntered).presentation == .transient(volume))
+    }
+
     @Test func activitiesDoNotInterruptAnOpenNotch() {
         var state = after(.show, .clicked)
         #expect(state.handle(.activity(song)).isEmpty)
@@ -219,7 +236,8 @@ struct NotchReducerTests {
             [
                 .show, .hide, .pointerEntered, .pointerExited, .clicked, .clickedOutside, .dismiss, .togglePin,
                 .beginTextInput, .endTextInput, .dragEntered, .dragExited, .dropped, .activity(song),
-                .activity(drop), .setTabs(FeatureID.allCases), .setTabs([.notes, .shelf]), .setTabs([]),
+                .activity(drop), .activity(volume), .setTabs(FeatureID.allCases), .setTabs([.notes, .shelf]),
+                .setTabs([]),
             ] + FeatureID.allCases.map(NotchEvent.selectTab) + reasons.map(NotchEvent.suspend)
             + reasons.map(NotchEvent.resume)
         var state = NotchState()
@@ -249,7 +267,9 @@ struct NotchReducerTests {
                 try #require(tab == state.lastTab)
                 try #require(state.tabs.contains(tab), "\(event) opened disabled \(tab)")
             }
-            if case .transient(let activity) = presentation { try #require(state.tabs.contains(activity.feature)) }
+            if case .transient(let activity) = presentation, let feature = activity.feature {
+                try #require(state.tabs.contains(feature), "\(event) showed a disabled feature's activity")
+            }
             if presentation == .hoverArmed { try #require(state.pointerInside) }
             if presentation != .hidden {
                 try #require((presentation == .suspended) == !state.suspensions.isEmpty, "\(event) → \(presentation)")

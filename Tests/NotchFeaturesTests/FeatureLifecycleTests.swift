@@ -22,7 +22,8 @@ struct FeatureLifecycleTests {
         let notes = NotesFeature(directory: folder.appending(path: "Notes"))
         let shortcuts = ShortcutsFeature(defaults: defaults)
         let timer = TimerFeature()
-        let features: [any NotchFeature] = [media, shelf, calendar, tasks, notes, shortcuts, timer]
+        let mirror = MirrorFeature()
+        let features: [any NotchFeature] = [media, shelf, calendar, tasks, notes, shortcuts, timer, mirror]
         let host = FeatureHost(features)
         let enabled = Set(FeatureID.allCases)
         let song = Activity(feature: .media, symbol: "music.note", title: "Song", duration: .seconds(1))
@@ -51,6 +52,7 @@ struct FeatureLifecycleTests {
             try FileManager.default.contentsOfDirectory(atPath: folder.appending(path: "Notes").path).count == 1,
             "and what was typed is on disk")
         #expect(shortcuts.shortcuts.isEmpty)
+        #expect(!mirror.isRunning, "the camera is off")
     }
 
     @Test func disablingAFeatureStopsItWhileTheNotchIsOpen() {
