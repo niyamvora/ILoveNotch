@@ -71,25 +71,36 @@ struct TimerView: View {
         }
     }
 
+    /// Laps go under the clock, or beside it when the notch is too short to show a few of them.
     private var stopwatch: some View {
         let watch = timer.stopwatch
-        return VStack(spacing: 8) {
-            // Tenths of a second need ten redraws a second, only while running on screen.
-            TimelineView(.periodic(from: .now, by: watch.isRunning ? 0.1 : 3600)) { context in
-                VStack(spacing: 8) {
-                    RollingTime(watch.elapsed(at: context.date), tenths: true)
-                        .font(.system(size: 40, weight: .semibold, design: .rounded))
-                    HStack(spacing: 18) {
-                        control(watch.isRunning ? "Pause" : "Start") { timer.toggleStopwatch() }
-                        if watch.isRunning {
-                            control("Lap") { timer.lap() }
-                        } else {
-                            control("Reset", timer.resetStopwatch).disabled(watch.elapsed(at: context.date) == 0)
-                        }
+        return ViewThatFits(in: .vertical) {
+            VStack(spacing: 8) {
+                stopwatchClock(watch)
+                if !watch.laps.isEmpty { lapList(watch.laps).frame(idealHeight: 44) }
+            }
+            HStack(alignment: .top, spacing: 16) {
+                stopwatchClock(watch)
+                if !watch.laps.isEmpty { lapList(watch.laps) }
+            }
+        }
+    }
+
+    private func stopwatchClock(_ watch: Stopwatch) -> some View {
+        // Tenths of a second need ten redraws a second, only while running on screen.
+        TimelineView(.periodic(from: .now, by: watch.isRunning ? 0.1 : 3600)) { context in
+            VStack(spacing: 8) {
+                RollingTime(watch.elapsed(at: context.date), tenths: true)
+                    .font(.system(size: 40, weight: .semibold, design: .rounded))
+                HStack(spacing: 18) {
+                    control(watch.isRunning ? "Pause" : "Start") { timer.toggleStopwatch() }
+                    if watch.isRunning {
+                        control("Lap") { timer.lap() }
+                    } else {
+                        control("Reset", timer.resetStopwatch).disabled(watch.elapsed(at: context.date) == 0)
                     }
                 }
             }
-            if !watch.laps.isEmpty { lapList(watch.laps) }
         }
     }
 

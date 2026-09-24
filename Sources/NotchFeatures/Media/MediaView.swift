@@ -25,11 +25,21 @@ struct MediaView: View {
         }
     }
 
+    /// Shorter notches drop the waveform first, then shrink the artwork, so the player never clips.
     private func player(_ now: NowPlaying) -> some View {
+        ViewThatFits(in: .vertical) {
+            player(now, artwork: 72, waveform: true)
+            player(now, artwork: 72, waveform: false)
+            player(now, artwork: 52, waveform: false)
+        }
+        .background { glow }
+    }
+
+    private func player(_ now: NowPlaying, artwork size: CGFloat, waveform: Bool) -> some View {
         let animating = now.isPlaying && !reduceMotion
         return VStack(spacing: 8) {
             HStack(spacing: 14) {
-                artwork
+                artwork(size)
                 details(now)
             }
             // One timeline drives the wave, the waveform, and the times, and stops when paused.
@@ -38,12 +48,14 @@ struct MediaView: View {
                 VStack(spacing: 8) {
                     seekBar(now, at: context.date, phase: time * 2.4)
                     controls(playing: now.isPlaying)
-                    Spacer(minLength: 0)
-                    Waveform(level: animating ? 1 : 0, time: time, tint: tint)
-                        .frame(height: 18)
-                        .fadingEdges(.horizontal, length: 28)
-                        .animation(.easeInOut(duration: 0.5), value: animating)
-                        .accessibilityHidden(true)
+                    if waveform {
+                        Spacer(minLength: 0)
+                        Waveform(level: animating ? 1 : 0, time: time, tint: tint)
+                            .frame(height: 18)
+                            .fadingEdges(.horizontal, length: 28)
+                            .animation(.easeInOut(duration: 0.5), value: animating)
+                            .accessibilityHidden(true)
+                    }
                 }
             }
             if media.source == .fallback {
@@ -52,12 +64,11 @@ struct MediaView: View {
                     .foregroundStyle(.white.opacity(0.45))
             }
         }
-        .background { glow }
     }
 
     // MARK: Parts
 
-    private var artwork: some View {
+    private func artwork(_ size: CGFloat) -> some View {
         Button(action: media.openPlayer) {
             ZStack {
                 if let image = media.artwork {
@@ -67,11 +78,11 @@ struct MediaView: View {
                     LinearGradient(
                         colors: [tint.opacity(0.45), tint.opacity(0.12)], startPoint: .topLeading,
                         endPoint: .bottomTrailing)
-                    Image(systemName: "music.note").font(.system(size: 26)).opacity(0.7)
+                    Image(systemName: "music.note").font(.system(size: size * 0.36)).opacity(0.7)
                 }
             }
-            .frame(width: 72, height: 72)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: size * 0.2, style: .continuous))
             .shadow(color: tint.opacity(0.45), radius: 12, y: 4)
             .animation(.easeInOut(duration: 0.16), value: media.artwork)
         }
