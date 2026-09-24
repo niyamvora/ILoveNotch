@@ -38,6 +38,9 @@ settings, and to read a provider's sign-in when it refreshes, OpenNotch:
 - May run your login shell once (`$SHELL -ilc env`) to see settings and API
   keys you export there, such as `CLAUDE_CONFIG_DIR` or `OPENROUTER_API_KEY`.
   Only non-secret settings (config folders, sign-in endpoints) are remembered.
+- Keeps an API key you paste in **Settings › AI Usage** (for OpenRouter or
+  Z.ai) in your login keychain, as "OpenNotch AI Usage", never in a file.
+  **Remove** there deletes it.
 
 For each provider you turn on, OpenNotch:
 

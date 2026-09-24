@@ -145,6 +145,14 @@ struct UsageFeatureTests {
         #expect(pages["ollama"] == "https://ollama.com/settings", "not its API keys")
     }
 
+    @Test func onlyOpenRouterAndZaiTakeAKeyAndOnlyTheAppTouchesTheKeychain() {
+        let usage = makeUsage()
+        #expect(usage.takesAPIKey("openrouter") && usage.takesAPIKey("zai") && !usage.takesAPIKey("claude"))
+        #expect(APIKeyVault.names == ["OPENROUTER_API_KEY", "ZAI_API_KEY"], "the variables a saved key stands in for")
+        #expect(APIKeyVault.key(named: "OPENROUTER_API_KEY") == nil, "a test runner never reads the keychain")
+        #expect(throws: APIKeyVault.VaultError.self) { try APIKeyVault.save("sk-or-test", named: "OPENROUTER_API_KEY") }
+    }
+
     @Test func openUsagesCatalogBuildsEveryProvider() {
         let ids = ProviderCatalog.make(defaults: defaults).map(\.provider.id)
         #expect(

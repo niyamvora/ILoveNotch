@@ -19,6 +19,10 @@ struct ProcessEnvironmentReader: EnvironmentReading {
     private static let identityKeys = Set(ShellEnvironmentSnapshot.capturedKeys)
 
     func value(for name: String) -> String? {
+        // OpenNotch: an API key pasted into Settings lives in the keychain and reads like an export.
+        if APIKeyVault.names.contains(name), let saved = APIKeyVault.key(named: name) {
+            return saved
+        }
         // The process environment first (set by launchd, `launchctl setenv`, or a terminal launch),
         // then the captured login-shell environment — so keys a user exports in their shell profile
         // still resolve in a packaged app launched from Finder/Dock. See `LoginShellEnvironment`.

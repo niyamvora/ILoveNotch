@@ -4,9 +4,9 @@ import NotchCore
 import NotchFeatures
 import SwiftUI
 
-/// The Usage tab: a tile per provider with its headline limit as a ring, then the other tools signed
-/// in on this Mac to add; a provider's full detail, with a way back; or, before any provider is on,
-/// the tools signed in on this Mac to choose from.
+/// The Usage tab: a small dashboard card per provider that's on, with a tray of every other provider
+/// under them to add from; a provider's full detail, with a way back; or, before any provider is on,
+/// the tray alone.
 struct UsageView: View {
     let usage: UsageFeature
 
@@ -32,9 +32,9 @@ struct UsageView: View {
         }
     }
 
+    /// The cards, then the tray. Spacing is tight so a row of cards and the tray fit the default size.
     private func dashboard(now: Date) -> some View {
-        let more = usage.providers.filter { usage.detected.contains($0.id) && !usage.isEnabled($0.id) }
-        return VStack(spacing: 8) {
+        VStack(spacing: 6) {
             UsageHeader(usage: usage, now: now)
             ScrollView {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 158), spacing: 8)], spacing: 8) {
@@ -52,13 +52,13 @@ struct UsageView: View {
                             Button("Turn Off \(provider.name)") { usage.setEnabled(provider.id, false) }
                         }
                     }
-                    if !more.isEmpty { AddTile(usage: usage, providers: more) }
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, 2)
             }
-            .fadingEdges(length: 8)
+            .fadingEdges(length: 6)
+            if usage.providers.contains(where: { !usage.isEnabled($0.id) }) { ProviderTray(usage: usage) }
         }
-        // The same local check onboarding runs, for the tools that aren't on yet.
+        // The same local check onboarding runs, so the tray knows which tools are signed in.
         .task { if !usage.hasDetected { await usage.detect() } }
     }
 }
@@ -89,6 +89,7 @@ private struct UsageHeader: View {
             }
             RefreshButton(spinning: !usage.refreshing.isEmpty) { Task { await usage.refreshAll(force: true) } }
         }
+        .frame(height: 18)
     }
 
     static func updated(_ date: Date, now: Date) -> String {
@@ -423,9 +424,8 @@ private struct UsageOnboarding: View {
     let usage: UsageFeature
 
     var body: some View {
-        let found = usage.providers.filter { usage.detected.contains($0.id) }
         let accents = ["claude", "copilot", "cursor"].map { ProviderStyle.of($0).start }
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             Image(systemName: "gauge.with.dots.needle.67percent")
                 .font(.system(size: 24, weight: .semibold))
                 .foregroundStyle(LinearGradient(colors: accents, startPoint: .leading, endPoint: .trailing))
@@ -433,82 +433,117 @@ private struct UsageOnboarding: View {
             VStack(spacing: 3) {
                 Text("Your AI plans at a glance").font(.headline)
                 Text(
-                    "Turn on the tools you use. Each reads only its own sign-in on this Mac and sends it only to "
-                        + "its own service."
+                    "Add the tools you use; the ones in color are signed in on this Mac. Each reads only its own "
+                        + "sign-in and sends it only to its own service."
                 )
                 .font(.caption)
                 .foregroundStyle(.white.opacity(0.6))
                 .multilineTextAlignment(.center)
             }
-            if !usage.hasDetected {
-                ProgressView().controlSize(.small)
-            } else if found.isEmpty {
-                Text("No signed-in AI tools found. Settings › Features › AI Usage lists every provider.")
-                    .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.5))
-                    .multilineTextAlignment(.center)
-            } else {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: 6)], spacing: 6) {
-                    ForEach(found) { provider in AddProviderChip(usage: usage, provider: provider) }
-                }
-            }
+            ProviderTray(usage: usage, labeled: true)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task { if !usage.hasDetected { await usage.detect() } }
     }
 }
 
-/// After the tiles: the tools signed in on this Mac that are off, one tap each to add. Tile-sized, so
-/// it fills the space beside a lone tile; past three tools, the rest are in Settings.
-private struct AddTile: View {
+/// Every provider that isn't on yet: the ones signed in on this Mac first and in color, then the
+/// rest, dimmed. A tap adds one as a card; a provider that needs an API key it doesn't have opens
+/// Settings for it instead. Under the cards it's one row that scrolls sideways; `labeled`, for the
+/// empty tab, it's a grid with each name under its logo, all of them in view.
+private struct ProviderTray: View {
     let usage: UsageFeature
-    let providers: [UsageProvider]
+    var labeled = false
 
     var body: some View {
-        let shown = providers.count > 3 ? 2 : providers.count
-        VStack(alignment: .leading, spacing: 6) {
-            Label("Add", systemImage: "plus").font(.system(size: 12, weight: .semibold))
-            ForEach(providers.prefix(shown)) { provider in AddProviderChip(usage: usage, provider: provider) }
-            if providers.count > shown {
-                Text("\(providers.count - shown) more in Settings")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.5))
+        let off = usage.providers.filter { !usage.isEnabled($0.id) }
+        let ordered = off.filter { usage.detected.contains($0.id) } + off.filter { !usage.detected.contains($0.id) }
+        HStack(spacing: 6) {
+            if labeled {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 56), spacing: 4)], spacing: 8) { items(ordered) }
+                    .frame(maxWidth: .infinity)
+            } else {
+                Text("Add").font(.system(size: 10, weight: .semibold)).foregroundStyle(.white.opacity(0.45))
+                ScrollView(.horizontal) {
+                    HStack(spacing: 6) { items(ordered) }
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 2)
+                }
+                .fadingEdges(.horizontal, length: 10)
             }
-            Spacer(minLength: 0)
+            Button {
+                usage.openSettings?()
+            } label: {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 11, weight: .medium))
+                    .frame(width: 22, height: 22)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.white.opacity(0.6))
+            .help("AI Usage settings: providers, API keys, and background refresh")
+            .accessibilityLabel("AI Usage settings")
         }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: ProviderTile.height, alignment: .top)
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(.white.opacity(0.16), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+        .frame(height: labeled ? nil : 26)
+    }
+
+    private func items(_ providers: [UsageProvider]) -> some View {
+        ForEach(providers) { provider in
+            TrayItem(usage: usage, provider: provider, signedIn: usage.detected.contains(provider.id), labeled: labeled)
         }
     }
 }
 
-/// A tool signed in on this Mac that's off: one tap turns it on.
-private struct AddProviderChip: View {
+/// One provider in the tray: its logo on a tint of its color, with a + to add it, or a key when it
+/// needs an API key first. It grows a little under the pointer.
+private struct TrayItem: View {
     let usage: UsageFeature
     let provider: UsageProvider
+    let signedIn: Bool
+    let labeled: Bool
+
+    @State private var hovering = false
 
     var body: some View {
         let style = ProviderStyle.of(provider.id)
+        let needsKey = usage.takesAPIKey(provider.id) && !signedIn
+        let side: CGFloat = labeled ? 30 : 22
         Button {
-            usage.setEnabled(provider.id, true)
+            if needsKey { usage.openSettings?() } else { usage.setEnabled(provider.id, true) }
         } label: {
-            HStack(spacing: 6) {
-                ProviderLogo(providerID: provider.id, name: provider.name, size: 13).foregroundStyle(style.end)
-                Text(provider.name).font(.system(size: 11, weight: .semibold)).lineLimit(1)
-                Spacer(minLength: 0)
-                Image(systemName: "plus.circle.fill").foregroundStyle(style.end)
+            VStack(spacing: 4) {
+                ProviderLogo(providerID: provider.id, name: provider.name, size: side * 0.52)
+                    .foregroundStyle(signedIn ? style.end : .white.opacity(0.85))
+                    .frame(width: side, height: side)
+                    .background(
+                        (signedIn ? style.start.opacity(0.28) : .white.opacity(0.08)),
+                        in: RoundedRectangle(cornerRadius: side * 0.3, style: .continuous)
+                    )
+                    .overlay(alignment: .bottomTrailing) {
+                        Image(systemName: needsKey ? "key.fill" : "plus.circle.fill")
+                            .font(.system(size: labeled ? 10 : 8, weight: .bold))
+                            .foregroundStyle(signedIn ? style.end : .white.opacity(0.7))
+                            .background(Circle().fill(.black).padding(-1))
+                            .offset(x: 2, y: 2)
+                    }
+                if labeled {
+                    Text(provider.name).font(.system(size: 9, weight: .medium)).lineLimit(1).fixedSize()
+                }
             }
-            .padding(.horizontal, 9)
-            .padding(.vertical, 6)
-            .background(style.start.opacity(0.18), in: Capsule())
-            .contentShape(Capsule())
+            .opacity(signedIn || hovering ? 1 : 0.55)
+            .scaleEffect(hovering ? 1.1 : 1)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Turn on \(provider.name)")
+        .onHover { hovering = $0 }
+        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: hovering)
+        .help(hint(needsKey: needsKey))
+        .accessibilityLabel(hint(needsKey: needsKey))
+    }
+
+    private func hint(needsKey: Bool) -> String {
+        if needsKey { return "Add an API key for \(provider.name) in Settings" }
+        return signedIn ? "Add \(provider.name)" : "Add \(provider.name). It isn't signed in on this Mac yet."
     }
 }
 

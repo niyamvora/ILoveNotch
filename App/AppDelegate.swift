@@ -46,7 +46,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         preferences: preferences,
         updater: updater,
         previewAnimation: { [weak self] in self?.coordinator?.previewAnimation() },
-        featureSettings: { [unowned self] in self.settingsView(for: $0) })
+        featureSettings: { [unowned self] in self.settingsView(for: $0) },
+        usageSettings: usageSettings)
+
+    private var usageSettings: AnyView? {
+        #if APP_STORE
+            nil
+        #else
+            AnyView(usage.settingsView)
+        #endif
+    }
 
     private var featureList: [any NotchFeature] {
         #if APP_STORE
@@ -87,7 +96,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             #if APP_STORE
                 return nil
             #else
-                return AnyView(usage.settingsView)
+                // Its settings have their own tab.
+                return AnyView(Button("Providers, API Keys, and Refresh…") { [unowned self] in settings.show(.usage) })
             #endif
         }
     }
@@ -111,6 +121,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         accessories.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         #if !APP_STORE
             usage.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
+            usage.openSettings = { [weak self] in self?.settings.show(.usage) }
         #endif
         volumeKeys.onKey = { [volume] key, fine in
             switch key {

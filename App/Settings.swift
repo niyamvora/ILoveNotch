@@ -13,24 +13,30 @@ final class SettingsWindowController {
     private let updater: Updater
     private let previewAnimation: () -> Void
     private let featureSettings: (FeatureID) -> AnyView?
+    private let usageSettings: AnyView?
+    private let selection = SettingsSelection()
     private var window: NSWindow?
 
-    /// `featureSettings` supplies each feature's own settings, shown under its toggle.
+    /// `featureSettings` supplies each feature's own settings, shown under its toggle; `usageSettings`,
+    /// when this edition has AI Usage, gets a tab of its own.
     init(
         preferences: NotchPreferences, updater: Updater, previewAnimation: @escaping () -> Void,
-        featureSettings: @escaping (FeatureID) -> AnyView?
+        featureSettings: @escaping (FeatureID) -> AnyView?, usageSettings: AnyView?
     ) {
         self.preferences = preferences
         self.updater = updater
         self.previewAnimation = previewAnimation
         self.featureSettings = featureSettings
+        self.usageSettings = usageSettings
     }
 
-    func show() {
+    /// Shows Settings, on `tab` when one is given.
+    func show(_ tab: SettingsSelection.Tab? = nil) {
+        if let tab { selection.tab = tab }
         if window == nil {
             let root = SettingsView(
                 preferences: preferences, updater: updater, previewAnimation: previewAnimation,
-                featureSettings: featureSettings)
+                featureSettings: featureSettings, usageSettings: usageSettings, selection: selection)
             let window = NSWindow(contentViewController: NSHostingController(rootView: root))
             window.title = "OpenNotch Settings"
             window.styleMask = [.titled, .closable]
@@ -43,20 +49,38 @@ final class SettingsWindowController {
     }
 }
 
+/// Which Settings tab is showing, so the notch can open a given one.
+@MainActor
+@Observable
+final class SettingsSelection {
+    enum Tab: Hashable { case general, features, usage, about }
+    var tab = Tab.general
+}
+
 struct SettingsView: View {
     let preferences: NotchPreferences
     let updater: Updater
     let previewAnimation: () -> Void
     let featureSettings: (FeatureID) -> AnyView?
+    let usageSettings: AnyView?
+    @Bindable var selection: SettingsSelection
 
     var body: some View {
-        TabView {
+        TabView(selection: $selection.tab) {
             GeneralSettings(preferences: preferences, previewAnimation: previewAnimation)
                 .tabItem { Label("General", systemImage: "gearshape") }
+                .tag(SettingsSelection.Tab.general)
             FeatureSettings(preferences: preferences, featureSettings: featureSettings)
                 .tabItem { Label("Features", systemImage: "square.grid.2x2") }
+                .tag(SettingsSelection.Tab.features)
+            if let usageSettings {
+                usageSettings
+                    .tabItem { Label(FeatureID.usage.title, systemImage: FeatureID.usage.symbol) }
+                    .tag(SettingsSelection.Tab.usage)
+            }
             AboutSettings(updater: updater)
                 .tabItem { Label("About", systemImage: "info.circle") }
+                .tag(SettingsSelection.Tab.about)
         }
         // One size for every tab. A grouped Form has almost no height of its own, so a window sized
         // from the tab it opens on came up collapsed with General blank until you switched tabs.
