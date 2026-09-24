@@ -11,6 +11,7 @@ https://github.com/user-attachments/assets/9d0c486c-5169-4297-b8b9-8fedbb9eadda
 <p align="center"><b>Your MacBook's notch, finally useful.</b> Free and open source.</p>
 
 <p align="center">
+  <a href="https://github.com/niyamvora/ILoveNotch/releases/latest"><img src="https://img.shields.io/github/v/release/niyamvora/ILoveNotch?label=download&logo=apple&color=e8573f" alt="Download the latest release"></a>
   <a href="https://github.com/niyamvora/ILoveNotch/actions/workflows/ci.yml"><img src="https://github.com/niyamvora/ILoveNotch/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a>
   <a href="#build--run"><img src="https://img.shields.io/badge/macOS-14.6%2B-black?logo=apple" alt="macOS 14.6 or later"></a>
@@ -43,6 +44,17 @@ near-zero idle CPU**.
 > comes from permissively licensed open-source projects (MIT, BSD, CC0), listed
 > in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
+## Download
+
+**[Download ILoveNotch](https://github.com/niyamvora/ILoveNotch/releases/latest)**
+(free, macOS 14.6 or later): open the download, drag ILoveNotch into
+Applications, and open it. It updates itself from then on.
+
+- **Mac App Store:** in review. The App Store edition has everything except AI
+  Usage, which the App Sandbox rules out. Try it now through the
+  [TestFlight beta](https://testflight.apple.com/join/6p3zqhCS).
+- **From source:** see [Build & run](#build--run).
+
 ## What it does
 
 - **The notch.** Opens when you hover it, click it, or pull down with two
@@ -68,13 +80,6 @@ near-zero idle CPU**.
 - **Updates.** A build from this checkout updates itself from the menu bar;
   signed releases update through Sparkle. A sandboxed Mac App Store edition
   builds from the same code.
-
-### What's left
-
-Everything above is built and tested, with its name and icon. Before the first
-public release: a Developer ID certificate for signed downloads
-([releasing](docs/releasing.md)), and the Mac App Store listing
-([App Store edition](docs/plan/implementation-plan.md#app-store-edition)).
 
 ## Why
 
