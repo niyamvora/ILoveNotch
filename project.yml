@@ -25,7 +25,8 @@ settingGroups:
     SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
     GENERATE_INFOPLIST_FILE: YES
     INFOPLIST_KEY_LSUIElement: YES # accessory app: no Dock icon, no menu bar
-    INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+    # The App Store listing's primary category; Utilities is the secondary (docs/app-store/metadata.md).
+    INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
     INFOPLIST_KEY_NSHumanReadableCopyright: Copyright © 2026 Niyam Vora. MIT License.
     # Shelf files dropped from protected folders are checked again on later launches.
     INFOPLIST_KEY_NSDesktopFolderUsageDescription: OpenNotch keeps files you drop on the shelf so you can drag them out later.
