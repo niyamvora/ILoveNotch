@@ -6,7 +6,7 @@ APP := $(DERIVED_DATA)/Build/Products/$(CONFIGURATION)/OpenNotch.app
 
 SWIFT_SOURCES := App Sources Tests Package.swift
 
-.PHONY: project build run test lint format clean
+.PHONY: project build run test lint format licenses check clean
 
 project: ## Generate OpenNotch.xcodeproj from project.yml
 	xcodegen generate --quiet
@@ -27,6 +27,11 @@ lint: ## Fail on formatting drift (config: .swift-format)
 
 format: ## Apply formatting in place
 	swift format --in-place --recursive $(SWIFT_SOURCES)
+
+licenses: ## SPDX headers and third-party notices
+	scripts/check-licenses.sh
+
+check: lint test build licenses ## Everything CI runs
 
 clean:
 	rm -rf .build OpenNotch.xcodeproj
