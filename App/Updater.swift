@@ -2,10 +2,14 @@
 import AppKit
 import Observation
 
+#if !APP_STORE
+    import Sparkle
+#endif
+
 /// Keeps OpenNotch current. A build made from a local checkout (`make run` or `make install`)
 /// updates by rebuilding that checkout: `scripts/update.sh` fast-forwards main when that's safe,
-/// builds, reinstalls into /Applications, and relaunches. Builds for everyone else will update
-/// through Sparkle and GitHub Releases (docs/updates.md); until then they link to the Releases page.
+/// builds, reinstalls into /Applications, and relaunches. Every other build updates through Sparkle
+/// from the signed appcast (docs/updates.md), which asks before checking on its own.
 @MainActor
 @Observable
 final class Updater {
@@ -18,12 +22,25 @@ final class Updater {
     private(set) var state = State.idle
 
     /// The checkout this build came from, when it's still on this Mac.
-    let sourceDirectory: URL? = {
-        guard let path = Bundle.main.object(forInfoDictionaryKey: "OpenNotchSourceDirectory") as? String,
-            !path.isEmpty, FileManager.default.fileExists(atPath: path + "/scripts/update.sh")
-        else { return nil }
-        return URL(filePath: path, directoryHint: .isDirectory)
-    }()
+    let sourceDirectory: URL?
+
+    #if APP_STORE
+        // The App Store updates this edition.
+        init() { sourceDirectory = nil }
+    #else
+        /// Sparkle, for builds that don't come from a checkout on this Mac.
+        private let sparkle: SPUStandardUpdaterController?
+
+        init() {
+            let path = Bundle.main.object(forInfoDictionaryKey: "OpenNotchSourceDirectory") as? String ?? ""
+            let checkout = !path.isEmpty && FileManager.default.fileExists(atPath: path + "/scripts/update.sh")
+            sourceDirectory = checkout ? URL(filePath: path, directoryHint: .isDirectory) : nil
+            sparkle =
+                checkout
+                ? nil
+                : SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+        }
+    #endif
 
     /// "0.2.0 (c94187a)": the version and, for local builds, the commit it was built from ("+" when
     /// the checkout had uncommitted changes).
@@ -64,6 +81,17 @@ final class Updater {
         } catch {
             state = .failed
         }
+    }
+
+    /// Checks the appcast now and shows what Sparkle finds.
+    func checkForUpdates() {
+        #if !APP_STORE
+            if let sparkle {
+                sparkle.checkForUpdates(nil)
+                return
+            }
+        #endif
+        openReleases()
     }
 
     func showLog() { NSWorkspace.shared.open(Self.log) }

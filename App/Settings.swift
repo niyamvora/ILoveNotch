@@ -161,24 +161,30 @@ private struct SystemSettings: View {
     var body: some View {
         Section {
             Toggle("Show volume changes", isOn: $preferences.showsVolume)
-            // A closure, not a method reference: see GeneralSettings.
-            Toggle(isOn: Binding(get: { preferences.replacesVolumeDisplay }, set: { setReplacesVolumeDisplay($0) })) {
-                Text("Replace the macOS volume display")
-                Text("Catches the volume keys so the change shows in the notch instead. Needs Accessibility access.")
-            }
-            .disabled(!preferences.showsVolume)
-            if preferences.replacesVolumeDisplay, !trusted {
-                LabeledContent("Accessibility") {
-                    Button("Open Accessibility Settings") {
-                        NSWorkspace.shared.open(.privacySettings("Privacy_Accessibility"))
+            #if !APP_STORE  // the App Sandbox allows neither the volume-key tap nor the accessory monitor
+                // A closure, not a method reference: see GeneralSettings.
+                let replaces = Binding(
+                    get: { preferences.replacesVolumeDisplay }, set: { setReplacesVolumeDisplay($0) })
+                Toggle(isOn: replaces) {
+                    Text("Replace the macOS volume display")
+                    Text("Catches the volume keys so the change shows in the notch. Needs Accessibility access.")
+                }
+                .disabled(!preferences.showsVolume)
+                if preferences.replacesVolumeDisplay, !trusted {
+                    LabeledContent("Accessibility") {
+                        Button("Open Accessibility Settings") {
+                            NSWorkspace.shared.open(.privacySettings("Privacy_Accessibility"))
+                        }
                     }
                 }
-            }
+            #endif
             Toggle("Show charging and battery", isOn: $preferences.showsBattery)
-            Toggle(isOn: $preferences.showsAccessoryBattery) {
-                Text("Show a Bluetooth accessory's battery when it connects")
-                Text("Experimental: Apple keyboards, mice, and trackpads.")
-            }
+            #if !APP_STORE
+                Toggle(isOn: $preferences.showsAccessoryBattery) {
+                    Text("Show a Bluetooth accessory's battery when it connects")
+                    Text("Experimental: Apple keyboards, mice, and trackpads.")
+                }
+            #endif
         } header: {
             Label("System", systemImage: "gearshape.2").font(.headline)
         }
@@ -200,16 +206,20 @@ private struct AboutSettings: View {
             Image(systemName: "rectangle.topthird.inset.filled").font(.system(size: 40))
             Text("OpenNotch").font(.title2.bold())
             Text("Version \(Updater.version)").foregroundStyle(.secondary)
-            if updater.sourceDirectory != nil {
-                Button(updater.state == .updating ? "Updating…" : "Update OpenNotch", action: updater.updateFromSource)
+            #if !APP_STORE  // the App Store updates its edition
+                if updater.sourceDirectory != nil {
+                    Button(
+                        updater.state == .updating ? "Updating…" : "Update OpenNotch", action: updater.updateFromSource
+                    )
                     .disabled(updater.state == .updating)
-                if updater.state == .failed {
-                    Button("The update failed. Show Log", action: updater.showLog).buttonStyle(.link)
+                    if updater.state == .failed {
+                        Button("The update failed. Show Log", action: updater.showLog).buttonStyle(.link)
+                    }
+                    Text("Rebuilds from this Mac's checkout and relaunches.").font(.caption).foregroundStyle(.secondary)
+                } else {
+                    Button("Check for Updates…", action: updater.checkForUpdates)
                 }
-                Text("Rebuilds from this Mac's checkout and relaunches.").font(.caption).foregroundStyle(.secondary)
-            } else {
-                Button("Check for Updates…", action: updater.openReleases)
-            }
+            #endif
             Text("Free and open source under the MIT License. Local-first: no accounts, no telemetry.")
                 .font(.callout)
                 .multilineTextAlignment(.center)

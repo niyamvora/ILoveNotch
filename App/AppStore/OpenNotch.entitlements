@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- The App Store edition runs in the App Sandbox. -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<!-- Calendar and Reminders (EventKit). -->
+	<key>com.apple.security.personal-information.calendars</key>
+	<true/>
+	<!-- The Mirror tab. -->
+	<key>com.apple.security.device.camera</key>
+	<true/>
+	<!-- System audio for the media waveform. -->
+	<key>com.apple.security.device.audio-input</key>
+	<true/>
+	<!-- Shelf files dropped earlier stay reachable after relaunch. -->
+	<key>com.apple.security.files.bookmarks.app-scope</key>
+	<true/>
+</dict>
+</plist>

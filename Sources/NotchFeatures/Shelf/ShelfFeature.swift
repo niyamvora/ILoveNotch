@@ -29,8 +29,13 @@ public final class ShelfFeature: NotchFeature {
 
     // ponytail: a fixed cap keeps the shelf and its bookmark checks bounded; make it a setting if asked.
     static let capacity = 100
+    /// A sandboxed build (the App Store edition) may only reach a dropped file again through a
+    /// security-scoped bookmark, and holds access to each file while it's on the shelf.
+    static let sandboxed = ProcessInfo.processInfo.environment["APP_SANDBOX_CONTAINER_ID"] != nil
     @ObservationIgnored private let storeURL: URL
     @ObservationIgnored private let quickLook = QuickLookSource()
+    /// Files whose security scope is open, in a sandboxed build.
+    @ObservationIgnored private var accessing: [ShelfItem.ID: URL] = [:]
 
     public init(storeURL: URL = AppSupport.file("shelf.json")) {
         self.storeURL = storeURL
@@ -48,7 +53,7 @@ public final class ShelfFeature: NotchFeature {
         var known = Set(locations.values.map(\.standardizedFileURL))
         var added: [ShelfItem] = []
         for url in urls where url.isFileURL && !known.contains(url.standardizedFileURL) {
-            guard let bookmark = try? url.bookmarkData() else { continue }
+            guard let bookmark = try? url.bookmarkData(options: Self.bookmarkOptions) else { continue }
             let item = ShelfItem(bookmark: bookmark, name: url.lastPathComponent)
             added.append(item)
             locations[item.id] = url
@@ -65,12 +70,15 @@ public final class ShelfFeature: NotchFeature {
     public func remove(_ item: ShelfItem) {
         items.removeAll { $0.id == item.id }
         locations[item.id] = nil
+        accessing.removeValue(forKey: item.id)?.stopAccessingSecurityScopedResource()
         save()
     }
 
     public func removeAll() {
         items = []
         locations = [:]
+        for url in accessing.values { url.stopAccessingSecurityScopedResource() }
+        accessing = [:]
         save()
     }
 
@@ -100,11 +108,17 @@ public final class ShelfFeature: NotchFeature {
         var renewed = false
         for index in items.indices {
             var stale = false
-            guard let url = try? URL(resolvingBookmarkData: items[index].bookmark, bookmarkDataIsStale: &stale),
-                FileManager.default.fileExists(atPath: url.path)
+            let item = items[index]
+            guard
+                let url = try? URL(
+                    resolvingBookmarkData: item.bookmark, options: Self.resolutionOptions, bookmarkDataIsStale: &stale)
             else { continue }
-            found[items[index].id] = url
-            if stale, let fresh = try? url.bookmarkData() {
+            if Self.sandboxed, accessing[item.id] == nil, url.startAccessingSecurityScopedResource() {
+                accessing[item.id] = url
+            }
+            guard FileManager.default.fileExists(atPath: url.path) else { continue }
+            found[item.id] = url
+            if stale, let fresh = try? url.bookmarkData(options: Self.bookmarkOptions) {
                 items[index].bookmark = fresh
                 items[index].name = url.lastPathComponent
                 renewed = true
@@ -113,6 +127,9 @@ public final class ShelfFeature: NotchFeature {
         locations = found
         if renewed { save() }
     }
+
+    private static var bookmarkOptions: URL.BookmarkCreationOptions { sandboxed ? .withSecurityScope : [] }
+    private static var resolutionOptions: URL.BookmarkResolutionOptions { sandboxed ? .withSecurityScope : [] }
 
     private func save() {
         do {

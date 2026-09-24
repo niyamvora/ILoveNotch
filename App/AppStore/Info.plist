@@ -2,14 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>OpenNotchSourceDirectory</key>
-	<string>$(OPENNOTCH_SOURCE)</string>
-	<key>SUFeedURL</key>
-	<string>https://raw.githubusercontent.com/niyamvora/OpenNotch/main/appcast.xml</string>
-	<key>SUPublicEDKey</key>
-	<string>rKEETTORw3k063xBn4P4UWHfyHwzEjFsHiXCYqPzPlQ=</string>
-	<key>OpenNotchCommit</key>
-	<string>$(OPENNOTCH_COMMIT)</string>
 	<key>NSAudioCaptureUsageDescription</key>
 	<string>OpenNotch listens to what's playing so the media waveform moves with the music. Audio is analyzed on this Mac as it plays and is never recorded.</string>
 </dict>
