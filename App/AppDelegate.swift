@@ -11,19 +11,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let media = MediaFeature()
     private let shelf = ShelfFeature()
     private let notes = NotesFeature()
+    private let shortcuts = ShortcutsFeature()
     private let timer = TimerFeature()
-    private lazy var features = FeatureHost([media, shelf, notes, timer])
+    private lazy var features = FeatureHost([media, shelf, notes, shortcuts, timer])
     private var coordinator: PanelCoordinator?
     private var statusItem: StatusItemController?
     private lazy var settings = SettingsWindowController(preferences: preferences)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let content = NotchContent(
-            tab: { [media, shelf, notes, timer] feature in
+            tab: { [media, shelf, notes, shortcuts, timer] feature in
                 switch feature {
                 case .media: AnyView(media.view)
                 case .shelf: AnyView(shelf.view)
                 case .notes: AnyView(notes.view)
+                case .shortcuts: AnyView(shortcuts.view)
                 case .timer: AnyView(timer.view)
                 default: AnyView(ComingSoonView(feature: feature))
                 }
@@ -38,6 +40,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         media.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         shelf.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         timer.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
+        shortcuts.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         coordinator.start()
         self.coordinator = coordinator
         statusItem = StatusItemController { [weak self] in self?.settings.show() }
