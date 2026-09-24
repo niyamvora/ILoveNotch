@@ -16,7 +16,8 @@ rules matter more than usual.
 
 ## Development
 
-Build and test commands live in the [README](README.md#build--run).
+Build and test commands live in the [README](README.md#build--run). Run
+`make check` before pushing; CI runs the same targets.
 
 ## Commits
 
