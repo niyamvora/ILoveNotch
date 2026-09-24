@@ -1,12 +1,19 @@
 # OpenNotch
 
 [![CI](https://github.com/niyamvora/OpenNotch/actions/workflows/ci.yml/badge.svg)](https://github.com/niyamvora/OpenNotch/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![macOS 14.6+](https://img.shields.io/badge/macOS-14.6%2B-black?logo=apple)](#build--run)
+[![Sponsor](https://img.shields.io/badge/sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/niyamvora)
 
 An **original, open-source** macOS menu-notch utility — turns the notch on Apple
 Silicon MacBooks into an interactive tray for media, files, your calendar, tasks,
 notes, shortcuts, timers, your camera, and how much of your AI plans you've
 used. Built native (SwiftUI + AppKit) with a **hard focus on low RAM and
 near-zero idle CPU**.
+
+<p align="center">
+  <img src="docs/media/ai-usage.gif" width="760" alt="The open notch on the AI Usage tab: Claude and Codex as cards with rings and bars, then Claude's limits, spend, and daily usage chart">
+</p>
 
 > **Not affiliated with, endorsed by, or derived from any commercial notch app.**
 > This is a clean-room implementation written from scratch. It contains no
@@ -199,7 +206,7 @@ described in [SECURITY.md](SECURITY.md); privacy commitments are in
 
 OpenNotch is free and open source. If it's useful to you,
 [sponsor the project](https://github.com/sponsors/niyamvora) to help keep it
-maintained.
+maintained, and star the repo so more people find it.
 
 <!-- ponytail: add a tiered logo table here (like chanhdai.com's README) once there are sponsors -->
 
