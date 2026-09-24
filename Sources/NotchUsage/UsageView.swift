@@ -37,7 +37,7 @@ struct UsageView: View {
         VStack(spacing: 6) {
             UsageHeader(usage: usage, now: now)
             ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 158), spacing: 8)], spacing: 8) {
+                CardGrid {
                     ForEach(usage.enabledProviders) { provider in
                         Button {
                             selected = provider.id
@@ -60,6 +60,47 @@ struct UsageView: View {
         }
         // The same local check onboarding runs, so the tray knows which tools are signed in.
         .task { if !usage.hasDetected { await usage.detect() } }
+    }
+}
+
+/// The providers' cards: as many columns as fit, and every card as wide as its column, so one card
+/// spans the row and two share it. A last row that isn't full sits centered, so a third card sits
+/// under the middle of the first two.
+struct CardGrid: Layout {
+    static let minimumWidth: CGFloat = 158
+    static let spacing: CGFloat = 8
+
+    /// Where each of `count` cards of `height` goes across `width`.
+    static func frames(count: Int, width: CGFloat, height: CGFloat) -> [CGRect] {
+        guard count > 0 else { return [] }
+        let columns = max(1, min(count, Int((width + spacing) / (minimumWidth + spacing))))
+        let cardWidth = (width - spacing * CGFloat(columns - 1)) / CGFloat(columns)
+        return (0..<count).map { index in
+            let row = index / columns
+            let inRow = min(columns, count - row * columns)
+            let rowWidth = cardWidth * CGFloat(inRow) + spacing * CGFloat(inRow - 1)
+            let x = (width - rowWidth) / 2 + CGFloat(index % columns) * (cardWidth + spacing)
+            return CGRect(x: x, y: CGFloat(row) * (height + spacing), width: cardWidth, height: height)
+        }
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? Self.minimumWidth
+        let frames = Self.frames(count: subviews.count, width: width, height: cardHeight(subviews))
+        return CGSize(width: width, height: frames.last?.maxY ?? 0)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let frames = Self.frames(count: subviews.count, width: bounds.width, height: cardHeight(subviews))
+        for (subview, frame) in zip(subviews, frames) {
+            let origin = CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY)
+            subview.place(at: origin, proposal: ProposedViewSize(frame.size))
+        }
+    }
+
+    /// Cards have one fixed height; the tallest is asked, in case one ever differs.
+    private func cardHeight(_ subviews: Subviews) -> CGFloat {
+        subviews.map { $0.sizeThatFits(ProposedViewSize(width: Self.minimumWidth, height: nil)).height }.max() ?? 0
     }
 }
 
@@ -141,6 +182,7 @@ private struct ProviderTile: View {
             }
         }
         .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)  // as wide as the grid makes it
         .frame(height: Self.height, alignment: .top)
         .background {
             RoundedRectangle(cornerRadius: 14, style: .continuous)

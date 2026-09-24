@@ -63,6 +63,28 @@ struct UsageSnapshotTests {
         try await render(UsageView(usage: usage), name: "usage-dashboard")
     }
 
+    @Test func cardsShareTheWidthAndALastShortRowSitsCentered() {
+        let one = CardGrid.frames(count: 1, width: 396, height: 128)
+        #expect(one == [CGRect(x: 0, y: 0, width: 396, height: 128)], "one card spans the row")
+        let two = CardGrid.frames(count: 2, width: 396, height: 128)
+        #expect(two.map(\.width) == [194, 194] && two[1].minX == 202, "two share it")
+        let three = CardGrid.frames(count: 3, width: 396, height: 128)
+        #expect(three[2] == CGRect(x: 101, y: 136, width: 194, height: 128), "the third sits centered below")
+        let four = CardGrid.frames(count: 4, width: 396, height: 128)
+        #expect(four.map(\.origin) == [.zero, CGPoint(x: 202, y: 0), CGPoint(x: 0, y: 136), CGPoint(x: 202, y: 136)])
+        #expect(CardGrid.frames(count: 4, width: 656, height: 128).allSatisfy { $0.minY == 0 }, "wider fits a row")
+    }
+
+    @Test(arguments: 1...4)
+    func cardsFillTheWidthForAnyCount(count: Int) async throws {
+        let ids = [("claude", "Claude"), ("codex", "Codex"), ("cursor", "Cursor"), ("copilot", "Copilot")]
+        let usage = try usage(
+            with: ids.prefix(count).enumerated().map { index, provider in
+                Self.sample(provider.0, provider.1, session: [42, 86, 97, 15][index], weekly: [71, 40, 88, 5][index])
+            })
+        try await render(UsageView(usage: usage), name: "usage-cards-\(count)", size: CGSize(width: 396, height: 330))
+    }
+
     @Test func aProviderShowsEveryLimitSpendAndItsTrend() async throws {
         let usage = try usage(with: [Self.sample("claude", "Claude", session: 42, weekly: 71)])
         let provider = try #require(usage.enabledProviders.first)
