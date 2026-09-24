@@ -34,12 +34,12 @@ that delivers it.
 
 ## v0.3: productivity (Phase 4)
 
-- [ ] Today's calendar events
-- [ ] Reminders-backed tasks with check-off
-- [ ] Quick local notes
-- [ ] Shortcut launcher
-- [ ] Timer and stopwatch
-- [ ] Per-feature settings
+- [x] Today's calendar events, with a clear path when calendar access is off
+- [x] Reminders-backed tasks: check off, add, pick a list; they sync to iPhone through iCloud
+- [x] Quick local notes that save as you type
+- [x] Shortcut launcher that runs shortcuts in the background
+- [x] Timer and stopwatch with rolling-digit animation and a "Timer done" live activity
+- [x] Per-feature settings, including access status for Calendar and Reminders
 
 ## v0.3+: camera and system (Phase 5)
 
