@@ -60,7 +60,7 @@ public final class MediaFeature: NotchFeature {
         guard source == .adapter, let adapter else { return }
         // `send` waits up to 2 s for the player, so it runs off the main thread; the stream reports
         // the outcome.
-        DispatchQueue.global(qos: .userInitiated).async { adapter.run(["send", "\(command.rawValue)"]) }
+        Task { _ = await Subprocess.run(MediaAdapter.perl, adapter.arguments(["send", "\(command.rawValue)"])) }
     }
 
     /// Brings the playing app forward.
@@ -186,6 +186,7 @@ public final class MediaFeature: NotchFeature {
 
 /// The bundled mediaremote-adapter: its perl script and framework, run by the system perl.
 struct MediaAdapter: Sendable {
+    static let perl = "/usr/bin/perl"
     let script: URL
     let framework: URL
 
@@ -193,28 +194,18 @@ struct MediaAdapter: Sendable {
         guard let script = bundle.url(forResource: "mediaremote-adapter", withExtension: "pl"),
             let framework = bundle.privateFrameworksURL?.appending(path: "MediaRemoteAdapter.framework"),
             FileManager.default.fileExists(atPath: framework.path),
-            FileManager.default.isExecutableFile(atPath: "/usr/bin/perl")
+            FileManager.default.isExecutableFile(atPath: perl)
         else { return nil }
         return MediaAdapter(script: script, framework: framework)
     }
 
-    func process(_ arguments: [String]) -> Process {
-        let process = Process()
-        process.executableURL = URL(filePath: "/usr/bin/perl")
-        process.arguments = [script.path, framework.path] + arguments
-        return process
-    }
+    /// perl's arguments for one adapter command.
+    func arguments(_ command: [String]) -> [String] { [script.path, framework.path] + command }
 
-    /// Runs a short command to completion. Blocks: call it off the main thread.
-    func run(_ arguments: [String]) {
-        let process = process(arguments)
-        process.standardOutput = FileHandle.nullDevice
-        process.standardError = FileHandle.nullDevice
-        do {
-            try process.run()
-            process.waitUntilExit()
-        } catch {
-            Log.features.error("Media command failed: \(error.localizedDescription, privacy: .public)")
-        }
+    func process(_ command: [String]) -> Process {
+        let process = Process()
+        process.executableURL = URL(filePath: Self.perl)
+        process.arguments = arguments(command)
+        return process
     }
 }
