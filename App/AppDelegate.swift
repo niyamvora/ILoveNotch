@@ -25,8 +25,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     private var coordinator: PanelCoordinator?
     private var statusItem: StatusItemController?
+    private let updater = Updater()
     private lazy var settings = SettingsWindowController(
         preferences: preferences,
+        updater: updater,
         previewAnimation: { [weak self] in self?.coordinator?.previewAnimation() },
         featureSettings: { [media, shelf, calendar, tasks, shortcuts] feature in
             switch feature {
@@ -65,7 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         shortcuts.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         coordinator.start()
         self.coordinator = coordinator
-        statusItem = StatusItemController { [weak self] in self?.settings.show() }
+        statusItem = StatusItemController(updater: updater) { [weak self] in self?.settings.show() }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
