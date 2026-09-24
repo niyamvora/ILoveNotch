@@ -14,7 +14,8 @@ targets:
     type: application
     platform: macOS
     sources:
-      - App
+      - path: App
+        excludes: ["Info.plist"]
       # Now-playing helper script, run by /usr/bin/perl (see THIRD_PARTY_NOTICES.md).
       - path: ThirdParty/mediaremote-adapter/bin/mediaremote-adapter.pl
         buildPhase: resources
@@ -37,6 +38,8 @@ targets:
         SWIFT_VERSION: "6.0" # Swift 6 language mode: complete strict-concurrency checking
         SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
         GENERATE_INFOPLIST_FILE: YES
+        # Merged with the generated keys: the checkout and commit a local build came from, for the updater.
+        INFOPLIST_FILE: App/Info.plist
         INFOPLIST_KEY_LSUIElement: YES # accessory app: no Dock icon, no menu bar
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         INFOPLIST_KEY_NSHumanReadableCopyright: Copyright © 2026 Niyam Vora. MIT License.

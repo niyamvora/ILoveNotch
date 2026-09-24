@@ -9,16 +9,18 @@ import SwiftUI
 @MainActor
 final class SettingsWindowController {
     private let preferences: NotchPreferences
+    private let updater: Updater
     private let previewAnimation: () -> Void
     private let featureSettings: (FeatureID) -> AnyView?
     private var window: NSWindow?
 
     /// `featureSettings` supplies each feature's own settings, shown under its toggle.
     init(
-        preferences: NotchPreferences, previewAnimation: @escaping () -> Void,
+        preferences: NotchPreferences, updater: Updater, previewAnimation: @escaping () -> Void,
         featureSettings: @escaping (FeatureID) -> AnyView?
     ) {
         self.preferences = preferences
+        self.updater = updater
         self.previewAnimation = previewAnimation
         self.featureSettings = featureSettings
     }
@@ -26,7 +28,8 @@ final class SettingsWindowController {
     func show() {
         if window == nil {
             let root = SettingsView(
-                preferences: preferences, previewAnimation: previewAnimation, featureSettings: featureSettings)
+                preferences: preferences, updater: updater, previewAnimation: previewAnimation,
+                featureSettings: featureSettings)
             let window = NSWindow(contentViewController: NSHostingController(rootView: root))
             window.title = "OpenNotch Settings"
             window.styleMask = [.titled, .closable]
@@ -41,6 +44,7 @@ final class SettingsWindowController {
 
 struct SettingsView: View {
     let preferences: NotchPreferences
+    let updater: Updater
     let previewAnimation: () -> Void
     let featureSettings: (FeatureID) -> AnyView?
 
@@ -50,7 +54,7 @@ struct SettingsView: View {
                 .tabItem { Label("General", systemImage: "gearshape") }
             FeatureSettings(preferences: preferences, featureSettings: featureSettings)
                 .tabItem { Label("Features", systemImage: "square.grid.2x2") }
-            AboutSettings()
+            AboutSettings(updater: updater)
                 .tabItem { Label("About", systemImage: "info.circle") }
         }
         .frame(width: 460)
@@ -148,15 +152,23 @@ private struct FeatureSettings: View {
 }
 
 private struct AboutSettings: View {
-    private var version: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "–"
-    }
+    let updater: Updater
 
     var body: some View {
         VStack(spacing: 10) {
             Image(systemName: "rectangle.topthird.inset.filled").font(.system(size: 40))
             Text("OpenNotch").font(.title2.bold())
-            Text("Version \(version)").foregroundStyle(.secondary)
+            Text("Version \(Updater.version)").foregroundStyle(.secondary)
+            if updater.sourceDirectory != nil {
+                Button(updater.state == .updating ? "Updating…" : "Update OpenNotch", action: updater.updateFromSource)
+                    .disabled(updater.state == .updating)
+                if updater.state == .failed {
+                    Button("The update failed. Show Log", action: updater.showLog).buttonStyle(.link)
+                }
+                Text("Rebuilds from this Mac's checkout and relaunches.").font(.caption).foregroundStyle(.secondary)
+            } else {
+                Button("Check for Updates…", action: updater.openReleases)
+            }
             Text("Free and open source under the MIT License. Local-first: no accounts, no telemetry.")
                 .font(.callout)
                 .multilineTextAlignment(.center)
