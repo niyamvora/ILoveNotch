@@ -38,7 +38,8 @@ struct NotchSnapshotTests {
         try draw(name, metrics: metrics, events: events, preferences: Self.preferences())
     }
 
-    /// The densest header: every tab and the controls, at the smallest open size.
+    /// The densest layout: every tab and the settings button in the header, and the size and pin
+    /// capsule in the corner, at the smallest open size.
     @Test func everyTabFitsTheSmallestSize() throws {
         let preferences = Self.preferences()
         preferences.resizeExpanded(to: NotchPreferences.minimumExpandedSize)
