@@ -326,7 +326,7 @@ icon, logo, and DMG and store artwork.
 A useful beta is realistic in 1-2 days. Broad parity and a hardened release
 should be planned as approximately 3-4 days of focused work.
 
-### Phase 8 (upcoming): AI usage in the notch
+### Phase 8: AI usage in the notch
 
 Bring [OpenUsage](https://github.com/robinebers/openusage) into the notch: how
 much of each AI coding subscription is used, with session and weekly limits,
@@ -362,6 +362,30 @@ and UI than a menu bar popover.
 
 Exit: parity with OpenUsage's providers and metrics, per-provider opt-in, no
 refresh while hidden unless enabled, and mapper tests on recorded fixtures.
+
+Done: the AI Usage tab in the GitHub build. OpenUsage's providers, pricing, and
+services are adapted at commit 4ce7887 into `Sources/NotchUsage/OpenUsage`,
+with its own cache folder and User-Agent. Its reset-credit claim is left out,
+and so is Antigravity's Google token renewal, which embeds Antigravity's OAuth
+client secret; an expired Antigravity sign-in asks you to open the app. The rest
+is rebuilt:
+
+- One tile per provider: its headline limit as a ring, up to three limits as
+  bars, the reset countdown, and pace ("Plenty left", "Runs out in 28m").
+  Limits turn amber at 80% and red at 95%.
+- A detail view with every limit, spend chips for today, yesterday, and the
+  last 30 days, and the daily trend as a Swift Charts bar chart. With one
+  provider on, the detail is the whole tab.
+- Onboarding that offers the tools signed in on this Mac.
+- Live activities when a limit passes 80% or 95%, or resets, while the tab is
+  off screen.
+- A settings page with per-provider toggles and an optional background interval.
+
+theSVG's mono logos ship as SwiftPM resources, drawn in each provider's color.
+The providers run on macOS 14.6, so the minimum didn't change. 64 of
+OpenUsage's test files, 752 tests on its fixtures, run in the `OpenUsageTests`
+target. The closed-notch rings were left out, because the closed notch blends
+into the camera housing by design; the activities cover the glance.
 
 ## 8. Performance gates
 
