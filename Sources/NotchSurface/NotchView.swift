@@ -41,6 +41,8 @@ struct NotchView: View {
     @State private var dropTargeted = false
     @State private var justDropped = false
     @State private var slideForward = true
+    /// The open size when a resize drag began, while one is under way.
+    @State private var resizeStart: CGSize?
     @Namespace private var selection
 
     var body: some View {
@@ -177,18 +179,10 @@ struct NotchView: View {
             HStack(spacing: Self.tabSpacing) {
                 tabBar(selected: tab)
                 Spacer(minLength: 0)
-                Button {
-                    content.openSettings()
-                } label: {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 12, weight: .medium))
-                        .frame(width: Self.settingsWidth, height: 26)
-                        .contentShape(Rectangle())
+                headerButton(pinned ? "pin.fill" : "pin", label: pinned ? "Unpin" : "Pin", lit: pinned) {
+                    engine.send(.togglePin)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.white.opacity(0.75))
-                .help("Settings")
-                .accessibilityLabel("Settings")
+                headerButton("gearshape", label: "Settings") { content.openSettings() }
             }
             content.tab(tab)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -198,9 +192,11 @@ struct NotchView: View {
         }
         .padding(contentPadding)
         .overlay(alignment: .bottomTrailing) {
-            windowControls(pinned: pinned)
-                .padding(.trailing, contentPadding.trailing)
-                .padding(.bottom, (contentPadding.bottom - Self.controlHeight) / 2)
+            // The grip's corner sits 10 pt in from the notch's visible corner along both edges, inside
+            // its 24–26 pt rounding, in the margin beside and under the content.
+            resizeGrip
+                .padding(.trailing, contentPadding.trailing - 22 + 10)
+                .padding(.bottom, 10)
         }
         .foregroundStyle(.white)
     }
@@ -216,15 +212,15 @@ struct NotchView: View {
     }
 
     private static let tabSpacing: CGFloat = 2
-    private static let settingsWidth: CGFloat = 26
+    private static let headerButtonWidth: CGFloat = 26
 
-    /// The widest tab that still fits every tab and the settings button into the smallest open size,
+    /// The widest tab that still fits every tab, the pin, and settings into the smallest open size,
     /// up to 32 pt. Tabs keep that width at every size, and each tab added makes them a little
     /// narrower instead of crowding the row.
     private var tabWidth: CGFloat {
         let room =
             NotchPreferences.minimumExpandedSize.width - contentPadding.leading - contentPadding.trailing
-            - Self.settingsWidth - Self.tabSpacing
+            - 2 * (Self.headerButtonWidth + Self.tabSpacing)
         let count = CGFloat(max(engine.state.tabs.count, 1))
         return min(32, ((room - Self.tabSpacing * (count - 1)) / count).rounded(.down))
     }
@@ -287,47 +283,53 @@ struct NotchView: View {
             removal: .move(edge: outgoing).combined(with: .opacity))
     }
 
-    /// Fits the margin under the content, so the corner controls never cover a tab's own controls.
-    private static let controlHeight: CGFloat = 18
-
-    /// Size and pin, as one small capsule in the bottom-right corner: out of the tab row, which keeps
-    /// its room for tabs.
-    private func windowControls(pinned: Bool) -> some View {
-        HStack(spacing: 0) {
-            sizeButton(larger: false)
-            sizeButton(larger: true)
-            Rectangle().fill(.white.opacity(0.18)).frame(width: 1, height: Self.controlHeight - 8)
-            cornerButton(pinned ? "pin.fill" : "pin", label: pinned ? "Unpin" : "Pin", lit: pinned) {
-                engine.send(.togglePin)
-            }
-        }
-        .padding(.horizontal, 3)
-        .background(.white.opacity(0.09), in: Capsule())
+    /// The size a corner drag asks for, in whole points: the notch grows to both sides of its center
+    /// and down from the screen's edge, so the width moves twice as far as the pointer.
+    static func resized(_ start: CGSize, by drag: CGSize) -> CGSize {
+        CGSize(width: (start.width + 2 * drag.width).rounded(), height: (start.height + drag.height).rounded())
     }
 
-    /// − and + step the open notch through sizes in proportion, so its height follows its width.
-    private func sizeButton(larger: Bool) -> some View {
-        let next = preferences.expandedSizeStep(larger: larger)
-        return cornerButton(larger ? "plus" : "minus", label: larger ? "Make Larger" : "Make Smaller") {
-            guard let next else { return }
-            withAnimation(motion(for: engine.state.presentation)) { preferences.resizeExpanded(to: next) }
-        }
-        .disabled(next == nil)
-    }
-
-    private func cornerButton(_ symbol: String, label: String, lit: Bool = false, action: @escaping () -> Void)
+    private func headerButton(_ symbol: String, label: String, lit: Bool = false, action: @escaping () -> Void)
         -> some View
     {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 9, weight: .bold))
-                .frame(width: 21, height: Self.controlHeight)
+                .font(.system(size: 12, weight: .medium))
+                .frame(width: Self.headerButtonWidth, height: 26)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(CornerButtonStyle())
-        .foregroundStyle(.white.opacity(lit ? 0.95 : 0.65))
+        .buttonStyle(.plain)
+        .foregroundStyle(.white.opacity(lit ? 1 : 0.75))
         .help(label)
         .accessibilityLabel(label)
+    }
+
+    /// Drag the corner to resize, anywhere between the smallest and largest size. The notch grows from
+    /// its center, so width moves twice as far as the pointer and the corner stays under it. Holding the
+    /// button keeps the notch open even past its edge. VoiceOver steps through sizes instead.
+    private var resizeGrip: some View {
+        ResizeGrip(active: resizeStart != nil)
+            .frame(width: 18, height: 18)
+            .contentShape(Rectangle())
+            .gesture(
+                // Global: the grip moves with the corner, so a local translation would chase itself.
+                DragGesture(minimumDistance: 1, coordinateSpace: .global)
+                    .onChanged { drag in
+                        let start = resizeStart ?? preferences.expandedSize
+                        resizeStart = start
+                        preferences.resizeExpanded(to: Self.resized(start, by: drag.translation))
+                    }
+                    .onEnded { _ in resizeStart = nil }
+            )
+            .resizeCursor()
+            .help("Drag to resize")
+            .accessibilityElement()
+            .accessibilityLabel("Resize")
+            .accessibilityValue("\(Int(preferences.expandedSize.width)) by \(Int(preferences.expandedSize.height))")
+            .accessibilityAdjustableAction { direction in
+                guard let next = preferences.expandedSizeStep(larger: direction == .increment) else { return }
+                withAnimation(motion(for: engine.state.presentation)) { preferences.resizeExpanded(to: next) }
+            }
     }
 
     /// A live activity: its symbol and title on either side of the physical notch, or, for a level
@@ -381,22 +383,35 @@ struct NotchView: View {
     }
 }
 
-/// The corner capsule's buttons: a soft round highlight under the pointer, a dip while pressed, and
-/// dimmed when there's no step left.
-private struct CornerButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View { Highlighted(configuration: configuration) }
+/// Three diagonal strokes that run from the right edge to the bottom edge, like a window's resize
+/// corner. They brighten under the pointer and while dragging.
+private struct ResizeGrip: View {
+    let active: Bool
+    @State private var hovering = false
 
-    private struct Highlighted: View {
-        let configuration: Configuration
-        @Environment(\.isEnabled) private var isEnabled
-        @State private var hovering = false
+    var body: some View {
+        Canvas { context, size in
+            var strokes = Path()
+            for inset in [4.0, 8.0, 12.0] {
+                strokes.move(to: CGPoint(x: size.width, y: size.height - inset))
+                strokes.addLine(to: CGPoint(x: size.width - inset, y: size.height))
+            }
+            context.stroke(strokes, with: .color(.white), style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+        }
+        .opacity(active ? 0.95 : hovering ? 0.75 : 0.5)
+        .onHover { hovering = $0 }
+        .animation(.easeOut(duration: 0.12), value: hovering)
+        .accessibilityHidden(true)
+    }
+}
 
-        var body: some View {
-            configuration.label
-                .background(Circle().fill(.white.opacity(hovering && isEnabled ? 0.16 : 0)))
-                .opacity(isEnabled ? (configuration.isPressed ? 0.6 : 1) : 0.35)
-                .onHover { hovering = $0 }
-                .animation(.easeOut(duration: 0.12), value: hovering)
+extension View {
+    /// The diagonal resize cursor, where macOS has one (15 and later).
+    @ViewBuilder fileprivate func resizeCursor() -> some View {
+        if #available(macOS 15, *) {
+            pointerStyle(.frameResize(position: .bottomTrailing))
+        } else {
+            self
         }
     }
 }

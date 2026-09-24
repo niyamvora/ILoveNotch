@@ -38,8 +38,17 @@ struct NotchSnapshotTests {
         try draw(name, metrics: metrics, events: events, preferences: Self.preferences())
     }
 
-    /// The densest layout: every tab and the settings button in the header, and the size and pin
-    /// capsule in the corner, at the smallest open size.
+    @Test func draggingTheCornerGrowsTheNotchFromItsCenter() {
+        let start = CGSize(width: 460, height: 290)
+        #expect(NotchView.resized(start, by: CGSize(width: 10, height: 5)) == CGSize(width: 480, height: 295))
+        #expect(NotchView.resized(start, by: CGSize(width: -3.3, height: 0.4)) == CGSize(width: 453, height: 290))
+        let preferences = Self.preferences()
+        preferences.resizeExpanded(to: NotchView.resized(start, by: CGSize(width: 900, height: -900)))
+        #expect(preferences.expandedSize == CGSize(width: 720, height: 230), "held between the largest and smallest")
+    }
+
+    /// The densest layout: every tab, the pin, and Settings in the header, and the resize corner, at
+    /// the smallest open size.
     @Test func everyTabFitsTheSmallestSize() throws {
         let preferences = Self.preferences()
         preferences.resizeExpanded(to: NotchPreferences.minimumExpandedSize)
