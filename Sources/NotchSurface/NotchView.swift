@@ -288,33 +288,53 @@ struct NotchView: View {
         .accessibilityLabel(label)
     }
 
-    /// A live activity sits on either side of the physical notch, with a meter before the title when
-    /// it has a level, like the volume or the battery's charge.
+    /// A live activity: its symbol and title on either side of the physical notch, or, for a level
+    /// like the volume or the battery's charge, one row as wide as the notch just below it.
     private func live(_ activity: Activity) -> some View {
-        HStack(spacing: 0) {
-            Image(systemName: activity.symbol)
-                .font(.system(size: 13, weight: .semibold))
-                .contentTransition(.symbolEffect(.replace))
-            Spacer(minLength: metrics.housing.width)
-            HStack(spacing: 6) {
-                if let level = activity.level {
-                    Capsule()
-                        .fill(.white.opacity(0.25))
-                        .frame(width: 30, height: 4)
-                        .overlay(alignment: .leading) {
-                            Capsule().fill(.white).frame(width: 30 * min(max(level, 0), 1), height: 4)
-                        }
-                        .accessibilityHidden(true)
+        Group {
+            if let level = activity.level {
+                levelRow(activity, level: level)
+            } else {
+                HStack(spacing: 0) {
+                    Image(systemName: activity.symbol)
+                        .font(.system(size: 13, weight: .semibold))
+                    Spacer(minLength: metrics.housing.width)
+                    Text(activity.title)
+                        .font(.system(size: 12, weight: .medium))
+                        .lineLimit(1)
                 }
-                Text(activity.title)
-                    .font(.system(size: 12, weight: .medium))
-                    .monospacedDigit()
-                    .lineLimit(1)
+                .padding(.horizontal, 14)
+                .frame(height: metrics.housing.height)
             }
         }
-        .padding(.horizontal, 14)
-        .frame(height: metrics.housing.height)
         .foregroundStyle(.white)
         .accessibilityElement(children: .combine)
+    }
+
+    /// Symbol, meter, and value side by side, under the camera housing (or inside the pill).
+    private func levelRow(_ activity: Activity, level: Double) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: activity.symbol)
+                .font(.system(size: 12, weight: .semibold))
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: 20)
+            Capsule()
+                .fill(.white.opacity(0.25))
+                .frame(height: 5)
+                .overlay(alignment: .leading) {
+                    GeometryReader { track in
+                        Capsule().fill(.white).frame(width: track.size.width * min(max(level, 0), 1))
+                    }
+                }
+                .accessibilityHidden(true)
+            Text(activity.title)
+                .font(.system(size: 11, weight: .semibold))
+                .monospacedDigit()
+                .lineLimit(1)
+                .frame(minWidth: 30, alignment: .trailing)
+        }
+        .padding(.horizontal, 16)
+        .frame(height: metrics.notch == nil ? metrics.housing.height : NotchMetrics.meterDepth)
+        .padding(.top, metrics.notch == nil ? 0 : metrics.housing.height)
     }
 }

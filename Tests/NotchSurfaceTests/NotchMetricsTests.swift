@@ -18,11 +18,13 @@ private let external = NotchMetrics(
     screen: CGRect(x: -2560, y: 180, width: 2560, height: 1440), safeAreaTop: 0, left: nil, right: nil)
 
 private let song = Activity(feature: .media, symbol: "music.note", title: "Song", duration: .seconds(2))
+private let volume = Activity(
+    feature: nil, symbol: "speaker.wave.2.fill", title: "50%", level: 0.5, duration: .seconds(1))
 
 struct NotchMetricsTests {
     static let displays = [macBookPro14, macBookPro16, external]
     static let presentations: [NotchPresentationState] = [
-        .compact, .hoverArmed, .transient(song), .expanded(tab: .media), .pinned(tab: .notes),
+        .compact, .hoverArmed, .transient(song), .transient(volume), .expanded(tab: .media), .pinned(tab: .notes),
         .focused(tab: .notes, pinned: false),
     ]
 
@@ -32,6 +34,19 @@ struct NotchMetricsTests {
         #expect(abs(panel.midX - metrics.centerX) < 0.001)
         #expect(abs(panel.maxY - metrics.screen.maxY) < 0.5)
         #expect(metrics.screen.contains(panel))
+    }
+
+    @Test(arguments: displays)
+    func aLevelActivityKeepsToTheNotchsWidth(metrics: NotchMetrics) {
+        let level = metrics.size(for: .transient(volume))
+        let housing = metrics.housing
+        #expect(level.width <= housing.width + NotchMetrics.hoverGrowth.width, "no wings beside the notch")
+        #expect(level.width < metrics.size(for: .transient(song)).width)
+        if metrics.notch != nil {
+            #expect(level.height == housing.height + NotchMetrics.meterDepth, "its row sits under the camera")
+        } else {
+            #expect(level == housing, "inside the pill")
+        }
     }
 
     @Test(arguments: displays)
