@@ -23,7 +23,10 @@ done < <(git ls-files --cached --others --exclude-standard |
 # Private keys: key material on the line after the BEGIN line, or after an escaped newline on the
 # same line (a key inside JSON).
 while IFS= read -r file; do
-    if grep -A1 -E -- "$marker" "$file" | grep -qE -- "^[[:space:]]*$material[[:space:]]*\$|$marker\\\\n$material"; then
+    # Not grep -q: its early exit can kill the first grep with SIGPIPE, which pipefail reads as "no
+    # key", so a file holding many keys would pass.
+    if grep -A1 -E -- "$marker" "$file" |
+        grep -E -- "^[[:space:]]*${material}[[:space:]]*\$|$marker\\\\n$material" >/dev/null; then
         echo "error: $file contains a private key"
         status=1
     fi
