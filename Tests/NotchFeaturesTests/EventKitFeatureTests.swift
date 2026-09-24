@@ -29,6 +29,22 @@ struct EventKitFeatureTests {
         #expect(tasks.sorted(by: TaskItem.order).map(\.title) == ["overdue", "tomorrow", "Also someday", "someday"])
     }
 
+    @Test func completedTasksAreNewestFirst() {
+        let done = [
+            TaskItem(id: "1", title: "last week", completed: noon - 604_800),
+            TaskItem(id: "2", title: "just now", completed: noon),
+            TaskItem(id: "3", title: "yesterday", completed: noon - 86_400),
+        ]
+        let titles = done.sorted(by: TaskItem.recentlyCompletedFirst).map(\.title)
+        #expect(titles == ["just now", "yesterday", "last week"])
+    }
+
+    @Test func theCompletedSectionRemembersWhetherItIsOpen() {
+        let store = EventStore()
+        TasksFeature(eventStore: store, defaults: defaults).showsCompleted = true
+        #expect(TasksFeature(eventStore: store, defaults: defaults).showsCompleted)
+    }
+
     @Test func withoutAccessNothingIsReadOrWatched() {
         // Test runners never grant EventKit access, so this is the not-yet-allowed path.
         let store = EventStore()
