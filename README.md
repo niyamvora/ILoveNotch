@@ -3,9 +3,10 @@
 [![CI](https://github.com/niyamvora/OpenNotch/actions/workflows/ci.yml/badge.svg)](https://github.com/niyamvora/OpenNotch/actions/workflows/ci.yml)
 
 An **original, open-source** macOS menu-notch utility — turns the notch on Apple
-Silicon MacBooks into an interactive tray for media, files, tasks, and notes.
-Built native (SwiftUI + AppKit) with a **hard focus on low RAM and near-zero
-idle CPU**.
+Silicon MacBooks into an interactive tray for media, files, your calendar, tasks,
+notes, shortcuts, timers, your camera, and how much of your AI plans you've
+used. Built native (SwiftUI + AppKit) with a **hard focus on low RAM and
+near-zero idle CPU**.
 
 > **Not affiliated with, endorsed by, or derived from any commercial notch app.**
 > This is a clean-room implementation written from scratch. It contains no
@@ -14,7 +15,41 @@ idle CPU**.
 > comes from permissively licensed open-source projects (MIT, BSD, CC0), listed
 > in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-_Working name — pick a final name/logo before public release._
+_OpenNotch is a working name: the final name and icon come with the first public
+release._
+
+## What it does
+
+- **The notch.** Opens when you hover it, click it, or pull down with two
+  fingers, and closes when you move away. Closed, it hides behind the camera
+  housing. Pick how it opens and closes (spring, jelly, pop, smooth, snappy, or
+  instant), drag its bottom-right corner to resize it, and pin it open. Works on
+  every display, as a floating pill where there's no notch.
+- **Media.** What's playing in any app, with artwork, controls, a seek bar, and
+  a waveform that moves with the music.
+- **Shelf.** Drop files on the notch to keep them at hand; drag them back out,
+  preview them with Quick Look, or send them with AirDrop.
+- **Calendar and Tasks.** Today's events, and your Apple Reminders to check off
+  and add, synced to your iPhone through iCloud.
+- **Notes, Shortcuts, and Timer.** Quick notes that save as you type, your
+  shortcuts one click away, and a timer and a stopwatch with laps.
+- **Mirror.** Your camera, off until you turn it on, and on only while its tab
+  is open.
+- **AI Usage.** How much of each AI coding plan you've used, as a card per tool,
+  across 11 providers. [More below](#ai-usage).
+- **System activities.** Volume, charging and battery, and Bluetooth accessory
+  batteries show briefly in the notch, and it can stand in for the macOS volume
+  display.
+- **Updates.** A build from this checkout updates itself from the menu bar;
+  signed releases update through Sparkle. A sandboxed Mac App Store edition
+  builds from the same code.
+
+### What's left
+
+Everything above is built and tested. Before the first public release: the
+final name and icon ([brand assets](docs/brand-assets.md)), a Developer ID
+certificate for signed downloads ([releasing](docs/releasing.md)), and the Mac
+App Store listing ([App Store edition](docs/plan/implementation-plan.md#app-store-edition)).
 
 ## Why
 
@@ -72,7 +107,7 @@ make run                          # generate the Xcode project, build, and launc
 make install                      # build a Release app into /Applications and launch it
 make update                       # pull main when it's clean, then reinstall and relaunch
 make test                         # unit, snapshot, and performance tests (plain SwiftPM)
-make check                        # everything CI runs: lint, tests, build, license check
+make check                        # everything CI runs: secrets, lint, tests, build, licenses
 make build-app-store              # the sandboxed App Store edition
 scripts/soak.sh                   # sample the running app's CPU and memory against the budgets
 ```
@@ -107,21 +142,6 @@ log stream --level debug --predicate 'subsystem == "cafe.opennotch.app"'
    `/Applications/OpenNotch.app`; data lives in
    `~/Library/Application Support/OpenNotch`.
 
-## Roadmap
-
-Phases follow the [implementation plan](docs/plan/implementation-plan.md#7-delivery-phases);
-user-visible behaviors are tracked in the [parity checklist](docs/parity-checklist.md).
-
-- [x] **Phase 0 — Repository and governance:** MIT license, contribution, security, and privacy policies, third-party notices
-- [x] **Phase 1 — Build system and core:** XcodeGen app target, SwiftPM core libraries, Swift 6 strict concurrency, presentation state machine, feature lifecycle, logging and signposts, unit and performance tests, CI
-- [x] **Phase 2 — Production notch surface:** fixed panel with one animatable shape, click-away, Escape, drag, multi-display, menu-bar recovery, accessibility
-- [x] **Phase 3 — Useful core (v0.2):** media now-playing and controls, file shelf with Quick Look and AirDrop
-- [x] **Phase 4 — Productivity:** calendar, Reminders-backed tasks, local notes, shortcuts, timer, per-feature settings
-- [x] **Phase 5 — Camera and system:** camera mirror, volume, battery, and Bluetooth accessory activities, optional replacement for the macOS volume display
-- [ ] **Phase 6 — Visual and motion polish:** motion tokens, original icon and brand ([assets needed](docs/brand-assets.md)), themes, localization
-- [ ] **Phase 7 — Hardening and public beta:** [Sparkle updates](docs/updates.md#public-releases-phase-7), a [release pipeline](docs/releasing.md) that signs, notarizes, and drafts GitHub releases, a sandboxed [App Store edition](docs/plan/implementation-plan.md#app-store-edition), soak tooling and a [QA checklist](docs/qa.md) are in; the first signed release waits on a Developer ID certificate, and the App Store upload on the app record and icon
-- [x] **Phase 8 — AI usage:** how much of each AI coding plan you've used, in the notch: limits as rings and bars with reset countdowns and pace, spend and daily trends, and alerts at 80% and 95%, over providers adapted from [OpenUsage](https://github.com/robinebers/openusage) (MIT) with logos from [theSVG](https://thesvg.org) ([plan](docs/plan/implementation-plan.md#phase-8-ai-usage-in-the-notch))
-
 ## Now playing
 
 Since macOS 15.4, only Apple's own processes may read system-wide now-playing
@@ -137,15 +157,27 @@ permission to capture system audio. Nothing is recorded; see
 
 ## AI usage
 
-The AI Usage tab shows how much of your AI coding plans you've used: Claude,
-Codex, Cursor, Copilot, Antigravity, Devin, Grok, Ollama, OpenCode, OpenRouter,
-and Z.ai. Each provider is off until you turn it on, from the tab or
-**Settings › Features › AI Usage**. Each one reads the sign-in its own tool
-keeps on this Mac and sends it only to its own service. The provider code is
-adapted from [OpenUsage](https://github.com/robinebers/openusage) (MIT);
-OpenNotch isn't affiliated with it. The tab is in the GitHub build only: reading
-other tools' sign-ins doesn't fit the App Store's sandbox. What it reads and
-sends is in [PRIVACY.md](PRIVACY.md#ai-usage).
+The AI Usage tab shows how much of your AI coding plans you've used, as a small
+dashboard card per tool:
+
+- Claude, Codex, Cursor, Copilot, Antigravity, Devin, Grok, Ollama, OpenCode,
+  OpenRouter, and Z.ai are supported.
+- Each card shows its main limit as a ring, the others as bars, when they reset,
+  and whether they'll last until then. Click a card for spend, the daily trend,
+  and every limit.
+- Alerts show in the notch when a limit passes 80% or 95%, or resets.
+
+Each provider is off until you add it from the tray under the cards, where the
+tools signed in on this Mac are in color, or in **Settings › AI Usage**.
+OpenRouter and Z.ai have no sign-in to reuse, so they take an API key, pasted
+in **Settings › AI Usage** and kept in your keychain.
+
+Each provider reads the sign-in its own tool keeps on this Mac and sends it only
+to its own service. What it reads and sends is in
+[PRIVACY.md](PRIVACY.md#ai-usage). The provider code is adapted from
+[OpenUsage](https://github.com/robinebers/openusage) (MIT), and OpenNotch isn't
+affiliated with it. The tab is in the GitHub build only: reading other tools'
+sign-ins doesn't fit the App Store's sandbox.
 
 ## Tasks and notes
 
