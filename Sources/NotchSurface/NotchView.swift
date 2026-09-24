@@ -109,8 +109,9 @@ struct NotchView: View {
         switch presentation {
         case .expanded, .pinned, .focused:
             return NotchShape(topRadius: Self.expandedTopRadius, bottomRadius: Self.expandedBottomRadius)
-        case .hoverArmed, .transient: return NotchShape(topRadius: 6, bottomRadius: 13)
-        default: return NotchShape(topRadius: 6, bottomRadius: 10)
+        case .hoverArmed, .transient: return NotchShape(topRadius: NotchMetrics.flare, bottomRadius: 13)
+        // Closed: the camera housing's own corners, so the shape disappears into it.
+        default: return NotchShape(topRadius: NotchMetrics.flare, bottomRadius: 9)
         }
     }
 
