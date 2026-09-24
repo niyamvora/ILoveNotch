@@ -3,8 +3,8 @@ import Testing
 
 @testable import NotchCore
 
-private let song = Activity(feature: .media, duration: .seconds(2))
-private let drop = Activity(feature: .shelf, duration: .seconds(1))
+private let song = Activity(feature: .media, symbol: "music.note", title: "Song", duration: .seconds(2))
+private let drop = Activity(feature: .shelf, symbol: "tray.full", title: "2 files", duration: .seconds(1))
 
 /// The state a fresh reducer reaches after `events`.
 private func after(_ events: NotchEvent...) -> NotchState { after(events) }
@@ -23,7 +23,7 @@ struct NotchReducerTests {
         #expect(state.presentation == .compact)
     }
 
-    @Test(arguments: [NotchEvent.pointerEntered, .clicked, .selectTab(.notes), .activity(song), .suspend, .resume])
+    @Test(arguments: [NotchEvent.pointerEntered, .clicked, .selectTab(.notes), .activity(song), .dragEntered])
     func hiddenIgnoresEverythingButShow(event: NotchEvent) {
         var state = NotchState()
         #expect(state.handle(event).isEmpty)
@@ -74,6 +74,7 @@ struct NotchReducerTests {
     @Test func pinnedStaysOpenUntilDismissed() {
         var state = after(.show, .clicked, .togglePin)
         #expect(state.presentation == .pinned(tab: .media))
+        #expect(state.presentation.isPinned)
         #expect(state.handle(.pointerExited).isEmpty)
         #expect(state.handle(.clickedOutside).isEmpty)
         #expect(state.presentation == .pinned(tab: .media))
@@ -146,19 +147,57 @@ struct NotchReducerTests {
         #expect(state.presentation == .expanded(tab: .media))
     }
 
-    @Test func suspendingDropsPendingWorkAndResumingStartsCompact() {
+    @Test func draggingFilesOverTheNotchOpensTheShelf() {
+        var state = after(.show)
+        #expect(state.handle(.dragEntered).isEmpty)
+        #expect(state.presentation == .expanded(tab: .shelf))
+        #expect(state.handle(.dragExited) == [.schedule(.collapseGrace, after: NotchTiming.collapseGrace)])
+        // Dragging back in cancels the collapse; dropping keeps the shelf open under the pointer.
+        #expect(state.handle(.dragEntered) == [.cancel(.collapseGrace)])
+        #expect(state.handle(.dropped) == [.cancel(.collapseGrace)])
+        #expect(state.presentation == .expanded(tab: .shelf))
+        #expect(state.pointerInside)
+    }
+
+    @Test func draggingKeepsAPinAndIgnoresADisabledShelf() {
+        #expect(after(.show, .clicked, .togglePin, .dragEntered).presentation == .pinned(tab: .shelf))
+        #expect(after(.show, .setTabs([.media, .notes]), .dragEntered).presentation == .compact)
+    }
+
+    @Test func overlappingSuspensionsAllHaveToClear() {
         var state = after(.show, .clicked, .pointerExited)
-        #expect(state.handle(.suspend) == [.cancel(.collapseGrace)])
+        #expect(state.handle(.suspend(.screenLocked)) == [.cancel(.collapseGrace)])
+        _ = state.handle(.suspend(.systemSleep))
         #expect(state.handle(.clicked).isEmpty)
         #expect(state.handle(.activity(song)).isEmpty)
-        #expect(state.presentation == .suspended)
-        _ = state.handle(.resume)
+        _ = state.handle(.resume(.systemSleep))
+        #expect(state.presentation == .suspended, "still locked")
+        _ = state.handle(.resume(.screenLocked))
         #expect(state.presentation == .compact)
+    }
+
+    @Test func aNotchShownWhileSuspendedStartsSuspended() {
+        #expect(after(.suspend(.displaySleep), .show).presentation == .suspended)
+        #expect(after(.suspend(.displaySleep), .show, .resume(.displaySleep)).presentation == .compact)
+    }
+
+    @Test func disablingTheOpenTabMovesToTheNextEnabledOne() {
+        let pinned = after(.show, .clicked, .togglePin, .setTabs([.shelf, .notes]))
+        #expect(pinned.presentation == .pinned(tab: .shelf))
+        #expect(pinned.lastTab == .shelf)
+        #expect(after(.show, .clicked, .setTabs([])).presentation == .compact)
+    }
+
+    @Test func disabledFeaturesNeverOpenOrRaiseActivities() {
+        #expect(after(.show, .setTabs([.notes]), .selectTab(.media)).presentation == .expanded(tab: .notes))
+        #expect(after(.show, .setTabs([.notes]), .activity(song)).presentation == .compact)
+        #expect(after(.show, .activity(song), .setTabs([.notes])).presentation == .compact)
+        #expect(after(.show, .setTabs([]), .clicked).presentation == .compact)
     }
 
     @Test(arguments: [
         [NotchEvent.show], [.show, .pointerEntered], [.show, .clicked], [.show, .clicked, .togglePin],
-        [.show, .clicked, .beginTextInput], [.show, .activity(song)], [.show, .suspend],
+        [.show, .clicked, .beginTextInput], [.show, .activity(song)], [.show, .suspend(.systemSleep)],
     ])
     func hideWorksFromEveryStateAndCancelsItsDeadline(path: [NotchEvent]) {
         var state = after(path)
@@ -172,16 +211,19 @@ struct NotchReducerTests {
     /// after every step the invariants that the engine and the surface rely on.
     @Test func randomEventStreamsKeepTheInvariants() throws {
         var rng = SplitMix64(state: 0x0A11_CE5E_ED00_0001)
+        let reasons: [SuspendReason] = [.systemSleep, .displaySleep, .screenLocked]
         let inputs: [NotchEvent] =
             [
                 .show, .hide, .pointerEntered, .pointerExited, .clicked, .clickedOutside, .dismiss, .togglePin,
-                .beginTextInput, .endTextInput, .activity(song), .activity(drop), .suspend, .resume,
-            ] + FeatureID.allCases.map(NotchEvent.selectTab)
+                .beginTextInput, .endTextInput, .dragEntered, .dragExited, .dropped, .activity(song),
+                .activity(drop), .setTabs(FeatureID.allCases), .setTabs([.notes, .shelf]), .setTabs([]),
+            ] + FeatureID.allCases.map(NotchEvent.selectTab) + reasons.map(NotchEvent.suspend)
+            + reasons.map(NotchEvent.resume)
         var state = NotchState()
         var pending: Set<Deadline> = []
         var visited: Set<Substring> = []
 
-        for _ in 0..<20_000 {
+        for _ in 0..<50_000 {
             let event: NotchEvent
             if let deadline = pending.first, Bool.random(using: &rng) {
                 pending.remove(deadline)
@@ -197,10 +239,18 @@ struct NotchReducerTests {
             }
             visited.insert(String(describing: state.presentation).prefix { $0 != "(" })
 
-            let owned = Set([state.presentation.deadline].compactMap { $0 })
-            try #require(pending.isSubset(of: owned), "\(event) left \(pending) pending in \(state.presentation)")
-            if let tab = state.presentation.openTab { try #require(tab == state.lastTab) }
-            if state.presentation == .hoverArmed { try #require(state.pointerInside) }
+            let presentation = state.presentation
+            let owned = Set([presentation.deadline].compactMap { $0 })
+            try #require(pending.isSubset(of: owned), "\(event) left \(pending) pending in \(presentation)")
+            if let tab = presentation.openTab {
+                try #require(tab == state.lastTab)
+                try #require(state.tabs.contains(tab), "\(event) opened disabled \(tab)")
+            }
+            if case .transient(let activity) = presentation { try #require(state.tabs.contains(activity.feature)) }
+            if presentation == .hoverArmed { try #require(state.pointerInside) }
+            if presentation != .hidden {
+                try #require((presentation == .suspended) == !state.suspensions.isEmpty, "\(event) → \(presentation)")
+            }
         }
         #expect(visited.count == 8, "fuzzing only reached \(visited.sorted())")
     }
