@@ -1,0 +1,47 @@
+# XcodeGen spec for the app target. OpenNotch.xcodeproj is generated from this
+# file and git-ignored: run `make project` (or `xcodegen generate`).
+name: OpenNotch
+options:
+  bundleIdPrefix: cafe.opennotch
+  deploymentTarget:
+    macOS: "14.6"
+  createIntermediateGroups: true
+packages:
+  OpenNotchKit:
+    path: .
+targets:
+  OpenNotch:
+    type: application
+    platform: macOS
+    sources: [App]
+    dependencies:
+      - package: OpenNotchKit
+        product: NotchSurface
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cafe.opennotch.app
+        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 1
+        SWIFT_VERSION: "6.0" # Swift 6 language mode: complete strict-concurrency checking
+        SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_LSUIElement: YES # accessory app: no Dock icon, no menu bar
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+        INFOPLIST_KEY_NSHumanReadableCopyright: Copyright © 2026 Niyam Vora. MIT License.
+        ENABLE_HARDENED_RUNTIME: YES
+        # Ad-hoc signing builds and runs without an Apple team. Developer ID
+        # signing and notarization belong to the release pipeline.
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "-"
+        DEVELOPMENT_TEAM: ""
+schemes:
+  OpenNotch:
+    build:
+      targets:
+        OpenNotch: all
+    test:
+      config: Debug
+      targets:
+        - package: OpenNotchKit/NotchSurfaceTests
+    archive:
+      config: Release

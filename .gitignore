@@ -4,6 +4,8 @@
 DerivedData/
 xcuserdata/
 *.xcuserstate
+# Generated from project.yml by XcodeGen
+*.xcodeproj/
 
 # Third-party apps and reference binaries. OpenNotch is a clean-room project:
 # the repository may only contain original or permissively licensed material.

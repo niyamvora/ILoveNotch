@@ -1,4 +1,6 @@
+// SPDX-License-Identifier: MIT
 import AppKit
+import NotchSurface
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
