@@ -21,11 +21,17 @@ that delivers it.
 - [x] Settings: launch at login, displays, turn features on or off, and reset
 - [x] Respects Reduce Motion and Increase Contrast; VoiceOver labels and Open/Close actions
 - [x] Dragging files over the notch opens it to the shelf
+- [x] Closed, the notch hides behind the camera housing; hovering grows it slightly
+- [x] Switching tabs slides the content across, and the selection moves with a jelly stretch
+- [x] Resize the open notch by dragging the control beside the pin, or click it to step through sizes
+- [x] Choose how the notch opens and closes (spring, jelly, pop, smooth, snappy, or instant), with a preview
+- [x] Builds from a checkout update themselves from the menu bar (**Update OpenNotch**)
 
 ## v0.2: media and shelf (Phase 3)
 
 - [x] Shows now-playing title, artist, artwork, and progress, from any app
 - [x] Play/pause, next, and previous controls; clicking the artwork opens the player
+- [x] Wavy seek bar you can drag to seek, and a waveform that moves while music plays
 - [x] Brief live activity when the track changes
 - [x] Drop files onto the notch to hold them on a shelf
 - [x] Drag shelf files back out, preview with Quick Look, and send with AirDrop
@@ -36,6 +42,7 @@ that delivers it.
 
 - [x] Today's calendar events, with a clear path when calendar access is off
 - [x] Reminders-backed tasks: check off, add, pick a list; they sync to iPhone through iCloud
+- [x] Recently completed tasks in a collapsible section; tap one to reopen it
 - [x] Quick local notes that save as you type
 - [x] Shortcut launcher that runs shortcuts in the background
 - [x] Timer and stopwatch with rolling-digit animation and a "Timer done" live activity
@@ -52,4 +59,4 @@ that delivers it.
 - [ ] Replace the system volume HUD (v0.4)
 - [ ] Brightness HUD and Bluetooth accessory battery (experimental)
 - [ ] General notification mirror (deferred: no clean public API)
-- [ ] Signed, notarized DMG on GitHub Releases with in-app updates (Phase 7)
+- [ ] Signed, notarized DMG on GitHub Releases with in-app updates ([Phase 7](updates.md#public-releases-phase-7))

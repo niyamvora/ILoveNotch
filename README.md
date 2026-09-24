@@ -68,6 +68,7 @@ cd OpenNotch
 make setup                        # installs XcodeGen (Brewfile) and fetches submodules
 make run                          # generate the Xcode project, build, and launch OpenNotch.app
 make install                      # build a Release app into /Applications and launch it
+make update                       # pull main when it's clean, then reinstall and relaunch
 make test                         # unit, snapshot, and performance tests (plain SwiftPM)
 make check                        # everything CI runs: lint, tests, build, license check
 ```
@@ -83,14 +84,21 @@ log stream --level debug --predicate 'subsystem == "cafe.opennotch.app"'
 
 1. `make install` builds a Release app into `/Applications` and launches it.
    There's no Dock icon: look for the notch, and for the OpenNotch item in the
-   menu bar (Settings…, Sponsor, Quit).
+   menu bar (version, Update OpenNotch, Settings…, Sponsor, Quit).
 2. Quit other notch apps first; two apps can't share the notch.
 3. Hover the notch (or click it, or pull down with two fingers), then try each
    tab. Calendar and Tasks ask for access the first time you tap **Allow Access**.
-4. Local builds are ad-hoc signed, so macOS treats each rebuild as a new app and
-   asks for Calendar and Reminders access again. Signed releases won't.
-5. To start at login, turn on **Settings › General › Launch at login**.
-6. To uninstall, choose **Quit** from the menu bar item and delete
+   Drag the control beside the pin to resize the open notch, and pick how it
+   opens and closes in **Settings › General**.
+4. To get the latest, choose **Update OpenNotch** from the menu bar item (or run
+   `make update`). It pulls `main` when your checkout is clean, rebuilds, and
+   relaunches; see [updates](docs/updates.md).
+5. With an Apple Development certificate in your keychain (Xcode › Settings ›
+   Accounts), builds are signed with it and keep Calendar and Reminders access
+   across updates. Without one they're ad-hoc signed, and macOS asks again after
+   each rebuild.
+6. To start at login, turn on **Settings › General › Launch at login**.
+7. To uninstall, choose **Quit** from the menu bar item and delete
    `/Applications/OpenNotch.app`; data lives in
    `~/Library/Application Support/OpenNotch`.
 
@@ -106,7 +114,7 @@ user-visible behaviors are tracked in the [parity checklist](docs/parity-checkli
 - [x] **Phase 4 — Productivity:** calendar, Reminders-backed tasks, local notes, shortcuts, timer, per-feature settings
 - [ ] **Phase 5 — Camera and system:** camera mirror, volume and battery activities, optional HUD replacement
 - [ ] **Phase 6 — Visual and motion polish:** motion tokens, original icon and brand, themes, localization
-- [ ] **Phase 7 — Hardening and public beta:** soak tests, signed and notarized releases, Sparkle updates
+- [ ] **Phase 7 — Hardening and public beta:** soak tests, signed and notarized releases, [Sparkle updates](docs/updates.md#public-releases-phase-7)
 
 ## Now playing
 
