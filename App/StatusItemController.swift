@@ -35,22 +35,26 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     }
 
     private func updateItems() -> [NSMenuItem] {
-        guard updater.sourceDirectory != nil else {
-            return [menuItem("Check for Updates…", #selector(openReleases))]
-        }
-        switch updater.state {
-        case .idle:
-            return [menuItem("Update OpenNotch", #selector(update))]
-        case .updating:
-            let item = NSMenuItem(title: "Updating OpenNotch…", action: nil, keyEquivalent: "")
-            item.isEnabled = false
-            return [item]
-        case .failed:
-            return [
-                menuItem("Update Failed: Show Log", #selector(showLog)),
-                menuItem("Try Updating Again", #selector(update)),
-            ]
-        }
+        #if APP_STORE
+            return []  // the App Store updates this edition
+        #else
+            guard updater.sourceDirectory != nil else {
+                return [menuItem("Check for Updates…", #selector(checkForUpdates))]
+            }
+            switch updater.state {
+            case .idle:
+                return [menuItem("Update OpenNotch", #selector(update))]
+            case .updating:
+                let item = NSMenuItem(title: "Updating OpenNotch…", action: nil, keyEquivalent: "")
+                item.isEnabled = false
+                return [item]
+            case .failed:
+                return [
+                    menuItem("Update Failed: Show Log", #selector(showLog)),
+                    menuItem("Try Updating Again", #selector(update)),
+                ]
+            }
+        #endif
     }
 
     private func menuItem(_ title: String, _ action: Selector, key: String = "") -> NSMenuItem {
@@ -63,7 +67,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     @objc private func sponsor() { NSWorkspace.shared.open(Links.sponsor) }
     @objc private func update() { updater.updateFromSource() }
     @objc private func showLog() { updater.showLog() }
-    @objc private func openReleases() { updater.openReleases() }
+    @objc private func checkForUpdates() { updater.checkForUpdates() }
 }
 
 enum Links {

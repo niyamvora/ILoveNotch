@@ -478,12 +478,14 @@ the full one:
 | AI usage (Phase 8) | Yes | No: reads other apps' credentials |
 | Updates | Update OpenNotch (local builds) or Sparkle | The App Store |
 
-The edition builds from an `AppStore` configuration that sets a compile-time
-flag, uses sandbox entitlements, and leaves out the helper, Sparkle, and the
-local updater. Signing, the upload to App Store Connect, and TestFlight use the
-team's App Store Connect API key with cloud-managed certificates. Creating the
-app record and answering App Privacy are one-time steps in the App Store Connect
-website.
+The edition is the `OpenNotchAppStore` target (scheme `OpenNotch App Store`): the
+same sources with an `APP_STORE` compile-time flag, sandbox entitlements
+(`App/AppStore/OpenNotch.entitlements`), and none of the helper, Sparkle, or the
+local updater. Sandboxed, the shelf keeps security-scoped bookmarks. Signing,
+the upload to App Store Connect, and TestFlight use the team's App Store Connect
+API key with cloud-managed certificates (`make app-store`). Creating the app
+record and answering App Privacy are one-time steps in the App Store Connect
+website; see [releasing](../releasing.md#the-app-store-edition).
 
 ## 11. First development sprint
 
