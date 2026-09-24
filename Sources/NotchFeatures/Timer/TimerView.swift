@@ -73,32 +73,47 @@ struct TimerView: View {
 
     private var stopwatch: some View {
         let watch = timer.stopwatch
-        // Tenths of a second need ten redraws a second, only while running on screen.
-        return TimelineView(.periodic(from: .now, by: watch.isRunning ? 0.1 : 3600)) { context in
-            VStack(spacing: 8) {
-                RollingTime(watch.elapsed(at: context.date), tenths: true)
-                    .font(.system(size: 40, weight: .semibold, design: .rounded))
-                HStack(spacing: 18) {
-                    control(watch.isRunning ? "Pause" : "Start") { timer.toggleStopwatch() }
-                    if watch.isRunning {
-                        control("Lap") { timer.lap() }
-                    } else {
-                        control("Reset", timer.resetStopwatch).disabled(watch.elapsed(at: context.date) == 0)
+        return VStack(spacing: 8) {
+            // Tenths of a second need ten redraws a second, only while running on screen.
+            TimelineView(.periodic(from: .now, by: watch.isRunning ? 0.1 : 3600)) { context in
+                VStack(spacing: 8) {
+                    RollingTime(watch.elapsed(at: context.date), tenths: true)
+                        .font(.system(size: 40, weight: .semibold, design: .rounded))
+                    HStack(spacing: 18) {
+                        control(watch.isRunning ? "Pause" : "Start") { timer.toggleStopwatch() }
+                        if watch.isRunning {
+                            control("Lap") { timer.lap() }
+                        } else {
+                            control("Reset", timer.resetStopwatch).disabled(watch.elapsed(at: context.date) == 0)
+                        }
                     }
                 }
-                ForEach(Array(watch.laps.enumerated().suffix(3).reversed()), id: \.offset) { index, total in
-                    let previous = index > 0 ? watch.laps[index - 1] : 0
+            }
+            if !watch.laps.isEmpty { lapList(watch.laps) }
+        }
+    }
+
+    /// Every lap, newest first, scrolling once they outgrow the notch. It sits outside the timeline,
+    /// so it isn't rebuilt ten times a second.
+    private func lapList(_ laps: [TimeInterval]) -> some View {
+        ScrollView {
+            LazyVStack(spacing: 4) {
+                ForEach(laps.indices.reversed(), id: \.self) { index in
+                    let split = laps[index] - (index > 0 ? laps[index - 1] : 0)
                     HStack {
                         Text("Lap \(index + 1)")
                         Spacer()
-                        Text(formatTime(total - previous, tenths: true)).monospacedDigit()
+                        Text(formatTime(split, tenths: true)).monospacedDigit()
                     }
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.6))
-                    .frame(maxWidth: 220)
+                    .accessibilityElement(children: .combine)
                 }
             }
+            .font(.caption)
+            .foregroundStyle(.white.opacity(0.6))
+            .padding(.vertical, 6)
         }
+        .fadingEdges()
+        .frame(maxWidth: 220)
     }
 
     private func control(_ title: String, _ action: @escaping () -> Void) -> some View {
