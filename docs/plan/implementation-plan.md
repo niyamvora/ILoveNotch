@@ -1,6 +1,6 @@
 # ILoveNotch implementation plan
 
-Status: proposed roadmap  
+Status: shipped. 1.0.0 is on GitHub Releases (25 September 2026); the Mac App Store edition is in review  
 Target: original, open-source macOS notch utility  
 Minimum system: macOS 14.6  
 Primary architecture: Apple silicon, with Universal 2 support evaluated for v1
@@ -25,8 +25,9 @@ Core principles:
   set. A sandboxed Mac App Store edition with a smaller feature set follows it
   (see [§10](#app-store-edition)).
 
-`ILoveNotch` is a working name. Check repository, domain, and trademark
-availability before the first public release.
+The product is named ILoveNotch. The code keeps OpenNotch for its modules,
+targets, and bundle ID (`cafe.opennotch.app`), so settings and permissions carry
+over.
 
 ## 2. Current prototype
 
@@ -469,8 +470,8 @@ Release steps:
 12. Sign and publish the Sparkle appcast so installed builds can update from
     GitHub Releases.
 13. Test upgrades, skipped versions, interrupted downloads, and rollback.
-14. Add a Homebrew cask after several stable beta releases as an optional second
-    installation route.
+14. Add a Homebrew cask as an optional second installation route. Done with
+    1.0.0: `brew install --cask niyamvora/tap/ilovenotch`.
 
 The README download instructions should always point to the latest GitHub
 Release and clearly distinguish:

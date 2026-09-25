@@ -82,5 +82,5 @@ that delivers it.
 - [ ] Brightness display (blocked: Apple silicon has no public API to read or set brightness)
 - [ ] AirPods and other Bluetooth batteries (blocked: no public API)
 - [ ] General notification mirror (deferred: no clean public API)
-- [ ] Signed, notarized DMG on GitHub Releases with in-app updates ([Phase 7](updates.md#public-releases-phase-7))
-- [ ] Sandboxed Mac App Store edition ([Phase 7](plan/implementation-plan.md#app-store-edition))
+- [x] Signed, notarized DMG on GitHub Releases with in-app updates ([1.0.0](updates.md#public-releases))
+- [x] Sandboxed Mac App Store edition ([1.0.0 in review](plan/implementation-plan.md#app-store-edition))
