@@ -30,7 +30,7 @@ signs with it instead. The app then keeps the same identity across rebuilds, and
 granted once stays granted. Pass `SIGNING_IDENTITY=` to force ad-hoc signing, as CI does by
 having no certificate.
 
-## Public releases (Phase 7)
+## Public releases
 
 Downloaded copies have no checkout, so they update through [Sparkle 2](https://sparkle-project.org)
 (MIT):
@@ -40,7 +40,7 @@ Downloaded copies have no checkout, so they update through [Sparkle 2](https://s
 | In-app updates | `SPUStandardUpdaterController`, behind **Check for Updates…** in the menu bar item and Settings › About |
 | Feed | `appcast.xml` on `main` (`SUFeedURL`), updated by each release |
 | Trust | Every update's DMG is signed with an EdDSA (ed25519) key; its public half is `SUPublicEDKey` in `App/Info.plist`, and Sparkle also checks the Developer ID signature |
-| Distribution | A signed, notarized DMG on GitHub Releases; a Homebrew cask can follow |
+| Distribution | A signed, notarized DMG on [GitHub Releases](https://github.com/niyamvora/ILoveNotch/releases/latest), and `brew install --cask niyamvora/tap/ilovenotch` from [niyamvora/homebrew-tap](https://github.com/niyamvora/homebrew-tap). The cask sets `auto_updates`, so Homebrew leaves updating to Sparkle |
 | Automatic checks | Off until the user agrees: Sparkle asks on the second launch |
 
 Release builds record no source checkout (`OPENNOTCH_SOURCE` is empty), so they use Sparkle;

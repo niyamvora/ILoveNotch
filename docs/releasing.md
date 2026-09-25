@@ -36,34 +36,70 @@ notarizes and staples it, packages the DMG, adds the release to `appcast.xml` wi
 signature, and drafts a GitHub release with the DMG and `SHA256SUMS`. A version with a suffix
 (`-beta.1`) becomes a pre-release.
 
+Run it at the Mac, awake and unlocked:
+
+- **Notarization** usually takes minutes, but a team's first submission can take hours (1.0.0's
+  took about five). The script waits.
+- **Sparkle's key** is read from the login keychain. The first time, macOS asks whether
+  `generate_appcast` may use it: enter the Mac's password and click **Always Allow**. If the Mac is
+  asleep or locked, the prompt can't show and signing fails with `-25320`. Finish the script's
+  last steps by hand:
+
+  ```bash
+  tag=v1.0.1
+  .build/sparkle/bin/generate_appcast \
+    --download-url-prefix "https://github.com/niyamvora/ILoveNotch/releases/download/$tag/" \
+    "build/release/$tag/updates"
+  cp "build/release/$tag/updates/appcast.xml" appcast.xml
+  (cd "build/release/$tag" && shasum -a 256 ILoveNotch-*.dmg >SHA256SUMS)
+  gh release create "$tag" "build/release/$tag"/ILoveNotch-*.dmg "build/release/$tag/SHA256SUMS" \
+    --draft --title "ILoveNotch ${tag#v}" --generate-notes --target main
+  ```
+
 Then:
 
 1. Open the draft on GitHub, check the notes, and publish it.
 2. Commit the updated `appcast.xml` through a pull request. Installed copies read it from `main`,
    so an update is offered only once both the release and the appcast are public.
+3. Update the Homebrew cask in [niyamvora/homebrew-tap](https://github.com/niyamvora/homebrew-tap):
+   `version` and the DMG's `sha256` (from `SHA256SUMS`) in `Casks/ilovenotch.rb`. The cask sets
+   `auto_updates`, so installed copies still update through Sparkle.
+
+If notarization is slow and people are waiting, the signed `ILoveNotch.zip` the script submitted
+(`build/release/v<version>/`) can go on the release early. Until Apple accepts it, macOS asks people
+to allow it in System Settings › Privacy & Security; afterwards Gatekeeper finds the ticket online,
+so the same download opens normally. 1.0.0 went out this way.
 
 ## The App Store edition
 
 The `OpenNotch App Store` scheme builds the sandboxed edition (see the
-[plan](plan/implementation-plan.md#app-store-edition) for what it leaves out). Once:
+[plan](plan/implementation-plan.md#app-store-edition) for what it leaves out). The app record is
+**ILoveNotch** (Apple ID 6815805975, bundle ID `cafe.opennotch.app`, SKU `ilovenotch-mac`), made on
+the App Store Connect website because the API can't create app records. 1.0.0 was submitted for
+review on 24 September 2026.
 
-1. Decide the bundle ID; it can't change after the first upload. Both editions use
-   `cafe.opennotch.app` today.
-2. Create the app record in App Store Connect (My Apps › + › New App, macOS, that bundle ID). The
-   API can't create app records.
-3. Add the app icon (see [brand assets](brand-assets.md)): builds without one fail validation.
-
-Then, from a clean `main`:
+For each version, from a clean `main`:
 
 ```bash
-make app-store VERSION=0.3.0
+make app-store VERSION=1.0.1
 ```
 
 It archives the edition, signs it for the App Store with cloud-managed certificates through the
-team API key in `release.env` (registering the bundle ID and profile the first time), and uploads
-it. The build appears in App Store Connect › TestFlight once processed; submitting it for review
-also needs the screenshots, the listing in [docs/app-store](app-store/metadata.md), and the App
-Privacy answers ("Data Not Collected").
+team API key in `release.env`, and uploads it; the icon comes from the build. The build appears in
+App Store Connect › TestFlight once processed. Then, in App Store Connect or through its API with
+the same key:
+
+1. Add the version (Distribution › **+**), fill in What's New, and pick the build.
+2. Keep the listing in step with [docs/app-store](app-store/metadata.md), then **Add for Review**
+   and **Submit**.
+
+The listing, screenshots, preview, age rating, price, and availability for 1.0.0 went in through
+the API. App Privacy ("Data Not Collected") can only be answered on the website, and carries over
+to later versions.
+
+**TestFlight:** the "Public" external group has the link
+<https://testflight.apple.com/join/6p3zqhCS>. Add each new build to it; the first build of a
+version waits for Beta App Review before testers outside the team can install it.
 
 ## Checks before publishing
 

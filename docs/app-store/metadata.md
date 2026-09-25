@@ -1,25 +1,26 @@
-# App Store listing (draft)
+# App Store listing
 
-**Status: draft for review. Nothing here has been uploaded.** Character limits are App Store
-Connect's.
+**Status: live.** Version 1.0.0 was submitted for review with this listing on 24 September 2026.
+Change it here and in App Store Connect together. Character limits are App Store Connect's.
 
 The App Store edition is sandboxed: it has every tab except AI Usage, which reads other apps'
-sign-ins. Media shows what's playing in Music and Spotify from their public notifications; a
-sandboxed test app received them with the track details (macOS 26, September 2026). The listing,
-screenshots, and preview must show only what this edition does.
+sign-ins. Media shows what's playing in Music and Spotify from their public notifications, without
+artwork or playback controls. The 1.0.0 screenshots still show AI Usage (a chip, and one desktop
+shot) and a real album cover; if App Review objects, replace those.
 
 ## Identity
 
-| Field | Draft | Limit |
+| Field | Value | Limit |
 |-------|-------|-------|
 | Name | ILoveNotch | 30 |
 | Subtitle | Your notch, finally useful | 30 |
-| Bundle ID | `cafe.opennotch.app`: the app's today, so settings and permissions carry over. A new one (say `com.niyamvora.ilovenotch`) must be decided before the record exists, as it's permanent | permanent |
+| Bundle ID | `cafe.opennotch.app` (App Store app ID 6815805975), shared with the direct download so settings and permissions carry over | permanent |
 | SKU | `ilovenotch-mac` | internal |
 | Primary category | Productivity (matches `LSApplicationCategoryType`) | |
 | Secondary category | Utilities | |
-| Age rating | 4+ (no objectionable content) | |
-| Price | Free | |
+| Age rating | 4+ (every question answered None) | |
+| Content rights | Doesn't use third-party content | |
+| Price | Free, in all 175 countries and regions | |
 | Copyright | 2026 Niyam Vora | |
 
 ## Promotional text (170)
@@ -33,8 +34,7 @@ ILoveNotch turns the notch on your MacBook into a small, fast tray for the thing
 day. Hover over the notch or click it, and it opens right where you're already looking.
 
 MEDIA
-See what's playing in Music and Spotify, with a wavy progress bar and a waveform that moves with
-the sound.
+See what's playing in Music and Spotify, with a waveform that moves with the sound.
 
 SHELF
 Drop files on the notch to keep them close, then drag them out, preview them with Quick Look, or
@@ -59,11 +59,11 @@ Free and open source.
 
 ## Keywords (100)
 
-notch,menu bar,now playing,shelf,drag and drop,airdrop,reminders,calendar,timer,notes,dynamic island
+notch,menu bar,now playing,shelf,drag and drop,airdrop,reminders,calendar,timer,notes,stopwatch
 
 ## URLs
 
-| Field | Draft |
+| Field | Value |
 |-------|-------|
 | Support URL | https://github.com/niyamvora/ILoveNotch/issues |
 | Marketing URL | https://github.com/niyamvora/ILoveNotch |
@@ -71,26 +71,23 @@ notch,menu bar,now playing,shelf,drag and drop,airdrop,reminders,calendar,timer,
 
 ## Screenshots
 
-Mac screenshots are 16:10: 2880×1800, 2560×1600, 1440×900, or 1280×800, up to 10. The designed
-1440×900 set works as is. For this edition use the Shelf, Timer, Tasks, Notes, Calendar, and
-Shortcuts shots, in that order, and not the three AI Usage ones. In those six:
+Mac screenshots are 16:10 (2880×1800, 2560×1600, 1440×900, or 1280×800), up to 10, without
+transparency. 1.0.0 has nine, in this order: the designed hero, Shelf, Timer, Tasks, Notes,
+Calendar, and Shortcuts shots at 1440×900, then two desktop captures (Media and AI Usage) cut to
+2880×1800 above the Dock. The files are kept outside the repository, with the launch assets.
 
-- drop "AI usage" from the chip row;
-- show content you own: no album artwork from real releases, no personal data, no test text.
-
-## App preview (optional)
+## App preview
 
 A Mac app preview is 1920×1080, 15 to 30 seconds, at most 30 fps and 500 MB, H.264 with a stereo
-AAC track (256 kbps, 44.1 or 48 kHz). Use music you have the rights to, or none. To cut one from a
-recording, starting 3 seconds in and running 25:
+AAC track (256 kbps, 44.1 or 48 kHz). Use music you have the rights to, or none. 1.0.0's preview is
+the demo recording from 0:07, Media through Timer, stopping before AI Usage:
 
 ```bash
-ffmpeg -ss 3 -t 25 -i recording.mov -f lavfi -t 25 -i anullsrc=r=48000:cl=stereo \
-  -vf "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,fps=30,format=yuv420p" \
-  -map 0:v -map 1:a -c:v libx264 -profile:v high -level 4.0 -crf 18 -c:a aac -b:a 256k -shortest app-preview.mp4
+ffmpeg -ss 7 -t 29.95 -i nook.mp4 -vf "scale=1920:1080:flags=lanczos,fps=30,format=yuv420p" \
+  -c:v libx264 -profile:v high -level 4.0 -b:v 11M -maxrate 12M -bufsize 24M -x264-params nal-hrd=vbr \
+  -preset slow -af "afade=t=in:d=0.3,afade=t=out:st=28.45:d=1.5" -c:a aac -b:a 256k -ar 48000 -ac 2 \
+  -movflags +faststart app-preview.mp4
 ```
-
-That writes a silent track; to keep the recording's own sound, replace `-map 1:a` with `-map 0:a`.
 
 ## Export compliance
 
@@ -99,15 +96,23 @@ network requests, so App Store Connect doesn't ask on each upload.
 
 ## App Privacy (answered in App Store Connect)
 
-Data collection: **None**. ILoveNotch doesn't collect data or track. Calendar, Reminders, camera,
-and system audio stay on the Mac and are never sent anywhere.
+Data collection: **None** ("Data Not Collected"). ILoveNotch doesn't collect data or track.
+Calendar, Reminders, camera, and system audio stay on the Mac and are never sent anywhere. Only the
+website can answer this; the API can't.
 
 ## Review notes
 
 ILoveNotch is a menu-bar-style utility with no Dock icon. To open it, move the pointer to the notch
-(or the pill at the top of the screen on Macs without a notch) or click the ILoveNotch item in the
-menu bar and choose Settings. Calendar and Reminders access is requested only when the reviewer taps
-Allow Access in those tabs. The Mirror tab is off until turned on in Settings › Features and uses the
+(or the pill at the top of the screen on Macs without a notch), or click the ILoveNotch item in the
+menu bar and choose Settings. Calendar and Reminders access is requested only when you click Allow
+Access in those tabs. The Mirror tab is off until turned on in Settings › Features, and uses the
 camera only while it's open. Media shows what's playing in Music or Spotify; its waveform asks for
-system audio recording permission and analyzes the sound on the Mac without recording it. No account
-or sign-in is needed, and the app makes no network requests.
+system audio recording permission and analyzes the sound on the Mac without recording it. The App
+Sandbox doesn't let this edition control other players, so Media's playback buttons are disabled
+and the tab says so. No account or sign-in is needed, and the app makes no network requests.
+
+## TestFlight
+
+External testers join the "Public" group at <https://testflight.apple.com/join/6p3zqhCS>. Its test
+information (description, feedback email, and the same review contact and notes) is filled in, and
+each build's What to Test says to try every tab and send feedback from TestFlight.

@@ -50,6 +50,7 @@ near-zero idle CPU**.
 (free, macOS 14.6 or later): open the download, drag ILoveNotch into
 Applications, and open it. It updates itself from then on.
 
+- **Homebrew:** `brew install --cask niyamvora/tap/ilovenotch`
 - **Mac App Store:** in review. The App Store edition has everything except AI
   Usage, which the App Sandbox rules out. Try it now through the
   [TestFlight beta](https://testflight.apple.com/join/6p3zqhCS).

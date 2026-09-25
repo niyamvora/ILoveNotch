@@ -89,8 +89,9 @@ It replaces the SF Symbol the menu bar item uses today and must read at a glance
 | `Brand/app-store/screenshots/en-US/01-….png` | 2880 × 1800 px (or 2560 × 1600, 1440 × 900, 1280 × 800) | 1 to 10 screenshots, 16:10, PNG or JPEG without transparency. Suggested: media, shelf, calendar, tasks, notes, timer, settings. Framed marketing shots or plain captures both work; plain captures can be made from the app. |
 | `Brand/app-store/preview.mov` | 1920 × 1080, 15–30 s | Optional app preview video. |
 
-The listing text (description, keywords, promotional text, support and privacy URLs) is drafted in
-[docs/app-store](app-store/metadata.md) and needs your review, not design work.
+The listing text (description, keywords, promotional text, support and privacy URLs) is in
+[docs/app-store](app-store/metadata.md). Version 1.0.0's listing is in App Store Connect with nine
+designed screenshots and a 30-second preview.
 
 ## 8. Optional
 
