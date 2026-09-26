@@ -12,11 +12,13 @@ import SwiftUI
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     #if APP_STORE
-        // The App Sandbox can't read other tools' sign-ins, so the App Store edition has no AI Usage.
-        private let preferences = NotchPreferences(unavailable: [.usage])
+        // The App Sandbox can't read other tools' sign-ins or add hooks to their settings, so the App
+        // Store edition has no AI Usage or Agents.
+        private let preferences = NotchPreferences(unavailable: [.usage, .agents])
     #else
         private let preferences = NotchPreferences()
         private let usage = UsageFeature()
+        private let agents = AgentsFeature()
     #endif
     private let media = MediaFeature()
     private let shelf = ShelfFeature()
@@ -70,7 +72,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         #if APP_STORE
             [media, shelf, calendar, tasks, notes, shortcuts, timer, mirror]
         #else
-            [media, shelf, calendar, tasks, notes, shortcuts, timer, mirror, usage]
+            [media, shelf, calendar, tasks, notes, shortcuts, timer, mirror, usage, agents]
         #endif
     }
 
@@ -90,6 +92,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             #else
                 return AnyView(usage.view)
             #endif
+        case .agents:
+            #if APP_STORE
+                return AnyView(EmptyView())
+            #else
+                return AnyView(agents.view)
+            #endif
         }
     }
 
@@ -108,6 +116,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             #else
                 // Its settings have their own tab.
                 return AnyView(Button("Providers, API Keys, and Refresh…") { [unowned self] in settings.show(.usage) })
+            #endif
+        case .agents:
+            #if APP_STORE
+                return nil
+            #else
+                return AnyView(agents.settingsView)
             #endif
         }
     }
@@ -144,6 +158,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         #if !APP_STORE
             usage.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
             usage.openSettings = { [weak self] in self?.settings.show(.usage) }
+            agents.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
+            agents.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .agents) }
         #endif
         volumeKeys.onKey = { [volume] key, fine in
             switch key {
