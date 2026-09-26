@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import AppKit
 import Foundation
 import SwiftUI
 
@@ -147,6 +148,41 @@ extension View {
                     LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing)
                         .frame(width: length)
                 }
+            }
+        }
+    }
+}
+
+extension View {
+    /// Gives the notch the keyboard when `active` turns on, for a field that appears after a click
+    /// elsewhere: the notch's panel only takes the keyboard by itself when a field is clicked.
+    public func takesKeyboard(_ active: Bool) -> some View {
+        background(KeyboardRequest(active: active).allowsHitTesting(false))
+    }
+}
+
+private struct KeyboardRequest: NSViewRepresentable {
+    let active: Bool
+
+    func makeNSView(context: Context) -> RequestView { RequestView() }
+
+    func updateNSView(_ view: RequestView, context: Context) { view.active = active }
+
+    final class RequestView: NSView {
+        var active = false {
+            didSet { if active, !oldValue { request() } }
+        }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if active { request() }
+        }
+
+        /// After the update in progress, so becoming key (which changes the notch's state) isn't part of it.
+        private func request() {
+            Task { @MainActor [weak self] in
+                guard let window = self?.window, !window.isKeyWindow else { return }
+                window.makeKey()
             }
         }
     }
