@@ -273,6 +273,7 @@ private struct TaskRow: View {
                         .textFieldStyle(.plain)
                         .font(.callout)
                         .focused($focused)
+                        .takesKeyboard(editing)
                         .onSubmit(commitRename)
                         .onChange(of: focused) { _, isFocused in
                             if !isFocused { commitRename() }
@@ -386,7 +387,7 @@ private struct TaskRow: View {
     private func beginRename() {
         title = task.title
         editing = true
-        focused = true
+        Task { @MainActor in focused = true }  // once the field is on screen
     }
 
     private func commitRename() {
