@@ -116,6 +116,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         shelf.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         timer.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         shortcuts.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
+        tasks.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         volume.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         battery.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         accessories.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
