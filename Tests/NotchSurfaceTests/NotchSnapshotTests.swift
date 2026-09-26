@@ -15,6 +15,9 @@ private let notched = NotchMetrics(
     left: CGRect(x: 0, y: 950, width: 662, height: 32), right: CGRect(x: 850, y: 950, width: 662, height: 32))
 private let notchless = NotchMetrics(
     screen: CGRect(x: 0, y: 0, width: 2560, height: 1440), safeAreaTop: 0, left: nil, right: nil)
+private let standIn = NotchMetrics(
+    screen: CGRect(x: 0, y: 0, width: 2560, height: 1440), safeAreaTop: 0, left: nil, right: nil,
+    standIn: CGSize(width: 185, height: 24))
 private let song = Activity(feature: .media, symbol: "music.note", title: "Midnight City", duration: .seconds(3))
 private let volume = Activity(
     feature: nil, symbol: "speaker.wave.2.fill", title: "56%", level: 0.56, duration: .seconds(1))
@@ -33,6 +36,9 @@ private let snapshotCases: [(name: String, metrics: NotchMetrics, events: [Notch
     ("pinned-notes", notched, [.show, .selectTab(.notes), .togglePin]),
     ("pill-compact", notchless, [.show]),
     ("pill-expanded", notchless, [.show, .selectTab(.shelf)]),
+    ("standin-compact", standIn, [.show]),
+    ("standin-activity", standIn, [.show, .activity(song)]),
+    ("standin-expanded", standIn, [.show, .selectTab(.shelf)]),
 ]
 
 @MainActor
