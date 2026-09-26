@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy · ILoveNotch</title>
+<meta name="description" content="ILoveNotch is local-first: no accounts, analytics, telemetry or device fingerprinting.">
+<link rel="icon" href="assets/icon.png">
+<link rel="canonical" href="https://niyamvora.github.io/ILoveNotch/privacy.html">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- ponytail: hand-copied from PRIVACY.md on main; re-copy it here whenever PRIVACY.md changes -->
+<div class="wrap">
+  <header class="top">
+    <a class="logo" href="./"><img src="assets/icon.png" alt="" width="36" height="36"><span><em>ILove</em>Notch</span></a>
+    <nav aria-label="Site">
+      <a href="privacy.html" aria-current="page">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="https://github.com/niyamvora/ILoveNotch">GitHub</a>
+    </nav>
+  </header>
+
+  <main class="doc narrow">
+    <h1>Privacy Policy</h1>
+    <p class="meta">Last updated 26 September 2026. The source of truth is <a href="https://github.com/niyamvora/ILoveNotch/blob/main/PRIVACY.md">PRIVACY.md</a> in the repository, with its full history.</p>
+
+    <p>ILoveNotch is local-first.</p>
+    <ul>
+      <li>No accounts, analytics, telemetry, or device fingerprinting.</li>
+      <li>The network is used for two things only: the update check against GitHub Releases, and the AI Usage providers you turn on (below). With no provider on, the AI Usage tab never touches the network.</li>
+      <li>Everything ILoveNotch creates (settings, notes, shelf items) stays on your Mac.</li>
+      <li>System permissions (Calendar, Reminders, Camera, and so on) are requested only when you enable the feature that needs them. Denying one disables only that feature.</li>
+      <li>The Mirror tab is off until you turn it on, and uses the camera only while that tab is open. Nothing is recorded or saved.</li>
+      <li>Replacing the macOS volume display is off until you turn it on. It asks for Accessibility access to catch the volume keys; ILoveNotch takes only the three volume keys and passes every other event through untouched.</li>
+      <li>To move the media waveform with the music, ILoveNotch listens to your Mac's audio output, and macOS asks for "system audio recording" permission the first time. It listens only while the Media tab is open and something plays, turns the sound into loudness per frequency band as it plays, and never records, stores, or sends audio. Turn it off in Settings › Features › Media.</li>
+    </ul>
+
+    <h2>AI Usage</h2>
+    <p>The AI Usage tab shows how much of your AI coding plans you've used. Its providers come from <a href="https://github.com/robinebers/openusage">OpenUsage</a>. Every provider is off until you turn it on, and nothing reaches the network before that.</p>
+    <p>To find which tools are signed in on this Mac, when you open the tab or its settings, and to read a provider's sign-in when it refreshes, ILoveNotch:</p>
+    <ul>
+      <li>Reads the sign-in each tool keeps on this Mac: its files (like <code>~/.codex/auth.json</code> or Cursor's settings database) and its keychain items, through <code>/usr/bin/security</code>. The sign-ins stay in memory. macOS may ask you to allow a keychain read.</li>
+      <li>May run your login shell once (<code>$SHELL -ilc env</code>) to see settings and API keys you export there, such as <code>CLAUDE_CONFIG_DIR</code> or <code>OPENROUTER_API_KEY</code>. Only non-secret settings (config folders, sign-in endpoints) are remembered.</li>
+      <li>Keeps an API key you paste in <strong>Settings › AI Usage</strong> (for OpenRouter or Z.ai) in your login keychain, as "ILoveNotch AI Usage", never in a file. <strong>Remove</strong> there deletes it.</li>
+    </ul>
+    <p>For each provider you turn on, ILoveNotch:</p>
+    <ul>
+      <li>Sends your sign-in only to that provider's own service, to ask for your usage. Antigravity is asked through its language server on this Mac, found with <code>ps</code> and <code>lsof</code>.</li>
+      <li>When a sign-in has expired, renews it with that provider and saves the new token back where its tool keeps it, the same way the tool would. For Antigravity, it asks you to open Antigravity instead.</li>
+      <li>Reads the tool's local session logs (Claude Code, Codex, and others) to estimate what you've spent. Prices come from public price lists: LiteLLM (raw.githubusercontent.com), models.dev, and OpenUsage's price supplement (robinebers.github.io). ILoveNotch downloads them about once an hour while a provider refreshes. These requests carry nothing about you or your usage.</li>
+    </ul>
+    <p>Refreshes happen when you open the tab, every five minutes while it stays open, and in the background only if you choose an interval in Settings (off by default). Results are cached in <code>~/Library/Application Support/OpenNotch/</code> so the tab paints at once. Turning a provider off deletes its cached results. The Mac App Store edition doesn't include the AI Usage tab.</p>
+    <p>A change that weakens any of these points must say so in its pull request and update this policy.</p>
+
+    <h2>This website</h2>
+    <p>This site is static and hosted on GitHub Pages. It sets no cookies and runs no analytics or scripts. GitHub may log visits as described in the <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub Privacy Statement</a>.</p>
+
+    <h2>Questions</h2>
+    <p>Ask in <a href="https://github.com/niyamvora/ILoveNotch/discussions">Discussions</a>, or report a security issue privately as described in <a href="https://github.com/niyamvora/ILoveNotch/blob/main/SECURITY.md">SECURITY.md</a>.</p>
+  </main>
+
+  <footer>
+    <div class="links">
+      <a href="./">Home</a>
+      <a href="terms.html">Terms</a>
+      <a href="https://github.com/niyamvora/ILoveNotch">GitHub</a>
+    </div>
+    <p>MIT licensed. Made by <a href="https://github.com/niyamvora">Niyam Vora</a>.</p>
+  </footer>
+</div>
+</body>
+</html>
