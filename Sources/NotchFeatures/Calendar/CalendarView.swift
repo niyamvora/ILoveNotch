@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 import SwiftUI
 
-/// The calendar tab: today's agenda, with past events dimmed, the tasks due today beneath it, and a
-/// field that adds an event from a line like "Lunch with Sam tomorrow 1pm".
+/// The calendar tab: today's agenda, with past events dimmed and a Join button on events with a
+/// video call that hasn't ended, the tasks due today beneath it, and a field that adds an event
+/// from a line like "Lunch with Sam tomorrow 1pm".
 struct CalendarView: View {
     let calendar: CalendarFeature
     @State private var draft = ""
@@ -63,6 +64,7 @@ struct CalendarView: View {
 
     private func row(_ event: DayEvent) -> some View {
         let past = !event.isAllDay && event.end < .now
+        let joinable = event.meeting != nil && !past && !event.isDeclined
         return HStack(spacing: 8) {
             Capsule()
                 .fill(event.color?.color ?? .white)
@@ -81,9 +83,38 @@ struct CalendarView: View {
                 .foregroundStyle(.white.opacity(0.55))
             }
             Spacer(minLength: 0)
+            if joinable, let meeting = event.meeting {
+                joinButton(event, meeting: meeting)
+            }
         }
         .opacity(past ? 0.45 : 1)
+        .contentShape(Rectangle())
+        .contextMenu {
+            if let meeting = event.meeting {
+                Button("Join \(meeting.service)") { calendar.join(event) }.disabled(!joinable)
+                Button("Copy Link") { calendar.copyLink(event) }
+            }
+        }
         .accessibilityElement(children: .combine)
+        .accessibilityActions {
+            if joinable { Button("Join") { calendar.join(event) } }
+        }
+    }
+
+    /// Stands out while the meeting's countdown is on.
+    private func joinButton(_ event: DayEvent, meeting: MeetingLink) -> some View {
+        let soon = calendar.countingDown?.id == event.id
+        return Button {
+            calendar.join(event)
+        } label: {
+            Label("Join", systemImage: "video.fill")
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 9)
+                .padding(.vertical, 4)
+                .background(soon ? Color.green.opacity(0.85) : .white.opacity(0.14), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .help("Join on \(meeting.service). Right-click to copy the link.")
     }
 
     private func taskRow(_ task: TaskItem) -> some View {

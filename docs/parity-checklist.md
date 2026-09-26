@@ -89,6 +89,11 @@ that delivers it.
 - [x] API keys for OpenRouter and Z.ai, pasted in Settings › AI Usage and kept in the keychain
 - [x] Provider logos from theSVG
 
+## v1.1: the roadmap's picks
+
+- [x] Join meeting: a Join button on events with a Zoom, Google Meet, Teams, Webex, Whereby, Jitsi, or FaceTime link in their URL, location, or notes; right-click copies the link
+- [x] A countdown in the closed notch for the five minutes before a meeting with a link, opening with its name; hovering it opens the Calendar tab
+
 ## Later
 
 - [ ] Brightness display (blocked: Apple silicon has no public API to read or set brightness)

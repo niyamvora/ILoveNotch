@@ -13,6 +13,10 @@ public struct DayEvent: Identifiable, Hashable, Sendable {
     public var end: Date
     public var isAllDay: Bool
     public var color: RGB?
+    /// The video call to join, when the event has a link to one.
+    public var meeting: MeetingLink?
+    /// Declined, or canceled by the organizer: nothing to join.
+    public var isDeclined: Bool
 
     init(_ event: EKEvent) {
         // Recurring events share an identifier, so the start date keeps occurrences apart.
@@ -22,15 +26,24 @@ public struct DayEvent: Identifiable, Hashable, Sendable {
         end = event.endDate
         isAllDay = event.isAllDay
         color = RGB(event.calendar?.cgColor)
+        meeting = MeetingLink.find(in: [event.url?.absoluteString, event.location, event.notes])
+        isDeclined =
+            event.status == .canceled
+            || event.attendees?.first(where: \.isCurrentUser)?.participantStatus == .declined
     }
 
-    init(id: String, title: String, start: Date, end: Date, isAllDay: Bool = false, color: RGB? = nil) {
+    init(
+        id: String, title: String, start: Date, end: Date, isAllDay: Bool = false, color: RGB? = nil,
+        meeting: MeetingLink? = nil, isDeclined: Bool = false
+    ) {
         self.id = id
         self.title = title
         self.start = start
         self.end = end
         self.isAllDay = isAllDay
         self.color = color
+        self.meeting = meeting
+        self.isDeclined = isDeclined
     }
 
     /// All-day events first, then by start time.
@@ -41,9 +54,11 @@ public struct DayEvent: Identifiable, Hashable, Sendable {
 }
 
 /// Today's events from the user's calendars, with the tasks due today beneath them and a field to
-/// add an event. It asks for access only when the user taps the button, and reads (one bounded
-/// day-long query, plus one for due reminders when Reminders access is already allowed) only while
-/// the tab is on screen, refreshing on EventKit's change notification rather than polling.
+/// add an event. It asks for access only when the user taps the button, and reads the agenda (one
+/// bounded day-long query, plus one for due reminders when Reminders access is already allowed)
+/// only while the tab is on screen, refreshing on EventKit's change notification rather than
+/// polling. With access, it also counts down to the next meeting with a video link while the tab is
+/// off screen: one bounded query for it and one deadline, looked at again when the calendars change.
 @MainActor
 @Observable
 public final class CalendarFeature: NotchFeature {
@@ -51,7 +66,7 @@ public final class CalendarFeature: NotchFeature {
     public var phase: FeaturePhase = .stopped {
         didSet {
             guard phase != oldValue else { return }
-            phase == .foreground ? activate() : deactivate()
+            update()
         }
     }
     public private(set) var access = EventAccess(.event)
@@ -74,21 +89,43 @@ public final class CalendarFeature: NotchFeature {
             reload()
         }
     }
+    /// Per-feature setting: count down in the closed notch to the next meeting with a video link.
+    public var countsDownToMeetings: Bool {
+        didSet {
+            defaults.set(countsDownToMeetings, forKey: Self.countdownKey)
+            update()
+        }
+    }
+    /// Raised when a meeting's countdown starts, with the meeting's name.
+    @ObservationIgnored public var onActivity: ((Activity) -> Void)?
+    /// The countdown to the next meeting, or nil when there's none to show.
+    @ObservationIgnored public var onOngoing: ((Activity?) -> Void)?
 
     // ponytail: overdue reminders can pile up, so the agenda shows a bounded number.
     static let dueTaskLimit = 20
+    // ponytail: a fixed five minutes' warning; a picker in Calendar's settings if people want more.
+    static let lead: TimeInterval = 5 * 60
+    /// How far ahead the next meeting is looked for; the countdown looks again when this runs out.
+    static let horizon: TimeInterval = 24 * 3600
     private static let allDayKey = "calendar.showsAllDay"
     private static let showsTasksKey = "calendar.showsTasks"
+    private static let countdownKey = "calendar.countsDownToMeetings"
     @ObservationIgnored private let eventStore: EventStore
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private var changes: NSObjectProtocol?
     @ObservationIgnored private var clearNotice: Task<Void, Never>?
+    @ObservationIgnored private var wake: Task<Void, Never>?
+    /// The meeting the notch is counting down to.
+    private(set) var countingDown: DayEvent?
+    /// Meetings the user joined from the notch, which don't count down again.
+    @ObservationIgnored private var joined: Set<DayEvent.ID> = []
 
     public init(eventStore: EventStore, defaults: UserDefaults = .standard) {
         self.eventStore = eventStore
         self.defaults = defaults
         showsAllDay = defaults.object(forKey: Self.allDayKey) as? Bool ?? true
         showsTasks = defaults.object(forKey: Self.showsTasksKey) as? Bool ?? true
+        countsDownToMeetings = defaults.object(forKey: Self.countdownKey) as? Bool ?? true
     }
 
     public var view: some View { CalendarView(calendar: self) }
@@ -98,11 +135,7 @@ public final class CalendarFeature: NotchFeature {
 
     public func requestAccess() {
         eventStore.store.requestFullAccessToEvents { [weak self] _, _ in
-            Task { @MainActor in
-                guard let self else { return }
-                self.access = EventAccess(.event)
-                if self.phase == .foreground { self.activate() }
-            }
+            Task { @MainActor in self?.update() }
         }
     }
 
@@ -157,7 +190,7 @@ public final class CalendarFeature: NotchFeature {
     }
 
     /// Shows the given agenda as if access were granted. For tests and snapshots only.
-    func show(events: [DayEvent], dueTasks: [TaskItem]) {
+    func show(events: [DayEvent], dueTasks: [TaskItem] = []) {
         access = .granted
         self.events = events
         self.dueTasks = dueTasks
@@ -178,24 +211,45 @@ public final class CalendarFeature: NotchFeature {
         workspace.openApplication(at: app, configuration: NSWorkspace.OpenConfiguration())
     }
 
-    private func activate() {
+    /// Opens the meeting's link, which hands it to the service's app, and ends its countdown.
+    public func join(_ event: DayEvent) {
+        guard let meeting = event.meeting else { return }
+        NSWorkspace.shared.open(meeting.url)
+        joined.insert(event.id)
+        watchMeetings()
+    }
+
+    public func copyLink(_ event: DayEvent) {
+        guard let meeting = event.meeting else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(meeting.url.absoluteString, forType: .string)
+    }
+
+    /// Listens for calendar changes while the agenda is on screen or a countdown may be needed, and
+    /// holds today's events only while they're on screen.
+    private func update() {
         refreshAccess()
-        guard access == .granted else { return }
-        if changes == nil {
+        let listens = access == .granted && (phase == .foreground || phase == .background && countsDownToMeetings)
+        if listens, changes == nil {
             changes = NotificationCenter.default.addObserver(
                 forName: .EKEventStoreChanged, object: eventStore.store, queue: .main
             ) { [weak self] _ in
-                MainActor.assumeIsolated { self?.reload() }
+                MainActor.assumeIsolated {
+                    self?.reload()
+                    self?.watchMeetings()
+                }
             }
+        } else if !listens, let changes {
+            NotificationCenter.default.removeObserver(changes)
+            self.changes = nil
         }
-        reload()
-    }
-
-    private func deactivate() {
-        if let changes { NotificationCenter.default.removeObserver(changes) }
-        changes = nil
-        events = []
-        dueTasks = []
+        if phase == .foreground {
+            reload()
+        } else {
+            events = []
+            dueTasks = []
+        }
+        watchMeetings()
     }
 
     private func reload() {
@@ -223,5 +277,55 @@ public final class CalendarFeature: NotchFeature {
                 self.dueTasks = bounded
             }
         }
+    }
+
+    // MARK: Meeting countdown
+
+    /// The next meeting worth counting down to: timed, with a link, not declined, not joined yet, and
+    /// not started.
+    static func nextMeeting(in events: [DayEvent], after now: Date, skipping joined: Set<DayEvent.ID>) -> DayEvent? {
+        events
+            .filter { !$0.isAllDay && $0.meeting != nil && !$0.isDeclined && !joined.contains($0.id) && $0.start > now }
+            .min { ($0.start, $0.title) < ($1.start, $1.title) }
+    }
+
+    /// When to look again: when `next`'s countdown starts, when it ends because the meeting starts,
+    /// or, with no meeting coming, when the look-ahead runs out.
+    static func nextWake(for next: DayEvent?, now: Date) -> Date {
+        guard let next else { return now + horizon }
+        return next.start - lead > now ? next.start - lead : next.start
+    }
+
+    /// Counts down to the next meeting from `lead` before it until it starts, then moves on to the
+    /// one after. Nothing runs while the notch is stopped or the countdown is off.
+    private func watchMeetings() {
+        wake?.cancel()
+        wake = nil
+        guard phase != .stopped, countsDownToMeetings, access == .granted else { return count(down: nil) }
+        let now = Date.now
+        let store = eventStore.store
+        let ahead = store.predicateForEvents(withStart: now, end: now + Self.horizon, calendars: nil)
+        let next = Self.nextMeeting(in: store.events(matching: ahead).map(DayEvent.init), after: now, skipping: joined)
+        count(down: next.flatMap { $0.start - Self.lead <= now ? $0 : nil })
+        let delay = Self.nextWake(for: next, now: now).timeIntervalSince(now)
+        wake = Task { [weak self] in
+            do { try await Task.sleep(for: .seconds(max(delay, 0)), tolerance: .seconds(1)) } catch { return }
+            self?.watchMeetings()
+        }
+    }
+
+    /// Starts or ends the notch's countdown. A new countdown opens with the meeting's name.
+    private func count(down meeting: DayEvent?) {
+        guard meeting != countingDown else { return }
+        countingDown = meeting
+        guard let meeting else {
+            onOngoing?(nil)
+            return
+        }
+        onActivity?(Activity(feature: .calendar, symbol: "video.fill", title: meeting.title, duration: .seconds(4)))
+        onOngoing?(
+            Activity(
+                feature: .calendar, symbol: "video.fill", title: "\(meeting.title) starts in", duration: .zero,
+                countdown: meeting.start))
     }
 }

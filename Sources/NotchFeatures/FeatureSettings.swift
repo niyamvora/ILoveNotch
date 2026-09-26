@@ -28,6 +28,12 @@ extension CalendarFeature {
                 Text("Show tasks due today")
                 Text("Lists open reminders due today or overdue under your events, once Tasks has access.")
             }
+            Toggle(isOn: $calendar.countsDownToMeetings) {
+                Text("Count down to meetings")
+                Text(
+                    "Five minutes before a meeting with a Zoom, Google Meet, Teams, Webex, Whereby, Jitsi, or "
+                        + "FaceTime link, the closed notch counts down to it. Join from the Calendar tab.")
+            }
         }
         .onAppear(perform: calendar.refreshAccess)
     }

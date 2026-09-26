@@ -114,6 +114,18 @@ struct FeatureSnapshotTests {
         try render(calendar.view, name: "calendar")
     }
 
+    @Test func calendarWithAMeetingToJoin() throws {
+        let calendar = CalendarFeature(eventStore: EventStore(), defaults: UserDefaults(suiteName: "C-\(UUID())")!)
+        let now = Date.now
+        let meet = MeetingLink(URL(string: "https://meet.google.com/abc-defg-hij")!)
+        calendar.show(events: [
+            DayEvent(id: "1", title: "Standup", start: now - 7200, end: now - 6300, meeting: meet),
+            DayEvent(id: "2", title: "Design review", start: now + 240, end: now + 3840, meeting: meet),
+            DayEvent(id: "3", title: "Lunch with Sam", start: now + 7200, end: now + 10_800),
+        ])
+        try render(calendar.view, name: "calendar-meeting")
+    }
+
     @Test func eventKitTabsBeforeAccess() throws {
         let store = EventStore()
         try render(CalendarFeature(eventStore: store).view, name: "calendar-no-access")
