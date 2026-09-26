@@ -204,3 +204,53 @@ public enum DueLabel {
         return hasTime ? "\(day) \(due.formatted(date: .omitted, time: .shortened))" : day
     }
 }
+
+/// An event typed into the Calendar tab: "Lunch with Sam tomorrow 1pm for 90 min".
+public struct EventDraft: Equatable, Sendable {
+    public var title: String
+    public var start: Date
+    public var duration: TimeInterval
+    public var isAllDay: Bool
+
+    private static let durationPattern =
+        #"\bfor\s+(\d+(?:\.\d+)?)\s*(h|hr|hrs|hour|hours|m|min|mins|minute|minutes)\b"#
+
+    /// Nil when there's no date or time in the text: an event needs to know when it happens.
+    public static func parse(_ text: String, defaultDuration: TimeInterval = 3600, calendar: Calendar = .current)
+        -> EventDraft?
+    {
+        var rest = text
+        var duration: TimeInterval?
+        if let match = rest.range(of: durationPattern, options: [.regularExpression, .caseInsensitive]) {
+            let phrase = rest[match].lowercased()
+            let digits = phrase.drop { !$0.isNumber }.prefix { $0.isNumber || $0 == "." }
+            if let amount = Double(digits) {
+                let unit = phrase.drop { !$0.isLetter }.dropFirst(3).drop { !$0.isLetter }
+                duration = unit.hasPrefix("h") ? amount * 3600 : amount * 60
+            }
+            rest.replaceSubrange(match, with: " ")
+        }
+        guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue) else {
+            return nil
+        }
+        let string = rest as NSString
+        guard
+            let match = detector.firstMatch(in: rest, options: [], range: NSRange(location: 0, length: string.length)),
+            let date = match.date
+        else { return nil }
+        let phrase = string.substring(with: match.range)
+        let timePattern = #"\d\s*(am|pm|a\.m\.|p\.m\.)|\d:\d\d|\b(noon|midnight|tonight)\b|\bat\s+\d"#
+        let hasTime = phrase.range(of: timePattern, options: [.regularExpression, .caseInsensitive]) != nil
+        rest = string.replacingCharacters(in: match.range, with: " ")
+        var titleWords = rest.split(whereSeparator: \.isWhitespace).map(String.init)
+        let dangling: Set<String> = ["at", "on", "from", "in", "@", "-", ",", "–"]
+        while let last = titleWords.last, dangling.contains(last.lowercased()) { titleWords.removeLast() }
+        let title = titleWords.joined(separator: " ")
+        let detected = match.duration > 0 ? match.duration : nil
+        return EventDraft(
+            title: title.isEmpty ? "New Event" : title,
+            start: hasTime ? date : calendar.startOfDay(for: date),
+            duration: hasTime ? (duration ?? detected ?? defaultDuration) : 86_400,
+            isAllDay: !hasTime)
+    }
+}

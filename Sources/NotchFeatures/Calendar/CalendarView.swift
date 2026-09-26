@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 import SwiftUI
 
-/// The calendar tab: today's agenda, with past events dimmed.
+/// The calendar tab: today's agenda, with past events dimmed, the tasks due today beneath it, and a
+/// field that adds an event from a line like "Lunch with Sam tomorrow 1pm".
 struct CalendarView: View {
     let calendar: CalendarFeature
+    @State private var draft = ""
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         if calendar.access != .granted {
@@ -12,24 +15,48 @@ struct CalendarView: View {
                 request: calendar.requestAccess)
         } else {
             VStack(alignment: .leading, spacing: 6) {
-                Button(action: calendar.openCalendarApp) {
-                    Text(Date.now, format: .dateTime.weekday(.wide).day().month(.wide))
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.6))
+                HStack {
+                    Button(action: calendar.openCalendarApp) {
+                        Text(Date.now, format: .dateTime.weekday(.wide).day().month(.wide))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Open Calendar")
+                    Spacer(minLength: 0)
+                    if let notice = calendar.notice {
+                        Text(notice).lineLimit(1).transition(.opacity)
+                    }
                 }
-                .buttonStyle(.plain)
-                .help("Open Calendar")
-                if calendar.events.isEmpty {
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.6))
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: calendar.notice)
+                if calendar.events.isEmpty, calendar.dueTasks.isEmpty {
                     FeatureUnavailableView(symbol: "calendar", title: "Nothing today", message: "Enjoy the free time.")
                 } else {
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 4) {
                             ForEach(calendar.events) { event in row(event) }
+                            if !calendar.dueTasks.isEmpty {
+                                Text("Tasks")
+                                    .font(.caption2.weight(.bold))
+                                    .foregroundStyle(.white.opacity(0.6))
+                                    .padding(.top, calendar.events.isEmpty ? 0 : 6)
+                                    .accessibilityAddTraits(.isHeader)
+                                ForEach(calendar.dueTasks) { task in taskRow(task) }
+                            }
                         }
                         .padding(.vertical, 6)
                     }
                     .fadingEdges()
                 }
+                TextField("New event: try \u{201C}Lunch tomorrow 1pm for 1h\u{201D}", text: $draft)
+                    .textFieldStyle(.plain)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 7))
+                    .onSubmit {
+                        // Text without a time stays in the field so it can be finished.
+                        if calendar.addEvent(draft) { draft = "" }
+                    }
             }
         }
     }
@@ -57,5 +84,30 @@ struct CalendarView: View {
         }
         .opacity(past ? 0.45 : 1)
         .accessibilityElement(children: .combine)
+    }
+
+    private func taskRow(_ task: TaskItem) -> some View {
+        HStack(spacing: 8) {
+            Button {
+                withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.82)) {
+                    calendar.complete(task)
+                }
+            } label: {
+                Image(systemName: "circle")
+                    .font(.system(size: 13))
+                    .foregroundStyle(task.color?.color ?? .white)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Complete \(task.title)")
+            Text(task.title).font(.callout).lineLimit(1)
+            Spacer(minLength: 0)
+            if let due = task.due {
+                Text(DueLabel.text(for: due, hasTime: task.hasTime))
+                    .font(.caption)
+                    .foregroundStyle(task.isOverdue() ? Color.red : .white.opacity(0.55))
+            }
+        }
+        .transition(.opacity)
     }
 }

@@ -60,6 +60,7 @@ struct EventKitFeatureTests {
     @Test func settingsPersist() {
         let store = EventStore()
         CalendarFeature(eventStore: store, defaults: defaults).showsAllDay = false
+        CalendarFeature(eventStore: store, defaults: defaults).showsTasks = false
         let tasks = TasksFeature(eventStore: store, defaults: defaults)
         #expect(tasks.alertsInNotch && tasks.alertsAtDueTime && tasks.blockMinutes == 30, "defaults")
         tasks.listID = "work"
@@ -67,6 +68,7 @@ struct EventKitFeatureTests {
         tasks.alertsInNotch = false
         tasks.blockMinutes = 45
         #expect(!CalendarFeature(eventStore: store, defaults: defaults).showsAllDay)
+        #expect(!CalendarFeature(eventStore: store, defaults: defaults).showsTasks)
         let relaunched = TasksFeature(eventStore: store, defaults: defaults)
         #expect(relaunched.listID == "work" && relaunched.groupsByList)
         #expect(!relaunched.alertsInNotch && relaunched.blockMinutes == 45)
@@ -93,6 +95,15 @@ struct EventKitFeatureTests {
         #expect(draft.hasTime)
         #expect(Calendar.current.isDateInTomorrow(due))
         #expect(Calendar.current.component(.hour, from: due) == 17)
+    }
+
+    @Test func eventsAreReadFromPlainWords() throws {
+        let draft = try #require(EventDraft.parse("Lunch with Sam tomorrow 1pm for 90 min"))
+        #expect(draft.title == "Lunch with Sam")
+        #expect(!draft.isAllDay)
+        #expect(draft.duration == 90 * 60)
+        #expect(Calendar.current.isDateInTomorrow(draft.start))
+        #expect(EventDraft.parse("Lunch with Sam") == nil, "an event needs a time")
     }
 
     @Test func tasksGroupByWhenTheyAreDue() throws {

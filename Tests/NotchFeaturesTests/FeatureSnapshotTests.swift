@@ -93,6 +93,20 @@ struct FeatureSnapshotTests {
         try render(tasks.view, name: "tasks-alert")
     }
 
+    @Test func calendarWithEventsAndTasks() throws {
+        let calendar = CalendarFeature(eventStore: EventStore(), defaults: UserDefaults(suiteName: "C-\(UUID())")!)
+        let now = Date.now
+        calendar.show(
+            events: [
+                DayEvent(
+                    id: "1", title: "Design review", start: now - 1800, end: now + 1800,
+                    color: RGB(red: 0.3, green: 0.6, blue: 1)),
+                DayEvent(id: "2", title: "Gym", start: now + 7200, end: now + 10_800),
+            ],
+            dueTasks: [TaskItem(id: "3", title: "Pay rent", due: Calendar.current.startOfDay(for: now))])
+        try render(calendar.view, name: "calendar")
+    }
+
     @Test func eventKitTabsBeforeAccess() throws {
         let store = EventStore()
         try render(CalendarFeature(eventStore: store).view, name: "calendar-no-access")
