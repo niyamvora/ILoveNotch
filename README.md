@@ -88,8 +88,9 @@ public and buildable whatever happens to the project.
   the notch when it's due.
 - **Notes, Shortcuts, and Timer.** Markdown notes that save as you type, with
   colors, pins, search, checklists you can tick and send to Tasks, and a
-  Control-Option-N shortcut; your shortcuts one click away; and a timer and a
-  stopwatch with laps.
+  Control-Option-N shortcut; your shortcuts one click away; a timer and a
+  stopwatch with laps; and Keep Awake, which stops your Mac sleeping for a
+  while or until you turn it off, with the time left in the closed notch.
 - **Mirror.** Your camera, off until you turn it on, and on only while its tab
   is open.
 - **AI Usage.** How much of each AI coding plan you've used, as a card per tool,

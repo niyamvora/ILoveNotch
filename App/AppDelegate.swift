@@ -131,6 +131,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         calendar.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         calendar.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .calendar) }
         timer.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
+        timer.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .timer) }
         shortcuts.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         tasks.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         notes.onSendToTasks = { [tasks] in tasks.add($0) }
@@ -171,6 +172,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         // Stops every feature, including the media helper process and the camera.
         features.update(presentations: [], enabled: [])
+        timer.allowSleep()
         volume.stop()
         battery.stop()
         accessories.stop()
@@ -194,6 +196,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// on. Replacing the volume display needs the volume activity and Accessibility access; without
     /// access the keys keep working as usual until access is granted.
     private func updateSystemActivities() {
+        // Keep awake lives in the Timer tab: turning the tab off must not leave the Mac awake unseen.
+        if !preferences.isEnabled(.timer) { timer.allowSleep() }
         preferences.showsVolume ? volume.start() : volume.stop()
         preferences.showsBattery ? battery.start() : battery.stop()
         preferences.showsAccessoryBattery ? accessories.start() : accessories.stop()

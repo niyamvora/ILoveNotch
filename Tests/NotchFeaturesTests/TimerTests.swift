@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-import Foundation
+import AppKit
 import NotchCore
 import Testing
 
@@ -54,6 +54,41 @@ struct TimerFeatureTests {
         #expect(watch.laps == [10, 20])
         watch.reset()
         #expect(watch == Stopwatch())
+    }
+
+    @Test func keepingAwakeHoldsOneAssertionAndShowsInTheClosedNotchUntilTurnedOff() {
+        let timer = TimerFeature()
+        var ongoing: [Activity?] = []
+        timer.onOngoing = { ongoing.append($0) }
+        timer.keepAwake(for: nil, now: start)
+        #expect(timer.keepsAwake && timer.awakeUntil == .distantFuture && timer.holdsAssertion)
+        #expect(ongoing.last??.title == "Awake" && ongoing.last??.countdown == nil, "no end, so no countdown")
+        timer.keepAwake(for: 3600, now: start)
+        #expect(timer.awakeUntil == start + 3600 && ongoing.last??.countdown == start + 3600)
+        timer.extendAwake(now: start + 600)
+        #expect(timer.awakeUntil == start + 5400, "half an hour more")
+        timer.allowSleep()
+        #expect(!timer.keepsAwake && !timer.holdsAssertion)
+        #expect(ongoing.count == 4 && ongoing.last == .some(nil), "and the closed notch lets it go")
+    }
+
+    @Test func aTimedKeepAwakeRunsOutAndSaysSo() async {
+        let timer = TimerFeature()
+        var activities: [Activity] = []
+        timer.onActivity = { activities.append($0) }
+        timer.keepAwake(for: 0.2)
+        #expect(await eventually { !timer.keepsAwake })
+        #expect(activities.map(\.title) == ["Can sleep"] && !timer.holdsAssertion)
+    }
+
+    @Test func sleepingAnywayEndsKeepAwake() async {
+        // Its own center: tests run side by side, and a real sleep notice would reach every timer.
+        let workspace = NotificationCenter()
+        let timer = TimerFeature(workspace: workspace)
+        timer.keepAwake(for: nil)
+        workspace.post(name: NSWorkspace.willSleepNotification, object: nil)
+        #expect(await eventually { !timer.keepsAwake })
+        #expect(!timer.holdsAssertion)
     }
 
     @Test func timesAreFormattedForHumans() {

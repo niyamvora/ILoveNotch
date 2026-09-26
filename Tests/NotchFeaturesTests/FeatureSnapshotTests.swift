@@ -62,6 +62,17 @@ struct FeatureSnapshotTests {
         try render(timer.view, name: "stopwatch")
     }
 
+    @Test func keepAwakeOffTimedAndUntilTurnedOff() throws {
+        let timer = TimerFeature()
+        timer.mode = .keepAwake
+        try render(timer.view, name: "keep-awake")
+        timer.keepAwake(for: 2 * 3600)
+        try render(timer.view, name: "keep-awake-timed")
+        timer.keepAwake(for: nil)
+        try render(timer.view, name: "keep-awake-on")
+        timer.allowSleep()
+    }
+
     @Test func notesWithAFewNotes() throws {
         let notes = NotesFeature(
             directory: FileManager.default.temporaryDirectory.appending(path: "N-\(UUID())"),
