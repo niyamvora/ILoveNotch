@@ -116,6 +116,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         media.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         shelf.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
+        calendar.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
+        calendar.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .calendar) }
         timer.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         shortcuts.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         tasks.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }

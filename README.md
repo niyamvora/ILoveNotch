@@ -70,7 +70,8 @@ public and buildable whatever happens to the project.
 
 - **The notch.** Opens when you hover it, click it, or pull down with two
   fingers, and closes when you move away. Closed, it hides behind the camera
-  housing. Pick how it opens and closes (spring, jelly, pop, smooth, snappy, or
+  housing until it has something to tell you, like a meeting about to start.
+  Pick how it opens and closes (spring, jelly, pop, smooth, snappy, or
   instant), drag its bottom-right corner to resize it, and pin it open. Works on
   every display, as a floating pill where there's no notch.
 - **Media.** What's playing in any app, with artwork, controls, a seek bar, and
@@ -78,10 +79,13 @@ public and buildable whatever happens to the project.
 - **Shelf.** Drop files on the notch to keep them at hand; drag them back out,
   preview them with Quick Look, or send them with AirDrop.
 - **Calendar and Tasks.** Today's events with the tasks due today, and an
-  event field that understands "Lunch tomorrow 1pm". Your Apple Reminders,
-  grouped by date or list, synced to your iPhone through iCloud: add them in
-  plain words ("Pay rent fri 9am !! #Home"), set dates, priorities, lists, and
-  alerts, block time for one in Calendar, and see it on the notch when it's due.
+  event field that understands "Lunch tomorrow 1pm". A Join button for Zoom,
+  Google Meet, Teams, Webex, Whereby, Jitsi, and FaceTime calls, and a
+  countdown in the closed notch for the five minutes before one starts. Your
+  Apple Reminders, grouped by date or list, synced to your iPhone through
+  iCloud: add them in plain words ("Pay rent fri 9am !! #Home"), set dates,
+  priorities, lists, and alerts, block time for one in Calendar, and see it on
+  the notch when it's due.
 - **Notes, Shortcuts, and Timer.** Markdown notes that save as you type, with
   colors, pins, search, checklists you can tick and send to Tasks, and a
   Control-Option-N shortcut; your shortcuts one click away; and a timer and a
