@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 import AppKit
+import Carbon.HIToolbox
 import NotchCore
 import NotchFeatures
 import ServiceManagement
@@ -11,6 +12,7 @@ import SwiftUI
 final class SettingsWindowController {
     private let preferences: NotchPreferences
     private let updater: Updater
+    private let notchKey: HotKey
     private let previewAnimation: () -> Void
     private let featureSettings: (FeatureID) -> AnyView?
     private let usageSettings: AnyView?
@@ -20,11 +22,12 @@ final class SettingsWindowController {
     /// `featureSettings` supplies each feature's own settings, shown under its toggle; `usageSettings`,
     /// when this edition has AI Usage, gets a tab of its own.
     init(
-        preferences: NotchPreferences, updater: Updater, previewAnimation: @escaping () -> Void,
+        preferences: NotchPreferences, updater: Updater, notchKey: HotKey, previewAnimation: @escaping () -> Void,
         featureSettings: @escaping (FeatureID) -> AnyView?, usageSettings: AnyView?
     ) {
         self.preferences = preferences
         self.updater = updater
+        self.notchKey = notchKey
         self.previewAnimation = previewAnimation
         self.featureSettings = featureSettings
         self.usageSettings = usageSettings
@@ -35,7 +38,7 @@ final class SettingsWindowController {
         if let tab { selection.tab = tab }
         if window == nil {
             let root = SettingsView(
-                preferences: preferences, updater: updater, previewAnimation: previewAnimation,
+                preferences: preferences, updater: updater, notchKey: notchKey, previewAnimation: previewAnimation,
                 featureSettings: featureSettings, usageSettings: usageSettings, selection: selection)
             let window = NSWindow(contentViewController: NSHostingController(rootView: root))
             window.title = "ILoveNotch Settings"
@@ -60,6 +63,7 @@ final class SettingsSelection {
 struct SettingsView: View {
     let preferences: NotchPreferences
     let updater: Updater
+    let notchKey: HotKey
     let previewAnimation: () -> Void
     let featureSettings: (FeatureID) -> AnyView?
     let usageSettings: AnyView?
@@ -67,7 +71,7 @@ struct SettingsView: View {
 
     var body: some View {
         TabView(selection: $selection.tab) {
-            GeneralSettings(preferences: preferences, previewAnimation: previewAnimation)
+            GeneralSettings(preferences: preferences, notchKey: notchKey, previewAnimation: previewAnimation)
                 .tabItem { Label("General", systemImage: "gearshape") }
                 .tag(SettingsSelection.Tab.general)
             FeatureSettings(preferences: preferences, featureSettings: featureSettings)
@@ -91,6 +95,7 @@ struct SettingsView: View {
 
 private struct GeneralSettings: View {
     @Bindable var preferences: NotchPreferences
+    let notchKey: HotKey
     let previewAnimation: () -> Void
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginError: String?
@@ -107,6 +112,19 @@ private struct GeneralSettings: View {
             Text("Otherwise ILoveNotch uses the built-in display's notch, or the main display.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            LabeledContent("Keyboard shortcut") {
+                ShortcutRecorder(shortcut: $preferences.notchShortcut, hotKey: notchKey)
+            }
+            Group {
+                if notchKey.isAvailable {
+                    Text("Opens the notch from any app, on the display under the pointer. Press it or Escape to close.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Another app already uses \(preferences.notchShortcut?.display ?? "it"). Record another.")
+                        .foregroundStyle(.red)
+                }
+            }
+            .font(.caption)
             Picker("Open and close animation", selection: $preferences.animationStyle) {
                 ForEach(NotchAnimationStyle.allCases) { style in
                     Text(style.title).tag(style)
@@ -148,6 +166,57 @@ private struct GeneralSettings: View {
             loginError = error.localizedDescription
         }
         launchAtLogin = SMAppService.mainApp.status == .enabled
+    }
+}
+
+/// Click, then press the new shortcut; Escape cancels and Delete clears it. The shortcut stops
+/// working while recording, so pressing the current one records it rather than opening the notch.
+private struct ShortcutRecorder: View {
+    @Binding var shortcut: KeyShortcut?
+    let hotKey: HotKey
+    @State private var monitor: Any?
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Button(monitor != nil ? "Press the shortcut…" : shortcut?.display ?? "Record Shortcut") {
+                monitor == nil ? record() : stop()
+            }
+            .help(monitor != nil ? "Escape cancels, Delete clears" : "Click, then press a new shortcut")
+            if shortcut != nil, monitor == nil {
+                Button("Clear") { shortcut = nil }
+            }
+        }
+        .onDisappear(perform: stop)
+    }
+
+    private func record() {
+        hotKey.isPaused = true
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            MainActor.assumeIsolated {
+                let plain = event.modifierFlags.isDisjoint(with: [.command, .option, .control, .shift])
+                switch Int(event.keyCode) {
+                case kVK_Escape where plain:
+                    stop()
+                case kVK_Delete where plain, kVK_ForwardDelete where plain:
+                    shortcut = nil
+                    stop()
+                default:
+                    guard let recorded = KeyShortcut(event: event) else {
+                        NSSound.beep()  // needs Command, Option, or Control
+                        return
+                    }
+                    shortcut = recorded
+                    stop()
+                }
+            }
+            return nil
+        }
+    }
+
+    private func stop() {
+        if let monitor { NSEvent.removeMonitor(monitor) }
+        monitor = nil
+        hotKey.isPaused = false
     }
 }
 

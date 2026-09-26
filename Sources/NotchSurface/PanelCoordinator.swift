@@ -58,6 +58,28 @@ public final class PanelCoordinator {
         controllers.first { $0.engine.state.presentation.openTab != nil }?.focusKeyboard()
     }
 
+    /// The keyboard shortcut: closes any open notch, or else opens the one on the display under the
+    /// pointer (or the only one). Returns whether a notch opened.
+    @discardableResult
+    public func toggleNotch() -> Bool {
+        if presentations.contains(where: { $0.openTab != nil }) {
+            dismissAll()
+            return false
+        }
+        let pointer = NSEvent.mouseLocation
+        guard let controller = controllers.first(where: { $0.screenFrame.contains(pointer) }) ?? controllers.first
+        else { return false }
+        controller.engine.send(.clicked)
+        return controller.engine.state.presentation.openTab != nil
+    }
+
+    /// Closes every open notch, pinned ones too.
+    public func dismissAll() {
+        for controller in controllers where controller.engine.state.presentation.openTab != nil {
+            controller.engine.send(.dismiss)
+        }
+    }
+
     /// Shows `activity` on every resting notch until `feature` replaces it, or clears it with nil.
     /// With several at once the newest shows, and the others wait underneath until it clears.
     public func setOngoing(_ activity: Activity?, for feature: FeatureID) {

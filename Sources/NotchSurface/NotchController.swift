@@ -11,6 +11,8 @@ final class NotchController {
     let displayID: CGDirectDisplayID
     /// Called after every presentation change.
     var onPresentationChange: (() -> Void)?
+    /// The display's frame in global coordinates.
+    var screenFrame: CGRect { metrics.screen }
 
     private let metrics: NotchMetrics
     private let preferences: NotchPreferences

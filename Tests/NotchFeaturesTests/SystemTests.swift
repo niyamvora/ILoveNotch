@@ -92,6 +92,34 @@ struct SystemActivitySymbolTests {
 }
 
 @MainActor
+struct HotKeyTests {
+    private func press(_ characters: String, keyCode: UInt16, _ flags: NSEvent.ModifierFlags) -> NSEvent? {
+        NSEvent.keyEvent(
+            with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0, windowNumber: 0, context: nil,
+            characters: characters, charactersIgnoringModifiers: characters, isARepeat: false, keyCode: keyCode)
+    }
+
+    private func shortcut(_ characters: String, keyCode: UInt16, _ flags: NSEvent.ModifierFlags) throws
+        -> KeyShortcut?
+    {
+        KeyShortcut(event: try #require(press(characters, keyCode: keyCode, flags)))
+    }
+
+    @Test func aKeyPressWithCommandOptionOrControlBecomesAShortcut() throws {
+        #expect(try shortcut("o", keyCode: 31, [.control, .option]) == NotchPreferences.defaultNotchShortcut)
+        #expect(try shortcut("n", keyCode: 45, [.control, .option]) == .newNote)
+        #expect(try shortcut(" ", keyCode: 49, [.command, .shift])?.display == "⇧⌘Space")
+        let f5 = String(UnicodeScalar(UInt32(NSF5FunctionKey))!)
+        #expect(try shortcut(f5, keyCode: 96, [.command])?.display == "⌘F5")
+    }
+
+    @Test func plainTypingIsNotAShortcut() throws {
+        #expect(try shortcut("a", keyCode: 0, []) == nil)
+        #expect(try shortcut("A", keyCode: 0, [.shift]) == nil, "Shift alone types")
+    }
+}
+
+@MainActor
 struct MirrorTests {
     @Test func theCameraRunsOnlyWhileTheMirrorCanBeSeen() {
         #expect(MirrorFeature.runsCamera(phase: .foreground, access: .granted))

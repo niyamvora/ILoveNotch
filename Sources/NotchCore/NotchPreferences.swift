@@ -35,6 +35,34 @@ public enum NotchAnimationStyle: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+/// A keyboard shortcut, kept the way Carbon's hot keys take it: a virtual key code, the same on
+/// every keyboard layout, and Carbon modifier flags. `key` is what that key typed when recorded.
+public struct KeyShortcut: Codable, Hashable, Sendable {
+    public var keyCode: UInt32
+    public var modifiers: UInt32
+    public var key: String
+
+    // Carbon's modifier flags (Events.h), which don't need Carbon to compare.
+    public static let command: UInt32 = 0x100
+    public static let shift: UInt32 = 0x200
+    public static let option: UInt32 = 0x800
+    public static let control: UInt32 = 0x1000
+
+    public init(keyCode: UInt32, modifiers: UInt32, key: String) {
+        self.keyCode = keyCode
+        self.modifiers = modifiers
+        self.key = key
+    }
+
+    /// "⌃⌥O": the modifiers in the order macOS menus show them, then the key.
+    public var display: String {
+        let symbols: [(UInt32, String)] = [
+            (Self.control, "⌃"), (Self.option, "⌥"), (Self.shift, "⇧"), (Self.command, "⌘"),
+        ]
+        return symbols.filter { modifiers & $0.0 != 0 }.map(\.1).joined() + key
+    }
+}
+
 /// User preferences, persisted in UserDefaults. The settings UI binds to these directly.
 @MainActor
 @Observable
@@ -75,6 +103,19 @@ public final class NotchPreferences {
     public var showsAccessoryBattery: Bool {
         didSet { defaults.set(showsAccessoryBattery, forKey: Key.showsAccessoryBattery) }
     }
+
+    /// Opens and closes the notch from any app. Nil once the user clears it.
+    public var notchShortcut: KeyShortcut? {
+        didSet {
+            // Empty data means cleared; no value at all means the default.
+            let data = notchShortcut.flatMap { try? JSONEncoder().encode($0) } ?? Data()
+            defaults.set(data, forKey: Key.notchShortcut)
+        }
+    }
+
+    // ponytail: ⌃⌥O for "open", as Notes has ⌃⌥N for a new note; Settings changes it.
+    public nonisolated static let defaultNotchShortcut = KeyShortcut(
+        keyCode: 31, modifiers: KeyShortcut.control | KeyShortcut.option, key: "O")
 
     /// The open notch's size, set by dragging its bottom-right corner. Always within the minimum and
     /// maximum.
@@ -122,6 +163,11 @@ public final class NotchPreferences {
         showsBattery = defaults.object(forKey: Key.showsBattery) as? Bool ?? true
         replacesVolumeDisplay = defaults.bool(forKey: Key.replacesVolumeDisplay)
         showsAccessoryBattery = defaults.bool(forKey: Key.showsAccessoryBattery)
+        if let data = defaults.data(forKey: Key.notchShortcut) {
+            notchShortcut = try? JSONDecoder().decode(KeyShortcut.self, from: data)
+        } else {
+            notchShortcut = Self.defaultNotchShortcut
+        }
         if let size = defaults.array(forKey: Key.expandedSize) as? [Double], size.count == 2 {
             expandedSize = Self.clamped(CGSize(width: size[0], height: size[1]))
         } else {
@@ -168,6 +214,7 @@ public final class NotchPreferences {
         showsBattery = true
         replacesVolumeDisplay = false
         showsAccessoryBattery = false
+        notchShortcut = Self.defaultNotchShortcut
     }
 
     private enum Key {
@@ -180,6 +227,7 @@ public final class NotchPreferences {
         static let showsBattery = "showsBattery"
         static let replacesVolumeDisplay = "replacesVolumeDisplay"
         static let showsAccessoryBattery = "showsAccessoryBattery"
+        static let notchShortcut = "notchShortcut"
     }
 }
 
