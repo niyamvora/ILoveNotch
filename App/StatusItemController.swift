@@ -74,6 +74,8 @@ enum Links {
     static let repository = URL(string: "https://github.com/niyamvora/ILoveNotch")!
     static let releases = URL(string: "https://github.com/niyamvora/ILoveNotch/releases")!
     static let sponsor = URL(string: "https://github.com/sponsors/niyamvora")!
+    static let contributing = URL(string: "https://github.com/niyamvora/ILoveNotch/blob/main/CONTRIBUTING.md")!
+    static let newIssue = URL(string: "https://github.com/niyamvora/ILoveNotch/issues/new/choose")!
     static let privacy = URL(string: "https://github.com/niyamvora/ILoveNotch/blob/main/PRIVACY.md")!
     /// Rendered on GitHub; the direct download also carries a copy in its Resources.
     static let acknowledgements = URL(

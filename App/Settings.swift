@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 import AppKit
+import Carbon.HIToolbox
 import NotchCore
 import NotchFeatures
 import ServiceManagement
@@ -11,6 +12,7 @@ import SwiftUI
 final class SettingsWindowController {
     private let preferences: NotchPreferences
     private let updater: Updater
+    private let notchKey: HotKey
     private let previewAnimation: () -> Void
     private let featureSettings: (FeatureID) -> AnyView?
     private let usageSettings: AnyView?
@@ -20,11 +22,12 @@ final class SettingsWindowController {
     /// `featureSettings` supplies each feature's own settings, shown under its toggle; `usageSettings`,
     /// when this edition has AI Usage, gets a tab of its own.
     init(
-        preferences: NotchPreferences, updater: Updater, previewAnimation: @escaping () -> Void,
+        preferences: NotchPreferences, updater: Updater, notchKey: HotKey, previewAnimation: @escaping () -> Void,
         featureSettings: @escaping (FeatureID) -> AnyView?, usageSettings: AnyView?
     ) {
         self.preferences = preferences
         self.updater = updater
+        self.notchKey = notchKey
         self.previewAnimation = previewAnimation
         self.featureSettings = featureSettings
         self.usageSettings = usageSettings
@@ -35,7 +38,7 @@ final class SettingsWindowController {
         if let tab { selection.tab = tab }
         if window == nil {
             let root = SettingsView(
-                preferences: preferences, updater: updater, previewAnimation: previewAnimation,
+                preferences: preferences, updater: updater, notchKey: notchKey, previewAnimation: previewAnimation,
                 featureSettings: featureSettings, usageSettings: usageSettings, selection: selection)
             let window = NSWindow(contentViewController: NSHostingController(rootView: root))
             window.title = "ILoveNotch Settings"
@@ -60,6 +63,7 @@ final class SettingsSelection {
 struct SettingsView: View {
     let preferences: NotchPreferences
     let updater: Updater
+    let notchKey: HotKey
     let previewAnimation: () -> Void
     let featureSettings: (FeatureID) -> AnyView?
     let usageSettings: AnyView?
@@ -67,7 +71,7 @@ struct SettingsView: View {
 
     var body: some View {
         TabView(selection: $selection.tab) {
-            GeneralSettings(preferences: preferences, previewAnimation: previewAnimation)
+            GeneralSettings(preferences: preferences, notchKey: notchKey, previewAnimation: previewAnimation)
                 .tabItem { Label("General", systemImage: "gearshape") }
                 .tag(SettingsSelection.Tab.general)
             FeatureSettings(preferences: preferences, featureSettings: featureSettings)
@@ -91,6 +95,7 @@ struct SettingsView: View {
 
 private struct GeneralSettings: View {
     @Bindable var preferences: NotchPreferences
+    let notchKey: HotKey
     let previewAnimation: () -> Void
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginError: String?
@@ -107,6 +112,19 @@ private struct GeneralSettings: View {
             Text("Otherwise ILoveNotch uses the built-in display's notch, or the main display.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            LabeledContent("Keyboard shortcut") {
+                ShortcutRecorder(shortcut: $preferences.notchShortcut, hotKey: notchKey)
+            }
+            Group {
+                if notchKey.isAvailable {
+                    Text("Opens the notch from any app, on the display under the pointer. Press it or Escape to close.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Another app already uses \(preferences.notchShortcut?.display ?? "it"). Record another.")
+                        .foregroundStyle(.red)
+                }
+            }
+            .font(.caption)
             Picker("Open and close animation", selection: $preferences.animationStyle) {
                 ForEach(NotchAnimationStyle.allCases) { style in
                     Text(style.title).tag(style)
@@ -148,6 +166,57 @@ private struct GeneralSettings: View {
             loginError = error.localizedDescription
         }
         launchAtLogin = SMAppService.mainApp.status == .enabled
+    }
+}
+
+/// Click, then press the new shortcut; Escape cancels and Delete clears it. The shortcut stops
+/// working while recording, so pressing the current one records it rather than opening the notch.
+private struct ShortcutRecorder: View {
+    @Binding var shortcut: KeyShortcut?
+    let hotKey: HotKey
+    @State private var monitor: Any?
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Button(monitor != nil ? "Press the shortcut…" : shortcut?.display ?? "Record Shortcut") {
+                monitor == nil ? record() : stop()
+            }
+            .help(monitor != nil ? "Escape cancels, Delete clears" : "Click, then press a new shortcut")
+            if shortcut != nil, monitor == nil {
+                Button("Clear") { shortcut = nil }
+            }
+        }
+        .onDisappear(perform: stop)
+    }
+
+    private func record() {
+        hotKey.isPaused = true
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            MainActor.assumeIsolated {
+                let plain = event.modifierFlags.isDisjoint(with: [.command, .option, .control, .shift])
+                switch Int(event.keyCode) {
+                case kVK_Escape where plain:
+                    stop()
+                case kVK_Delete where plain, kVK_ForwardDelete where plain:
+                    shortcut = nil
+                    stop()
+                default:
+                    guard let recorded = KeyShortcut(event: event) else {
+                        NSSound.beep()  // needs Command, Option, or Control
+                        return
+                    }
+                    shortcut = recorded
+                    stop()
+                }
+            }
+            return nil
+        }
+    }
+
+    private func stop() {
+        if let monitor { NSEvent.removeMonitor(monitor) }
+        monitor = nil
+        hotKey.isPaused = false
     }
 }
 
@@ -223,17 +292,35 @@ private struct SystemSettings: View {
     }
 }
 
+/// The app, its version and updates, then asks for a star and for help, in the icon's coral and peach.
 private struct AboutSettings: View {
     let updater: Updater
 
+    static let coral = Color(red: 0.93, green: 0.30, blue: 0.24)
+    static let peach = Color(red: 0.95, green: 0.50, blue: 0.22)
+
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
                 .frame(width: 72, height: 72)
+                .background {
+                    Circle()
+                        .fill(LinearGradient(colors: [Self.coral, Self.peach], startPoint: .top, endPoint: .bottom))
+                        .blur(radius: 26)
+                        .opacity(0.45)
+                }
                 .accessibilityHidden(true)
-            Text("ILoveNotch").font(.title2.bold())
-            Text("Version \(Updater.version)").foregroundStyle(.secondary)
+            VStack(spacing: 4) {
+                (Text("I") + Text("Love").foregroundStyle(Self.coral) + Text("Notch"))
+                    .font(.system(.title, design: .rounded).bold())
+                Text("Version \(Updater.version)")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                    .background(.quaternary, in: Capsule())
+            }
             #if !APP_STORE  // the App Store updates its edition
                 if updater.sourceDirectory != nil {
                     Button(
@@ -248,17 +335,89 @@ private struct AboutSettings: View {
                     Button("Check for Updates…", action: updater.checkForUpdates)
                 }
             #endif
-            Text("Free and open source under the MIT License. Local-first: no accounts, no telemetry.")
-                .font(.callout)
-                .multilineTextAlignment(.center)
-            HStack(spacing: 16) {
-                Link("GitHub", destination: Links.repository)
-                Link("Privacy", destination: Links.privacy)
-                Link("Acknowledgements", destination: Links.acknowledgements)
-                Link("Sponsor ILoveNotch", destination: Links.sponsor)
+            AboutCard(url: Links.repository, glow: Self.coral) {
+                HStack(spacing: 12) {
+                    Image(systemName: "star.fill").font(.title)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Star ILoveNotch on GitHub").font(.headline)
+                        Text("It's free. A star is how other Mac users find it.").font(.callout).opacity(0.9)
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: "arrow.up.right").font(.callout.bold())
+                }
+                .foregroundStyle(.white)
+                .padding(14)
+                .background(
+                    LinearGradient(colors: [Self.coral, Self.peach], startPoint: .leading, endPoint: .trailing),
+                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
+            HStack(spacing: 10) {
+                AboutTile(
+                    title: "Contribute", detail: "Good first issues", symbol: "chevron.left.forwardslash.chevron.right",
+                    tint: .blue, url: Links.contributing)
+                AboutTile(
+                    title: "Report a Bug", detail: "Or ask for a feature", symbol: "ladybug.fill", tint: .orange,
+                    url: Links.newIssue)
+                AboutTile(
+                    title: "Sponsor", detail: "Fuel the next one", symbol: "heart.fill", tint: .pink, url: Links.sponsor
+                )
+            }
+            Spacer(minLength: 0)
+            VStack(spacing: 4) {
+                Text("MIT licensed. Local-first: no accounts, no telemetry.").foregroundStyle(.secondary)
+                HStack(spacing: 14) {
+                    Link("Privacy", destination: Links.privacy)
+                    Link("Acknowledgements", destination: Links.acknowledgements)
+                }
+            }
+            .font(.caption)
         }
         .padding()
         .frame(maxWidth: .infinity)
+    }
+}
+
+/// One of the About tab's links: a card that lifts its glow under the pointer.
+private struct AboutCard<Content: View>: View {
+    let url: URL
+    let glow: Color
+    @ViewBuilder let content: Content
+    @State private var hovering = false
+
+    var body: some View {
+        Link(destination: url) { content }
+            .buttonStyle(.plain)
+            .compositingGroup()  // one shadow for the card, not one per label
+            .shadow(color: glow.opacity(hovering ? 0.45 : 0.15), radius: hovering ? 10 : 4, y: 2)
+            .onHover { hovering = $0 }
+            .animation(.easeOut(duration: 0.15), value: hovering)
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isLink)
+    }
+}
+
+private struct AboutTile: View {
+    let title: String
+    let detail: String
+    let symbol: String
+    let tint: Color
+    let url: URL
+
+    var body: some View {
+        AboutCard(url: url, glow: tint) {
+            VStack(spacing: 6) {
+                Image(systemName: symbol)
+                    .font(.title3)
+                    .foregroundStyle(tint)
+                    .frame(width: 34, height: 34)
+                    .background(tint.opacity(0.15), in: Circle())
+                Text(title).font(.callout.weight(.semibold))
+                Text(detail).font(.caption).foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(tint.opacity(0.25)))
+        }
     }
 }

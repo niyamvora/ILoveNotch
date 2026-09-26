@@ -93,6 +93,7 @@ that delivers it.
 
 - [x] Join meeting: a Join button on events with a Zoom, Google Meet, Teams, Webex, Whereby, Jitsi, or FaceTime link in their URL, location, or notes; right-click copies the link
 - [x] A countdown in the closed notch for the five minutes before a meeting with a link, opening with its name; hovering it opens the Calendar tab
+- [x] A keyboard shortcut from any app (⌃⌥O, recorded in Settings › General) opens the notch on the display under the pointer; it, Escape, or a click away closes it
 
 ## Later
 
