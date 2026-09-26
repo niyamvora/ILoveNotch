@@ -32,6 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let battery = BatteryMonitor()
     private let accessories = AccessoryMonitor()
     private let volumeKeys = VolumeKeyTap()
+    private let quickNote = QuickNoteHotKey()
 
     override init() {
         let eventStore = EventStore()  // shared, and only created when Calendar or Tasks first needs it
@@ -91,7 +92,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .calendar: return AnyView(calendar.settingsView)
         case .tasks: return AnyView(tasks.settingsView)
         case .shortcuts: return AnyView(shortcuts.settingsView)
-        case .notes, .timer, .mirror: return nil
+        case .notes: return AnyView(notes.settingsView)
+        case .timer, .mirror: return nil
         case .usage:
             #if APP_STORE
                 return nil
@@ -117,6 +119,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         timer.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         shortcuts.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         tasks.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
+        notes.onSendToTasks = { [tasks] in tasks.add($0) }
+        quickNote.onPress = { [weak self] in self?.startQuickNote() }
         volume.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         battery.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         accessories.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
@@ -153,11 +157,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         battery.stop()
         accessories.stop()
         volumeKeys.stop()
+        quickNote.stop()
     }
 
-    /// Runs each system activity's listener only while Settings has it on. Replacing the volume
-    /// display needs the volume activity and Accessibility access; without access the keys keep
-    /// working as usual until access is granted.
+    /// Opens the notch on Notes with a new note, ready to type. The tab gets a moment to come on
+    /// screen and load before the note is added and the editor takes the keyboard.
+    private func startQuickNote() {
+        guard let coordinator, preferences.isEnabled(.notes) else { return }
+        coordinator.open(.notes)
+        Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(150))
+            guard let self else { return }
+            notes.quickCapture()
+            self.coordinator?.focusKeyboard()
+        }
+    }
+
+    /// Runs each system activity's listener, and the quick note shortcut, only while Settings has it
+    /// on. Replacing the volume display needs the volume activity and Accessibility access; without
+    /// access the keys keep working as usual until access is granted.
     private func updateSystemActivities() {
         preferences.showsVolume ? volume.start() : volume.stop()
         preferences.showsBattery ? battery.start() : battery.stop()
@@ -167,5 +185,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             volumeKeys.stop()
         }
+        notes.quickNoteShortcut && preferences.isEnabled(.notes) ? quickNote.start() : quickNote.stop()
     }
 }

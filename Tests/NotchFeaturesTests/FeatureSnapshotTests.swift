@@ -63,13 +63,20 @@ struct FeatureSnapshotTests {
     }
 
     @Test func notesWithAFewNotes() throws {
-        let notes = NotesFeature(directory: FileManager.default.temporaryDirectory.appending(path: "N-\(UUID())"))
+        let notes = NotesFeature(
+            directory: FileManager.default.temporaryDirectory.appending(path: "N-\(UUID())"),
+            defaults: UserDefaults(suiteName: "N-\(UUID())")!)
         notes.phase = .foreground
         try render(notes.view, name: "notes-empty")
         for text in ["Groceries\n- oat milk\n- coffee", "Ideas for the notch", "Meeting notes\nShip Phase 4"] {
             notes.update(notes.add(), text: text)
         }
         try render(notes.view, name: "notes")
+        let id = notes.add()
+        notes.update(id, text: "# Trip\n- [ ] passport\n- [x] tickets\n- **socks**\n> pack light")
+        notes.setColor(id, .mint)
+        notes.showsFormatted = true
+        try render(notes.view, name: "notes-formatted")
     }
 
     @Test func tasksWithACompletedSection() throws {

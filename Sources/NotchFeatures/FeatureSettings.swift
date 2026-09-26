@@ -68,6 +68,55 @@ extension TasksFeature {
     }
 }
 
+extension NotesFeature {
+    public var settingsView: some View {
+        NotesSettings(notes: self)
+    }
+}
+
+private struct NotesSettings: View {
+    @Bindable var notes: NotesFeature
+
+    var body: some View {
+        Group {
+            LabeledContent {
+                HStack {
+                    Button("Choose\u{2026}", action: chooseFolder)
+                    if notes.usesCustomFolder {
+                        Button("Use Default") { notes.useDefaultFolder() }
+                    }
+                }
+            } label: {
+                Text("Folder: \(notes.usesCustomFolder ? notes.directory.lastPathComponent : "On this Mac")")
+                Text(
+                    "Pick a folder in iCloud Drive to reach your notes from the Files app or a Markdown app on "
+                        + "iPhone. Notes on this Mac move to the new folder.")
+            }
+            Picker("Sort notes by", selection: $notes.sort) {
+                ForEach(NoteSort.allCases) { sort in Text(sort.name).tag(sort) }
+            }
+            Toggle(isOn: $notes.quickNoteShortcut) {
+                Text("Control-Option-N starts a new note")
+                Text("Opens the notch on Notes from any app, ready to type.")
+            }
+        }
+    }
+
+    private func chooseFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.prompt = "Use Folder"
+        panel.message = "Choose where ILoveNotch keeps your notes."
+        let iCloudDrive = FileManager.default.homeDirectoryForCurrentUser
+            .appending(path: "Library/Mobile Documents/com~apple~CloudDocs", directoryHint: .isDirectory)
+        if FileManager.default.fileExists(atPath: iCloudDrive.path) { panel.directoryURL = iCloudDrive }
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        notes.chooseFolder(url)
+    }
+}
+
 /// EventKit access at a glance, with the next step when it isn't allowed.
 private struct AccessRow: View {
     let access: EventAccess
