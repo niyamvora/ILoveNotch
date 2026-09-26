@@ -77,10 +77,15 @@ public and buildable whatever happens to the project.
   a waveform that moves with the music.
 - **Shelf.** Drop files on the notch to keep them at hand; drag them back out,
   preview them with Quick Look, or send them with AirDrop.
-- **Calendar and Tasks.** Today's events, and your Apple Reminders to check off
-  and add, synced to your iPhone through iCloud.
-- **Notes, Shortcuts, and Timer.** Quick notes that save as you type, your
-  shortcuts one click away, and a timer and a stopwatch with laps.
+- **Calendar and Tasks.** Today's events with the tasks due today, and an
+  event field that understands "Lunch tomorrow 1pm". Your Apple Reminders,
+  grouped by date or list, synced to your iPhone through iCloud: add them in
+  plain words ("Pay rent fri 9am !! #Home"), set dates, priorities, lists, and
+  alerts, block time for one in Calendar, and see it on the notch when it's due.
+- **Notes, Shortcuts, and Timer.** Markdown notes that save as you type, with
+  colors, pins, search, checklists you can tick and send to Tasks, and a
+  Control-Option-N shortcut; your shortcuts one click away; and a timer and a
+  stopwatch with laps.
 - **Mirror.** Your camera, off until you turn it on, and on only while its tab
   is open.
 - **AI Usage.** How much of each AI coding plan you've used, as a card per tool,
@@ -241,12 +246,17 @@ sign-ins doesn't fit the App Store's sandbox.
 ## Tasks and notes
 
 Tasks use Apple **Reminders** through EventKit, so they sync to your iPhone over
-iCloud with no server to run. Notes are plain-text files in
-`~/Library/Application Support/OpenNotch/Notes`, with optional iCloud sync
-later; driving Apple Notes through Apple Events was dropped as brittle and
-permission-heavy. (Google **Keep** is intentionally not used: it has no official
-API.) Calendar and Reminders access is requested only when you tap **Allow
-Access** in their tab.
+iCloud with no server to run, and alerts set in the notch ring on every device.
+Notes are Markdown files named after their first line, in
+`~/Library/Application Support/OpenNotch/Notes` by default. To read them on an
+iPhone, pick a folder in iCloud Drive in Settings › Features › Notes: they show
+up in the Files app and in Markdown apps such as Obsidian. A note's color and
+pin are kept in a small front matter block those apps understand, and a file you
+named yourself keeps its name when you edit it in the notch. The Share button
+sends a copy to Apple Notes; driving Apple Notes directly through Apple Events
+was dropped as brittle and permission-heavy. (Google **Keep** is intentionally
+not used: it has no official API.) Calendar and Reminders access is requested
+only when you tap **Allow Access** in their tab.
 
 ## Contributing
 

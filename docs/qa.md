@@ -52,6 +52,9 @@ still to be set.
 - [ ] Media: Apple Music, Spotify, a browser, and QuickTime; kill the helper (`pkill -f mediaremote-adapter`) and check Media falls back
 - [ ] Shelf: deleted, moved, and corrupt files
 - [ ] Permissions granted, denied, and revoked while running (Calendar, Reminders)
+- [ ] Tasks: quick add in plain words, a timed task's alert on the notch and on iPhone, Snooze, and Block Time
+- [ ] Notes in an iCloud Drive folder: edits reach the iPhone's Files app, and a file named there keeps its name
+- [ ] Control-Option-N starts a note from another app and hands the keyboard back when the notch closes
 - [ ] Light and dark mode, Increase Contrast, Reduce Motion, Reduce Transparency, VoiceOver, keyboard-only use
 
 ## Operating systems

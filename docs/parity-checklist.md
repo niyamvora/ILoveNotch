@@ -54,6 +54,18 @@ that delivers it.
 - [x] Every stopwatch lap, newest first, in a scrolling list
 - [x] Per-feature settings, including access status for Calendar and Reminders
 
+## Tasks, Calendar, and Notes revamp
+
+- [x] Tasks grouped by due date (Overdue, Today, Tomorrow, Next 7 Days, Later, No Date) or by list
+- [x] Quick add that reads dates, times, "!"-style priorities, "#list", and repeats as you type
+- [x] Hover actions on a task: due date, priority, list, rename, delete, and block time in Calendar
+- [x] Alerts at the due time through Reminders, and a due task shown on the notch with Done and Snooze
+- [x] Calendar lists tasks due today and adds events typed in plain words
+- [x] Notes with hover highlights, a sliding selection, colors, pins, search, and sort
+- [x] Formatted view of a note with tickable checklists that can be sent to Tasks
+- [x] Notes in a folder of your choice (such as iCloud Drive) to reach them on iPhone, where files you named keep their names; share to Apple Notes
+- [x] Control-Option-N opens a new note from any app
+
 ## v0.3+: camera and system (Phase 5)
 
 - [x] Front-camera mirror, off until turned on; the camera runs only while the Mirror tab is open
