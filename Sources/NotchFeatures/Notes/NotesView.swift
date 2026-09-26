@@ -9,7 +9,12 @@ import SwiftUI
 struct NotesView: View {
     @Bindable var notes: NotesFeature
     @Namespace private var selectionSpace
+    @Namespace private var searchSpace
     @FocusState private var editorFocused: Bool
+    @FocusState private var searchFocused: Bool
+    /// Search was opened from its icon; it also stays open while it has text.
+    @State private var searching = false
+    @State private var searchHovering = false
     @State private var showsPalette = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -47,36 +52,7 @@ struct NotesView: View {
 
     private var list: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 5) {
-                HStack(spacing: 3) {
-                    Image(systemName: "magnifyingglass").font(.system(size: 9, weight: .semibold)).opacity(0.5)
-                    TextField("Search", text: $notes.search).textFieldStyle(.plain)
-                }
-                .padding(.horizontal, 5)
-                .padding(.vertical, 3)
-                .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
-                Menu {
-                    Picker("Sort By", selection: $notes.sort) {
-                        ForEach(NoteSort.allCases) { sort in Text(sort.name).tag(sort) }
-                    }
-                    .pickerStyle(.inline)
-                } label: {
-                    Image(systemName: "arrow.up.arrow.down")
-                }
-                .menuStyle(.borderlessButton)
-                .menuIndicator(.hidden)
-                .fixedSize()
-                .help("Sort notes")
-                Button {
-                    withAnimation(spring) { _ = notes.add() }
-                } label: {
-                    Image(systemName: "square.and.pencil")
-                }
-                .buttonStyle(.plain)
-                .help("New note")
-                .accessibilityLabel("New Note")
-            }
-            .font(.caption)
+            header
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 2) {
                     ForEach(notes.visibleNotes) { note in
@@ -93,6 +69,104 @@ struct NotesView: View {
             }
             .fadingEdges()
         }
+    }
+
+    /// Search, sort, and new note as three icons of one size. Search opens out of its icon into a
+    /// field across the header, and folds back when closed or left empty.
+    private var header: some View {
+        let open = searching || !notes.search.isEmpty
+        return HStack(spacing: 6) {
+            if open {
+                HStack(spacing: 4) {
+                    searchGlass
+                    TextField("Search", text: $notes.search)
+                        .textFieldStyle(.plain)
+                        .font(.caption)
+                        .focused($searchFocused)
+                        .takesKeyboard(searching)
+                    Button(action: closeSearch) {
+                        Image(systemName: "xmark.circle.fill").font(.system(size: 10)).opacity(0.5)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Close search")
+                    .accessibilityLabel("Close Search")
+                }
+                .padding(.leading, 6)
+                .padding(.trailing, 5)
+                .frame(height: HeaderIcon.side)
+                .background { searchField }
+                .transition(.opacity)
+            } else {
+                Button(action: openSearch) {
+                    searchGlass
+                        .frame(width: HeaderIcon.side, height: HeaderIcon.side)
+                        .background { searchField }
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .onHover { inside in withAnimation(.easeOut(duration: 0.15)) { searchHovering = inside } }
+                .help("Search notes")
+                .accessibilityLabel("Search")
+                Spacer(minLength: 0)
+                Menu {
+                    Picker("Sort By", selection: $notes.sort) {
+                        ForEach(NoteSort.allCases) { sort in Text(sort.name).tag(sort) }
+                    }
+                    .pickerStyle(.inline)
+                } label: {
+                    HeaderIcon(symbol: "arrow.up.arrow.down")
+                }
+                .menuStyle(.button)
+                .buttonStyle(.plain)
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .help("Sort notes")
+                .accessibilityLabel("Sort")
+                .transition(.opacity.combined(with: .scale(scale: 0.6)))
+                Button {
+                    withAnimation(spring) { _ = notes.add() }
+                } label: {
+                    HeaderIcon(symbol: "square.and.pencil")
+                }
+                .buttonStyle(.plain)
+                .help("New note")
+                .accessibilityLabel("New Note")
+                .transition(.opacity.combined(with: .scale(scale: 0.6)))
+            }
+        }
+        .frame(height: HeaderIcon.side)
+        .onChange(of: searchFocused) { _, focused in
+            // Clicking away from an empty search folds it back into its icon.
+            if !focused, notes.search.isEmpty { withAnimation(spring) { searching = false } }
+        }
+    }
+
+    /// The icon and the field's backdrop are shared, so the icon's circle stretches into the field.
+    private var searchGlass: some View {
+        Image(systemName: "magnifyingglass")
+            .font(.system(size: HeaderIcon.symbolSize, weight: .semibold))
+            .foregroundStyle(.white.opacity(0.8))
+            .matchedGeometryEffect(id: "glass", in: searchSpace)
+    }
+
+    private var searchField: some View {
+        Capsule()
+            .fill(.white.opacity(searchHovering && !searching ? 0.18 : 0.1))
+            .matchedGeometryEffect(id: "field", in: searchSpace)
+    }
+
+    private func openSearch() {
+        searchHovering = false
+        withAnimation(spring) { searching = true }
+        Task { @MainActor in searchFocused = true }
+    }
+
+    private func closeSearch() {
+        withAnimation(spring) {
+            notes.search = ""
+            searching = false
+        }
+        searchFocused = false
     }
 
     // MARK: Editor
@@ -174,7 +248,7 @@ struct NotesView: View {
         .buttonStyle(.plain)
         .font(.system(size: 11, weight: .medium))
         .foregroundStyle(.white.opacity(0.75))
-        .frame(height: 16)
+        .frame(height: HeaderIcon.side)  // in line with the list's header
     }
 
     private func footer(_ note: Note) -> some View {
@@ -299,6 +373,26 @@ private struct NoteRow: View {
     private var tooltip: String {
         let edited = "Edited " + note.modified.formatted(date: .abbreviated, time: .shortened)
         return note.preview.isEmpty ? "\(note.title)\n\(edited)" : "\(note.title)\n\(note.preview)\n\(edited)"
+    }
+}
+
+/// An icon in the list's header, on a circle that brightens under the pointer.
+private struct HeaderIcon: View {
+    static let side: CGFloat = 22
+    static let symbolSize: CGFloat = 10.5
+
+    let symbol: String
+    @State private var hovering = false
+
+    var body: some View {
+        Image(systemName: symbol)
+            .font(.system(size: Self.symbolSize, weight: .semibold))
+            .foregroundStyle(.white.opacity(hovering ? 1 : 0.8))
+            .frame(width: Self.side, height: Self.side)
+            .background(.white.opacity(hovering ? 0.18 : 0.1), in: Circle())
+            .contentShape(Circle())
+            .onHover { hovering = $0 }
+            .animation(.easeOut(duration: 0.15), value: hovering)
     }
 }
 
