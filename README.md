@@ -95,6 +95,10 @@ public and buildable whatever happens to the project.
   is open.
 - **AI Usage.** How much of each AI coding plan you've used, as a card per tool,
   across 11 providers. [More below](#ai-usage).
+- **Agents.** When Claude Code or Codex needs your approval, the closed notch
+  says so until you answer, and it tells you when one finishes while you're in
+  another app; one click takes you back to its terminal.
+  [More below](#agent-status).
 - **System activities.** Volume, charging and battery, and Bluetooth accessory
   batteries show briefly in the notch, and it can stand in for the macOS volume
   display.
@@ -158,7 +162,7 @@ hover, clicks, drags, sleep/lock, display changes
 | `NotchCore` | State machine, `NotchEngine`, `FeatureHost` lifecycle, preferences, typed logging and signposts. No AppKit. |
 | `NotchSurface` | Fixed click-through `NSPanel` per display, animatable `NotchShape`, `PanelCoordinator` (displays, sleep, lock), notch geometry from **public** APIs (`safeAreaInsets`, `auxiliaryTop*Area`) |
 | `NotchFeatures` | Feature modules (Media, Shelf, Calendar, Tasks, Notes, Shortcuts, Timer, Mirror), each a `NotchFeature` with its views and settings, and the event-driven system monitors (volume, battery, accessories, volume keys) |
-| `NotchUsage` | The AI Usage tab: provider tiles, rings, pace, spend, and trends, over providers adapted from [OpenUsage](https://github.com/robinebers/openusage) (MIT) in `NotchUsage/OpenUsage` |
+| `NotchUsage` | The GitHub build's developer tabs: AI Usage (provider tiles, rings, pace, spend, and trends, over providers adapted from [OpenUsage](https://github.com/robinebers/openusage) (MIT) in `NotchUsage/OpenUsage`) and Agents (Claude Code and Codex hooks, in `NotchUsage/Agents`) |
 | `ThirdParty/` | [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter) (BSD-3-Clause) as a git submodule |
 | `Tests/` | Unit tests (reducer transitions and fuzzing, engine, feature host, preferences, geometry, features), offscreen snapshot tests, XCTest performance tests, and OpenUsage's provider tests on its fixtures (`OpenUsageTests`) |
 
@@ -250,6 +254,25 @@ to its own service. What it reads and sends is in
 [OpenUsage](https://github.com/robinebers/openusage) (MIT), and ILoveNotch isn't
 affiliated with it. The tab is in the GitHub build only: reading other tools'
 sign-ins doesn't fit the App Store's sandbox.
+
+## Agent status
+
+The Agents tab shows what Claude Code and Codex are doing in your terminals:
+working, finished, or waiting for you to approve something. While one waits,
+the closed notch shows a raised hand and the project until you answer, and when
+one finishes while its app is in the background, the notch says so. **Go**
+brings its terminal forward.
+
+Nothing is connected until you connect it, in the tab or in **Settings ›
+Features › Agents**. Connecting adds hooks to the tool's own settings
+(`~/.claude/settings.json`, or `~/.codex/hooks.json`, which Codex asks you to
+trust the next time it starts), next to any hooks already there, and
+disconnecting takes out exactly those. The hooks run in the background, so an
+agent never waits on them, and they write one small file per session: its
+state, project folder, terminal app, and what it's waiting for, never your
+prompts or code. Nothing leaves your Mac; see [PRIVACY.md](PRIVACY.md#agent-status).
+Like AI Usage, it's in the GitHub build only, since hooks don't fit the App
+Store's sandbox.
 
 ## Show in Notch
 
