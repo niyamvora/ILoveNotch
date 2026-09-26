@@ -35,7 +35,7 @@ settingGroups:
     INFOPLIST_KEY_NSDesktopFolderUsageDescription: ILoveNotch keeps files you drop on the shelf so you can drag them out later.
     INFOPLIST_KEY_NSDocumentsFolderUsageDescription: ILoveNotch keeps files you drop on the shelf so you can drag them out later.
     INFOPLIST_KEY_NSDownloadsFolderUsageDescription: ILoveNotch keeps files you drop on the shelf so you can drag them out later.
-    INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: ILoveNotch shows today's events in the notch and adds the events and time blocks you create there. Your calendars stay on this Mac.
+    INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: ILoveNotch shows today's events in the notch, adds the events and time blocks you create there, and changes or deletes the ones you choose. Your calendars stay on this Mac.
     INFOPLIST_KEY_NSRemindersFullAccessUsageDescription: ILoveNotch shows, adds, and completes your reminders in the notch.
     INFOPLIST_KEY_NSCameraUsageDescription: ILoveNotch shows your camera in the Mirror tab while that tab is open. Nothing is recorded.
     ENABLE_HARDENED_RUNTIME: YES

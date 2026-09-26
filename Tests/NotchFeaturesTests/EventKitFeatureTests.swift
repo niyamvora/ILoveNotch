@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import EventKit
 import Foundation
 import NotchCore
 import Testing
@@ -55,6 +56,25 @@ struct EventKitFeatureTests {
         }
         #expect(calendar.access != .granted && calendar.events.isEmpty && !calendar.isObserving)
         #expect(tasks.access != .granted && tasks.tasks.isEmpty && !tasks.isObserving)
+    }
+
+    @Test func onlyYourOwnEventsCanBeChangedFromTheNotch() {
+        let store = EventStore().store
+        let event = EKEvent(eventStore: store)
+        event.title = "Lunch"
+        event.startDate = noon
+        event.endDate = noon + 3600
+        #expect(DayEvent(event).id == DayEvent.id(for: event), "a change finds the event by the agenda's id")
+        #expect(!DayEvent(event).isEditable, "no calendar to change it in")
+        event.calendar = EKCalendar(for: .event, eventStore: store)
+        #expect(DayEvent(event).isEditable, "yours, with nobody invited")
+
+        // Without access, nothing is changed or deleted, and nothing breaks.
+        let calendar = CalendarFeature(eventStore: EventStore(), defaults: defaults)
+        let lunch = DayEvent(id: "x", title: "Lunch", start: noon, end: noon + 3600)
+        #expect(!calendar.update(lunch, title: "Brunch", start: noon, end: noon + 3600))
+        calendar.delete(lunch)
+        #expect(calendar.notice == nil)
     }
 
     @Test func settingsPersist() {

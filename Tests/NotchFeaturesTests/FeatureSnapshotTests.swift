@@ -148,6 +148,10 @@ struct FeatureSnapshotTests {
             ],
             dueTasks: [TaskItem(id: "3", title: "Pay rent", due: Calendar.current.startOfDay(for: now))])
         try render(calendar.view, name: "calendar")
+        try render(CalendarView(calendar: calendar, editing: "2"), name: "calendar-editing")
+        calendar.show(events: [DayEvent(id: "2", title: "Gym", start: now + 7200, end: now + 10_800)])
+        let small = CalendarView(calendar: calendar, editing: "2")
+        try render(small, name: "calendar-editing-smallest", size: Self.smallest)
     }
 
     @Test func calendarWithAMeetingToJoin() throws {
