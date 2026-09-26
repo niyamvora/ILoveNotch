@@ -22,6 +22,7 @@ that delivers it.
 - [x] Respects Reduce Motion and Increase Contrast; VoiceOver labels and Open/Close actions
 - [x] Dragging files over the notch opens it to the shelf
 - [x] Closed, the notch hides behind the camera housing; hovering grows it slightly
+- [x] A live activity's symbol and text stay together: in a row just under the camera, or, while ongoing, in a tab beside it over the menu bar
 - [x] Switching tabs slides the content across, and the selection moves with a jelly stretch
 - [x] Resize the open notch by dragging its bottom-right corner, between a smallest and a largest size
 - [x] The tab row holds the tabs, the pin, and Settings; more tabs make the tabs narrower, never crowded

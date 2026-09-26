@@ -45,9 +45,9 @@ public struct Activity: Hashable, Sendable {
     /// The tab that raised it, which opens when it's hovered or clicked. Nil for a system activity,
     /// such as volume or battery, that belongs to no tab and shows whatever tabs are enabled.
     public var feature: FeatureID?
-    /// SF Symbol shown on the leading side of the notch.
+    /// SF Symbol shown just before the title.
     public var symbol: String
-    /// Short text shown on the trailing side of the notch.
+    /// Short text: under the camera for a one-shot activity, beside it for an ongoing one.
     public var title: String
     /// 0...1 for a meter beside the title, such as the volume or the battery's charge.
     public var level: Double?
@@ -195,10 +195,11 @@ public struct NotchState: Hashable, Sendable {
 
     public init() {}
 
-    /// The ongoing activity the notch shows right now: only while it rests, and only for an
-    /// enabled feature.
+    /// The ongoing activity the notch shows right now: while it rests, and while the pointer is on it
+    /// on the way to opening (so the notch doesn't shrink out from under the pointer), and only for
+    /// an enabled feature.
     public var restingActivity: Activity? {
-        guard presentation == .compact, let ongoing, shows(ongoing) else { return nil }
+        guard presentation == .compact || presentation == .hoverArmed, let ongoing, shows(ongoing) else { return nil }
         return ongoing
     }
 

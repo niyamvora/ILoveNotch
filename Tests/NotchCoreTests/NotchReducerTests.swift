@@ -178,7 +178,7 @@ struct NotchReducerTests {
     @Test func hoveringOrClickingAnOngoingActivityOpensItsFeature() {
         var hovered = after(.show, .setOngoing(meeting))
         _ = hovered.handle(.pointerEntered)
-        #expect(hovered.restingActivity == nil, "only a resting notch shows it")
+        #expect(hovered.restingActivity == meeting, "hovered, it stays in view, so the pointer stays on it")
         _ = hovered.handle(.deadline(.hoverDwell))
         #expect(hovered.presentation == .expanded(tab: .calendar))
         #expect(after(.show, .setOngoing(meeting), .clicked).presentation == .expanded(tab: .calendar))
@@ -310,7 +310,8 @@ struct NotchReducerTests {
                 try #require(state.tabs.contains(feature), "\(event) showed a disabled feature's activity")
             }
             if let resting = state.restingActivity {
-                try #require(presentation == .compact, "\(event) showed an ongoing activity in \(presentation)")
+                let closed = presentation == .compact || presentation == .hoverArmed
+                try #require(closed, "\(event) showed an ongoing activity in \(presentation)")
                 try #require(resting.feature.map(state.tabs.contains) ?? true, "\(event) rested a disabled feature")
             }
             if presentation == .hoverArmed { try #require(state.pointerInside) }
