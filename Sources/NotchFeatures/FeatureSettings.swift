@@ -24,6 +24,10 @@ extension CalendarFeature {
         return Group {
             AccessRow(access: calendar.access, pane: "Privacy_Calendars", request: calendar.requestAccess)
             Toggle("Show all-day events", isOn: $calendar.showsAllDay)
+            Toggle(isOn: $calendar.showsTasks) {
+                Text("Show tasks due today")
+                Text("Lists open reminders due today or overdue under your events, once Tasks has access.")
+            }
         }
         .onAppear(perform: calendar.refreshAccess)
     }
