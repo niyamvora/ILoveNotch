@@ -97,10 +97,23 @@ public struct Note: Identifiable, Equatable, Sendable {
 
     public var isEmpty: Bool { text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
-    /// Whether the note has checklist items not yet ticked.
-    public var hasOpenChecklist: Bool {
-        NoteLine.parse(text).contains { $0.kind.isOpenTask }
+    /// The checklist items not yet ticked, like "passport" from "- [ ] passport", in order. Empty
+    /// ones are left out.
+    public var openChecklistItems: [String] {
+        text.split(separator: "\n").compactMap { line in
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard let marker = trimmed.first, "-*+".contains(marker), trimmed.dropFirst().hasPrefix(" [ ]") else {
+                return nil
+            }
+            let rest = trimmed.dropFirst(5)
+            guard rest.isEmpty || rest.first == " " else { return nil }  // "- [ ]x" isn't a checkbox
+            let item = rest.trimmingCharacters(in: .whitespaces)
+            return item.isEmpty ? nil : item
+        }
     }
+
+    /// Whether the note has checklist items not yet ticked.
+    public var hasOpenChecklist: Bool { !openChecklistItems.isEmpty }
 
     /// What goes on disk: front matter, when there's anything for it, then the text.
     var fileContents: String {
@@ -133,78 +146,5 @@ public struct Note: Identifiable, Equatable, Sendable {
         guard header.allSatisfy(isField) else { return ([], contents) }
         let body = lines[(end + 1)...].joined(separator: "\n")
         return (header.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }, body)
-    }
-}
-
-/// One line of a note, as the formatted view draws it.
-public struct NoteLine: Identifiable, Equatable, Sendable {
-    public enum Kind: Equatable, Sendable {
-        case heading(level: Int, text: String)
-        case task(done: Bool, text: String)
-        case bullet(String)
-        case numbered(String, text: String)
-        case quote(String)
-        case rule
-        case text(String)
-        case blank
-
-        /// A checklist item not yet ticked.
-        public var isOpenTask: Bool {
-            if case .task(done: false, _) = self { return true }
-            return false
-        }
-    }
-
-    /// The line's index in the note's text, so a checkbox can be ticked in place.
-    public var id: Int
-    public var kind: Kind
-
-    public static func parse(_ text: String) -> [NoteLine] {
-        text.split(separator: "\n", omittingEmptySubsequences: false).enumerated().map { index, line in
-            NoteLine(id: index, kind: Self.kind(of: String(line)))
-        }
-    }
-
-    static func kind(of line: String) -> Kind {
-        let trimmed = line.trimmingCharacters(in: .whitespaces)
-        if trimmed.isEmpty { return .blank }
-        if trimmed == "---" || trimmed == "***" || trimmed == "___" { return .rule }
-        if trimmed.hasPrefix("#") {
-            let level = trimmed.prefix { $0 == "#" }.count
-            let rest = trimmed.dropFirst(level)
-            if level <= 6, rest.first == " " {
-                return .heading(level: level, text: rest.trimmingCharacters(in: .whitespaces))
-            }
-        }
-        if let marker = trimmed.first, "-*+".contains(marker), trimmed.dropFirst().first == " " {
-            let item = trimmed.dropFirst(2)
-            for (box, done) in [("[ ] ", false), ("[x] ", true), ("[X] ", true)] where item.hasPrefix(box) {
-                return .task(done: done, text: String(item.dropFirst(box.count)))
-            }
-            if item == "[ ]" || item == "[x]" || item == "[X]" { return .task(done: item != "[ ]", text: "") }
-            return .bullet(String(item))
-        }
-        let digits = trimmed.prefix { $0.isNumber }
-        if !digits.isEmpty, digits.count < 4 {
-            let rest = trimmed.dropFirst(digits.count)
-            if let mark = rest.first, mark == "." || mark == ")", rest.dropFirst().first == " " {
-                return .numbered(String(digits), text: String(rest.dropFirst(2)))
-            }
-        }
-        if trimmed.hasPrefix(">") { return .quote(trimmed.dropFirst().trimmingCharacters(in: .whitespaces)) }
-        return .text(line)
-    }
-
-    /// The note's text with the checkbox on line `index` ticked or unticked.
-    public static func toggleTask(in text: String, line index: Int) -> String {
-        var lines = text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
-        guard lines.indices.contains(index) else { return text }
-        let line = lines[index]
-        if let open = line.range(of: "[ ]") {
-            lines[index] = line.replacingCharacters(in: open, with: "[x]")
-        } else if let done = line.range(of: "[x]", options: .caseInsensitive) {
-            lines[index] = line.replacingCharacters(in: done, with: "[ ]")
-        }
-        return lines.joined(separator: "\n")
     }
 }

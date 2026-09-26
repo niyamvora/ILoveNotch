@@ -46,9 +46,9 @@ a task in plain words, like "Pay rent Friday 9am", group tasks by date or list, 
 one in Calendar, and see it on the notch when it's due.
 
 NOTES, SHORTCUTS, AND TIMER
-Markdown notes that save as you type, with colors, pins, search, and checklists you can tick, in a
-folder of your choice such as iCloud Drive. Your shortcuts one click away, a timer, and a
-stopwatch with laps.
+Markdown notes that save as you type, with colors, pins, search, and checklists you can send to
+Tasks, in a folder of your choice such as iCloud Drive. Your shortcuts one click away, a timer,
+and a stopwatch with laps.
 
 MIRROR
 A quick look at your camera before a call, only while its tab is open.

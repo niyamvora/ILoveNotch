@@ -110,10 +110,9 @@ struct FeatureSnapshotTests {
         try render(notes.view, name: "notes-searching")
         notes.search = ""
         let id = notes.add()
-        notes.update(id, text: "# Trip\n- [ ] passport\n- [x] tickets\n- **socks**\n> pack light")
+        notes.update(id, text: "Trip\n- [ ] passport\n- [x] tickets\n- socks")
         notes.setColor(id, .mint)
-        notes.showsFormatted = true
-        try render(notes.view, name: "notes-formatted")
+        try render(notes.view, name: "notes-checklist")
     }
 
     @Test func tasksWithACompletedSection() throws {
