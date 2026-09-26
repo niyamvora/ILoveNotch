@@ -119,6 +119,36 @@ struct HotKeyTests {
     }
 }
 
+struct ShowInNotchTests {
+    @Test func aLinkShowsItsMessageForAWhile() throws {
+        let url = try #require(URL(string: "ilovenotch://show?title=Build%20done&symbol=hammer.fill&seconds=6"))
+        let message = try #require(ShowInNotch.activity(from: url))
+        #expect(message.title == "Build done" && message.symbol == "hammer.fill" && message.duration == .seconds(6))
+        #expect(message.feature == nil, "it belongs to no tab, so it shows whatever tabs are on")
+    }
+
+    @Test func textFromOutsideIsCleanedUpAndKeptShort() throws {
+        let messy = try #require(
+            ShowInNotch.activity(
+                title: "  Deploy\n\tfinished \u{202E}now\u{0} ", symbol: "no.such.symbol", seconds: 999))
+        #expect(messy.title == "Deploy finished now", "line breaks, controls, and bidi overrides are gone")
+        #expect(messy.symbol == ShowInNotch.defaultSymbol && messy.duration == .seconds(30))
+        let long = try #require(
+            ShowInNotch.activity(title: String(repeating: "a", count: 500), symbol: nil, seconds: nil))
+        #expect(long.title.count == 80 && long.duration == .seconds(4))
+        let family = ShowInNotch.activity(title: "👨‍👩‍👧 home", symbol: nil, seconds: .nan)
+        #expect(family?.title == "👨‍👩‍👧 home" && family?.duration == .seconds(4), "emoji stay whole; NaN isn't a time")
+        #expect(ShowInNotch.activity(title: " \n ", symbol: nil, seconds: nil) == nil, "nothing to show")
+    }
+
+    @Test(arguments: [
+        "ilovenotch://open?tab=media", "https://show?title=Hi", "ilovenotch://show", "ilovenotch://show?title=",
+    ])
+    func otherLinksAreIgnored(link: String) throws {
+        #expect(ShowInNotch.activity(from: try #require(URL(string: link))) == nil)
+    }
+}
+
 @MainActor
 struct MirrorTests {
     @Test func theCameraRunsOnlyWhileTheMirrorCanBeSeen() {
