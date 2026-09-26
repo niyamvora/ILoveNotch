@@ -91,7 +91,7 @@ public and buildable whatever happens to the project.
   priorities, lists, and alerts, block time for one in Calendar, and see it on
   the notch when it's due.
 - **Notes, Shortcuts, and Timer.** Markdown notes that save as you type, with
-  colors, pins, search, checklists you can tick and send to Tasks, and a
+  colors, pins, search, checklists you can send to Tasks, and a
   Control-Option-N shortcut; your shortcuts one click away; a timer and a
   stopwatch with laps; and Keep Awake, which stops your Mac sleeping for a
   while or until you turn it off, with the time left in the closed notch.

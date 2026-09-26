@@ -167,16 +167,11 @@ struct NotesFeatureTests {
         #expect(notes.visibleNotes.map(\.title) == ["Middle"])
     }
 
-    @Test func checklistsParseTickAndGoToTasks() {
-        let text = "# Trip\n- [ ] passport\n- [x] tickets\n- socks\n1. pack"
-        let kinds = NoteLine.parse(text).map(\.kind)
-        #expect(
-            kinds == [
-                .heading(level: 1, text: "Trip"), .task(done: false, text: "passport"),
-                .task(done: true, text: "tickets"), .bullet("socks"), .numbered("1", text: "pack"),
-            ])
-        #expect(NoteLine.toggleTask(in: text, line: 1).contains("- [x] passport"))
-        #expect(NoteLine.toggleTask(in: text, line: 2).contains("- [ ] tickets"))
+    @Test func uncheckedChecklistItemsGoToTasks() {
+        let text = "# Trip\n- [ ] passport\n- [x] tickets\n- socks\n  * [ ]  adapter \n- [ ]\n- [ ]x\n1. pack"
+        let note = Note(id: UUID(), text: text, modified: .now)
+        #expect(note.openChecklistItems == ["passport", "adapter"], "ticked, plain, empty, and malformed are left")
+        #expect(!Note(id: UUID(), text: "- [x] done\n- socks", modified: .now).hasOpenChecklist)
 
         let notes = NotesFeature(directory: folder)
         notes.phase = .foreground
@@ -187,8 +182,8 @@ struct NotesFeatureTests {
         }
         let id = notes.add()
         notes.update(id, text: text)
-        #expect(notes.sendToTasks(id) == 1)
-        #expect(sent == ["passport"])
+        #expect(notes.sendToTasks(id) == 2)
+        #expect(sent == ["passport", "adapter"])
     }
 
     @Test func choosingAFolderMovesTheNotesThere() throws {
