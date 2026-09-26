@@ -57,11 +57,21 @@ struct NotchPreferencesTests {
         preferences.resizeExpanded(to: CGSize(width: 600, height: 400))
         preferences.setEnabled(.mirror, true)
         preferences.replacesVolumeDisplay = true
+        preferences.theme = .glass
         preferences.reset()
         #expect(preferences.tabs == defaultTabs)
         #expect(preferences.expandedSize == NotchPreferences.defaultExpandedSize)
         #expect(!preferences.replacesVolumeDisplay)
+        #expect(preferences.theme == .black)
         #expect(!NotchPreferences(defaults: defaults).showOnAllDisplays)
+    }
+
+    @Test func theThemeIsBlackUntilChosenAndKept() {
+        #expect(NotchPreferences(defaults: defaults).theme == .black)
+        NotchPreferences(defaults: defaults).theme = .glass
+        #expect(NotchPreferences(defaults: defaults).theme == .glass)
+        defaults.set("chrome-from-the-future", forKey: "theme")
+        #expect(NotchPreferences(defaults: defaults).theme == .black)
     }
 
     @Test func theNotchSizePersistsWithinItsLimits() {
