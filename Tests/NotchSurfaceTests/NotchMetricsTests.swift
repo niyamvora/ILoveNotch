@@ -50,6 +50,19 @@ struct NotchMetricsTests {
     }
 
     @Test(arguments: displays)
+    func anOngoingActivityGrowsNarrowerWingsThanAOneShotOne(metrics: NotchMetrics) {
+        let awake = Activity(feature: .timer, symbol: "cup.and.saucer.fill", title: "Awake", duration: .zero)
+        var state = NotchState()
+        _ = state.handle(.show)
+        _ = state.handle(.setOngoing(awake))
+        let resting = metrics.size(for: state)
+        #expect(resting.height == metrics.housing.height, "it stays in the menu bar")
+        #expect(resting.width > metrics.housing.width && resting.width < metrics.size(for: .transient(song)).width)
+        _ = state.handle(.clicked)
+        #expect(metrics.size(for: state) == metrics.size(for: .expanded(tab: .timer)), "open, it's an open notch")
+    }
+
+    @Test(arguments: displays)
     func aPointerPushedAgainstTheTopEdgeIsOverTheNotch(metrics: NotchMetrics) {
         let compact = metrics.size(for: .compact)
         let frame = metrics.hoverFrame(for: compact, in: metrics.panelFrame)

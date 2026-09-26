@@ -96,7 +96,7 @@ final class NotchController {
 
     /// Where the pointer counts as over the notch as it's drawn right now, in screen coordinates.
     private func notchFrame() -> CGRect {
-        let size = metrics.size(for: engine.state.presentation, expanded: preferences.expandedSize)
+        let size = metrics.size(for: engine.state, expanded: preferences.expandedSize)
         return metrics.hoverFrame(for: size, in: panel.frame)
     }
 
