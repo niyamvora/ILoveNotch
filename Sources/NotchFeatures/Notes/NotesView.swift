@@ -195,43 +195,54 @@ struct NotesView: View {
     }
 
     private func toolbar(_ note: Note) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: ColorPalette.gap) {
             Button {
-                withAnimation(spring) { showsPalette.toggle() }
+                showsPalette.toggle()
             } label: {
                 Circle()
                     .fill(note.color?.swatch ?? .white.opacity(0.35))
-                    .frame(width: 10, height: 10)
-                    .overlay(Circle().strokeBorder(.white.opacity(0.5), lineWidth: 1))
+                    .frame(width: ColorPalette.dot, height: ColorPalette.dot)
+                    .overlay(Circle().strokeBorder(.white.opacity(showsPalette ? 0.9 : 0.5), lineWidth: 1))
+                    .scaleEffect(showsPalette && !reduceMotion ? 1.2 : 1)
+                    .animation(spring, value: showsPalette)
+                    .contentShape(Circle().inset(by: -4))
             }
-            .help("Color")
+            .help(showsPalette ? "Close colors" : "Color")
             .accessibilityLabel("Color")
-            if showsPalette {
-                ColorPalette(selected: note.color) { color in
-                    notes.setColor(note.id, color)
-                    withAnimation(spring) { showsPalette = false }
-                }
-                .transition(.opacity.combined(with: .move(edge: .leading)))
-            } else {
-                ToolbarButton(
-                    symbol: note.isPinned ? "pin.fill" : "pin", help: note.isPinned ? "Unpin" : "Pin to top",
-                    isOn: note.isPinned
-                ) { withAnimation(spring) { notes.togglePin(note.id) } }
-                Spacer(minLength: 0)
-                // What the note is (color, pin) on the left; what to do with its text on the right.
-                if note.hasOpenChecklist {
-                    ToolbarButton(symbol: "checklist", help: "Send unticked items to Tasks", isOn: false) {
-                        _ = notes.sendToTasks(note.id)
+            // The palette opens over the other buttons, which step aside while it's out.
+            ZStack(alignment: .leading) {
+                HStack(spacing: 10) {
+                    ToolbarButton(
+                        symbol: note.isPinned ? "pin.fill" : "pin", help: note.isPinned ? "Unpin" : "Pin to top",
+                        isOn: note.isPinned
+                    ) { withAnimation(spring) { notes.togglePin(note.id) } }
+                    Spacer(minLength: 0)
+                    // What the note is (color, pin) on the left; what to do with its text on the right.
+                    if note.hasOpenChecklist {
+                        ToolbarButton(symbol: "checklist", help: "Send unticked items to Tasks", isOn: false) {
+                            _ = notes.sendToTasks(note.id)
+                        }
+                        .transition(.opacity)
                     }
-                    .transition(.opacity)
+                    ShareLink(item: note.text, subject: Text(note.title)) {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                    .help("Share to Notes, Mail, Messages, and more")
+                    .accessibilityLabel("Share")
                 }
-                ShareLink(item: note.text, subject: Text(note.title)) {
-                    Image(systemName: "square.and.arrow.up")
+                .opacity(showsPalette ? 0 : 1)
+                .allowsHitTesting(!showsPalette)
+                .accessibilityHidden(showsPalette)
+                // Out of the way at once; back once the swatches have folded up.
+                .animation(
+                    showsPalette ? .easeOut(duration: 0.1) : .easeIn(duration: 0.18).delay(0.12), value: showsPalette)
+                ColorPalette(selected: note.color, open: showsPalette) { color in
+                    notes.setColor(note.id, color)
+                    showsPalette = false
                 }
-                .help("Share to Notes, Mail, Messages, and more")
-                .accessibilityLabel("Share")
             }
         }
+        .onChange(of: notes.selection) { _, _ in showsPalette = false }
         .buttonStyle(.plain)
         .font(.system(size: 11, weight: .medium))
         .foregroundStyle(.white.opacity(0.75))
@@ -405,18 +416,44 @@ private struct ToolbarButton: View {
     }
 }
 
-/// The colour choices, as swatches that grow under the pointer.
+/// The colour choices, as swatches that grow under the pointer. Opening, they spring out of the
+/// colour dot one after another; closing, they fold back into it, the last one first.
 private struct ColorPalette: View {
+    /// The colour dot, and the gap between it and the first swatch.
+    static let dot: CGFloat = 10
+    static let gap: CGFloat = 10
+    private static let side: CGFloat = 11
+    private static let spacing: CGFloat = 5
+    private static let choices: [NoteColor?] = [nil] + NoteColor.allCases.map(Optional.some)
+
     let selected: NoteColor?
+    let open: Bool
     let choose: (NoteColor?) -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(spacing: 5) {
-            Swatch(color: nil, isSelected: selected == nil) { choose(nil) }
-            ForEach(NoteColor.allCases) { color in
+        HStack(spacing: Self.spacing) {
+            ForEach(Array(Self.choices.enumerated()), id: \.offset) { index, color in
                 Swatch(color: color, isSelected: selected == color) { choose(color) }
+                    .scaleEffect(open || reduceMotion ? 1 : 0.2)
+                    .offset(x: open || reduceMotion ? 0 : -folded(index))
+                    .opacity(open ? 1 : 0)
+                    .animation(animation(index), value: open)
             }
         }
+        .allowsHitTesting(open)
+        .accessibilityHidden(!open)
+    }
+
+    /// How far back swatch `index` sits when folded: centred on the colour dot.
+    private func folded(_ index: Int) -> CGFloat {
+        CGFloat(index) * (Self.side + Self.spacing) + Self.side / 2 + Self.gap + Self.dot / 2
+    }
+
+    private func animation(_ index: Int) -> Animation {
+        if reduceMotion { return .easeInOut(duration: 0.15) }
+        let order = open ? index : Self.choices.count - 1 - index
+        return .spring(response: 0.3, dampingFraction: 0.72).delay(Double(order) * 0.02)
     }
 
     private struct Swatch: View {
