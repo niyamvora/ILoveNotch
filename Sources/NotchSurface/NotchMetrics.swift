@@ -18,11 +18,13 @@ struct NotchMetrics: Equatable {
     static let pill = CGSize(width: 180, height: 26)  // resting shape on a notchless display
     static let pillInset: CGFloat = 3  // gap above the floating pill
     static let hoverGrowth = CGSize(width: 12, height: 4)  // hover feedback
-    static let activityWing: CGFloat = 120  // the most room a live activity takes beside the notch
-    static let ongoingWing: CGFloat = 90  // less for an ongoing one, which stays over the menu bar
-    static let wingInset: CGFloat = 10  // between a live activity's symbol or text and the notch
-    static let wingOutset: CGFloat = 12  // between its text and the wing's outer end
-    static let meterDepth: CGFloat = 26  // room under the notch for a level activity's row
+    static let activityWing: CGFloat = 120  // the most a live activity's row reaches past each side of the notch
+    static let ongoingTab: CGFloat = 120  // the most an ongoing activity reaches beside the notch, over the menu bar
+    static let wingInset: CGFloat = 10  // between an ongoing activity's symbol and the notch
+    static let wingOutset: CGFloat = 12  // between its text and the tab's outer end
+    static let meterDepth: CGFloat = 26  // room under the notch for a live activity's row
+    static let rowPadding: CGFloat = 16  // at either end of that row
+    static let labelSpacing: CGFloat = 6  // between a live activity's symbol and its text
     static let overshootRoom: CGFloat = 1.08  // springy and jelly animations briefly overshoot
 
     /// The notch is the gap between the two auxiliary top areas; no insets means no notch, and then
@@ -96,32 +98,62 @@ struct NotchMetrics: Equatable {
                 ? housing
                 : CGSize(width: housing.width + Self.hoverGrowth.width, height: housing.height + Self.meterDepth)
         case .transient(let activity):
-            CGSize(width: housing.width + Self.wing(for: activity) * 2, height: housing.height)
+            // Its symbol and title side by side, in a row under the camera housing or inside the pill:
+            // as wide as the notch, wider for a long title, up to a ceiling.
+            CGSize(
+                width: min(
+                    max(housing.width + (notch == nil ? 0 : Self.hoverGrowth.width), Self.rowWidth(for: activity)),
+                    housing.width + Self.activityWing * 2),
+                height: notch == nil ? housing.height : housing.height + Self.meterDepth)
         case .expanded, .pinned, .focused:
             expandedSize(expanded)
         }
     }
 
     /// The notch as `state` draws it: like `size(for:)`, but a resting notch with an ongoing activity
-    /// grows wings for it.
+    /// grows a tab for it beside the camera, or shows it inside the pill, and hovered it grows a
+    /// little more.
     func size(for state: NotchState, expanded: CGSize = NotchPreferences.defaultExpandedSize) -> CGSize {
         guard let resting = state.restingActivity else { return size(for: state.presentation, expanded: expanded) }
-        return CGSize(width: housing.width + Self.wing(for: resting, ongoing: true) * 2, height: housing.height)
+        let growth = state.presentation == .hoverArmed ? Self.hoverGrowth : .zero
+        let width =
+            notch == nil
+            ? min(max(housing.width, Self.rowWidth(for: resting)), housing.width + Self.activityWing * 2)
+            : housing.width + Self.tab(for: resting)
+        return CGSize(width: width + growth.width, height: housing.height + growth.height)
     }
 
-    /// How far a live activity reaches out beside the notch: just enough for its text, measured in
-    /// the font it's drawn in, between a floor and a ceiling (lower for an ongoing activity). Both
-    /// sides get the same, so the shape stays centered on the camera. A countdown makes room for
-    /// its longest reading.
-    static func wing(for activity: Activity, ongoing: Bool = false, now: Date = .now) -> CGFloat {
+    /// How far the shape sits right of center: half an ongoing activity's tab, so the tab reaches out
+    /// on the right while the rest stays over the camera. Zero otherwise.
+    func offset(for state: NotchState) -> CGFloat {
+        guard notch != nil, let resting = state.restingActivity else { return 0 }
+        return Self.tab(for: resting) / 2
+    }
+
+    /// A live activity's symbol and title side by side, measured in the fonts they're drawn in. A
+    /// countdown makes room for its longest reading.
+    static func labelWidth(for activity: Activity, now: Date = .now) -> CGFloat {
         var text = activity.title
         var font = NSFont.systemFont(ofSize: 12, weight: .medium)
         if let countdown = activity.countdown {
             text = countdown.timeIntervalSince(now) >= 3600 ? "0:00:00" : "00:00"
             font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
         }
-        let width = (text as NSString).size(withAttributes: [.font: font]).width.rounded(.up)
-        return min(max(width + wingInset + wingOutset, 40), ongoing ? ongoingWing : activityWing)
+        let symbol = NSImage(systemSymbolName: activity.symbol, accessibilityDescription: nil)?
+            .withSymbolConfiguration(.init(pointSize: 12, weight: .semibold))?.size.width
+        let width = (text as NSString).size(withAttributes: [.font: font]).width
+        return ((symbol ?? 16) + labelSpacing + width).rounded(.up)
+    }
+
+    /// A one-shot activity's row: its label with room at either end.
+    static func rowWidth(for activity: Activity) -> CGFloat {
+        labelWidth(for: activity) + rowPadding * 2
+    }
+
+    /// How far an ongoing activity's tab reaches beside the notch: just enough for its label, up to
+    /// a ceiling, since it stays over the menu bar.
+    static func tab(for activity: Activity, now: Date = .now) -> CGFloat {
+        min(labelWidth(for: activity, now: now) + wingInset + wingOutset, ongoingTab)
     }
 
     /// Gap between the top of the display and the shape: none on a notch, a little above a pill.
@@ -141,7 +173,10 @@ struct NotchMetrics: Equatable {
     /// moves or resizes; only the shape inside it animates.
     var panelFrame: CGRect {
         let largest = [
-            size(for: .hoverArmed), CGSize(width: housing.width + Self.activityWing * 2, height: housing.height),
+            size(for: .hoverArmed),
+            CGSize(width: housing.width + Self.activityWing * 2, height: housing.height + Self.meterDepth),
+            // An ongoing tab reaches out on one side, so it needs that much room on both.
+            CGSize(width: housing.width + Self.ongoingTab * 2, height: housing.height),
             size(for: .expanded(tab: .media), expanded: NotchPreferences.maximumExpandedSize),
         ]
         let width = min(largest.map(\.width).max()! * Self.overshootRoom, screen.width)

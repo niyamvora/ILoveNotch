@@ -45,7 +45,6 @@ struct NotchMetricsTests {
         let level = metrics.size(for: .transient(volume))
         let housing = metrics.housing
         #expect(level.width <= housing.width + NotchMetrics.hoverGrowth.width, "no wings beside the notch")
-        #expect(level.width < metrics.size(for: .transient(song)).width)
         if metrics.notch != nil {
             #expect(level.height == housing.height + NotchMetrics.meterDepth, "its row sits under the camera")
         } else {
@@ -53,19 +52,21 @@ struct NotchMetricsTests {
         }
     }
 
+    /// Its symbol and title side by side, like a level's row: under the camera, or inside the pill.
     @Test(arguments: displays)
-    func aLiveActivityTakesOnlyTheRoomItsTitleNeeds(metrics: NotchMetrics) {
+    func aLiveActivityKeepsItsSymbolAndTitleTogether(metrics: NotchMetrics) {
         let title = String(repeating: "A very long video title ", count: 4)
         let short = metrics.size(for: .transient(song))
         let long = metrics.size(
             for: .transient(Activity(feature: .media, symbol: "play.fill", title: title, duration: .zero)))
-        #expect(short.width < long.width, "a short title, short wings")
-        #expect(long.width == metrics.housing.width + NotchMetrics.activityWing * 2, "a long one stops at the ceiling")
-        #expect(short.height == metrics.housing.height && long.width <= metrics.panelFrame.width)
+        #expect(short == metrics.size(for: .transient(volume)), "a short title keeps to the notch, like a level")
+        #expect(short.width < long.width, "a long one widens the row")
+        #expect(long.width == metrics.housing.width + NotchMetrics.activityWing * 2, "up to a ceiling")
+        #expect(long.height == short.height && long.width <= metrics.panelFrame.width)
     }
 
     @Test(arguments: displays)
-    func anOngoingActivityRestsInTheMenuBarOnNarrowerWings(metrics: NotchMetrics) {
+    func anOngoingActivityRestsInATabBesideTheNotch(metrics: NotchMetrics) {
         let project = Activity(
             feature: .agents, symbol: "hand.raised.fill", title: String(repeating: "project ", count: 10),
             duration: .zero)
@@ -74,28 +75,46 @@ struct NotchMetricsTests {
         _ = state.handle(.setOngoing(project))
         let resting = metrics.size(for: state)
         let housing = metrics.housing
-        let ceiling = CGSize(width: housing.width + NotchMetrics.ongoingWing * 2, height: housing.height)
-        #expect(resting == ceiling, "a long title stops at the ongoing ceiling, in the menu bar")
-        #expect(resting.width < metrics.size(for: .transient(project)).width, "narrower than a one-shot's")
+        #expect(resting.height == housing.height, "in the menu bar, never over windows")
+        if metrics.notch != nil {
+            #expect(resting.width == housing.width + NotchMetrics.ongoingTab, "a long title stops at the ceiling")
+            // The shape moves right by half the tab: its left edge stays at the housing's.
+            let offset = metrics.offset(for: state)
+            #expect(offset == NotchMetrics.ongoingTab / 2)
+            let frame = metrics.hoverFrame(for: resting, in: metrics.panelFrame).offsetBy(dx: offset, dy: 0)
+            #expect(abs(frame.minX - (metrics.centerX - housing.width / 2)) < 0.001)
+            #expect(frame.maxX <= metrics.panelFrame.maxX, "and the panel has room for it")
+        } else {
+            #expect(metrics.offset(for: state) == 0, "inside the pill, centered")
+        }
+        // Hovered, it grows a little instead of shrinking to the plain hover shape, so the pointer on
+        // the tab stays on the notch while it waits to open.
+        var hovered = state
+        _ = hovered.handle(.pointerEntered)
+        let grown = metrics.size(for: hovered)
+        #expect(grown.width == resting.width + NotchMetrics.hoverGrowth.width && grown.height > resting.height)
+        #expect(metrics.offset(for: hovered) == metrics.offset(for: state))
         _ = state.handle(.clicked)
         #expect(metrics.size(for: state) == metrics.size(for: .expanded(tab: .agents)), "open, it's an open notch")
+        #expect(metrics.offset(for: state) == 0, "and centered again")
     }
 
     @Test(arguments: ["2 waiting", "OpenNotch", "Awake"])
     func anOngoingActivitysWordsFitUncut(title: String) {
-        let activity = Activity(feature: nil, symbol: "bell.fill", title: title, duration: .zero)
-        #expect(NotchMetrics.wing(for: activity, ongoing: true) == NotchMetrics.wing(for: activity), "not cut short")
+        let activity = Activity(feature: nil, symbol: "hand.raised.fill", title: title, duration: .zero)
+        let label = NotchMetrics.labelWidth(for: activity)
+        #expect(NotchMetrics.tab(for: activity) == label + NotchMetrics.wingInset + NotchMetrics.wingOutset)
     }
 
     @Test func aCountdownMakesRoomForItsLongestReading() {
         let now = Date(timeIntervalSince1970: 1_790_000_000)
-        func wing(_ seconds: TimeInterval) -> CGFloat {
+        func tab(_ seconds: TimeInterval) -> CGFloat {
             let countdown = Activity(
                 feature: .calendar, symbol: "video.fill", title: "Standup", duration: .zero, countdown: now + seconds)
-            return NotchMetrics.wing(for: countdown, ongoing: true, now: now)
+            return NotchMetrics.tab(for: countdown, now: now)
         }
-        #expect(wing(300) < wing(2 * 3600), "hours need more room than minutes")
-        #expect(wing(2 * 3600) <= NotchMetrics.ongoingWing)
+        #expect(tab(300) < tab(2 * 3600), "hours need more room than minutes")
+        #expect(tab(2 * 3600) < NotchMetrics.ongoingTab)
     }
 
     @Test(arguments: displays)
@@ -123,8 +142,12 @@ struct NotchMetricsTests {
         let housing = metrics.housing
         #expect(compact.width <= housing.width && compact.height <= housing.height)
         #expect(hover.width > housing.width && hover.height > housing.height, "hover shows past the housing")
-        #expect(live.width > housing.width && live.height == housing.height, "activities widen, not deepen")
-        #expect(open.width > live.width && open.height > housing.height)
+        if metrics.notch != nil {
+            #expect(live.width > housing.width && live.height > hover.height, "an activity's row shows under it")
+        } else {
+            #expect(live == housing, "or inside the pill")
+        }
+        #expect(open.width > live.width && open.height > live.height)
     }
 
     /// The housing as measured on hardware: the gap between the auxiliary areas, with top corners

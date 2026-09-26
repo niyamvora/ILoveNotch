@@ -24,13 +24,20 @@ private let volume = Activity(
 private let meeting = Activity(
     feature: .calendar, symbol: "video.fill", title: "Standup", duration: .zero,
     countdown: Date(timeIntervalSinceNow: 272))
+private let copied = Activity(
+    feature: .clipboard, symbol: "doc.on.clipboard.fill", title: "Copied", duration: .seconds(2))
+private let waiting = Activity(feature: .agents, symbol: "hand.raised.fill", title: "2 waiting", duration: .zero)
 
 private let snapshotCases: [(name: String, metrics: NotchMetrics, events: [NotchEvent])] = [
     ("compact", notched, [.show]),
     ("hover", notched, [.show, .pointerEntered]),
     ("activity", notched, [.show, .activity(song)]),
+    ("copied", notched, [.show, .activity(copied)]),
     ("volume", notched, [.show, .activity(volume)]),
     ("ongoing", notched, [.show, .setOngoing(meeting)]),
+    ("ongoing-words", notched, [.show, .setOngoing(waiting)]),
+    ("ongoing-hover", notched, [.show, .setOngoing(waiting), .pointerEntered]),
+    ("pill-activity", notchless, [.show, .activity(copied)]),
     ("pill-ongoing", notchless, [.show, .setOngoing(meeting)]),
     ("expanded-media", notched, [.show, .clicked]),
     ("pinned-notes", notched, [.show, .selectTab(.notes), .togglePin]),
