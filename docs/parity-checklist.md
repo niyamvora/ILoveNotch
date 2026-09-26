@@ -85,6 +85,7 @@ that delivers it.
 - [x] Live activity when a limit is close or resets
 - [x] A card per provider that's on, and back from a provider's detail to the cards
 - [x] Cards share the width: one spans it, two split it, and a last short row sits centered
+- [x] Cards fit the notch at any size: the grid picks the columns, and each card shows what its size holds (the ring, then fewer limits) instead of being cut off
 - [x] A tray under the cards offers every other provider; the ones signed in on this Mac are in color
 - [x] API keys for OpenRouter and Z.ai, pasted in Settings › AI Usage and kept in the keychain
 - [x] Provider logos from theSVG

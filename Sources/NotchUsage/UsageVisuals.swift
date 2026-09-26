@@ -101,20 +101,25 @@ struct PlanPill: View {
     }
 }
 
-/// Whether a limit will last until it resets, from OpenUsage's burn-rate projection.
+/// Whether a limit will last until it resets, from OpenUsage's burn-rate projection. Without
+/// `showsWords`, just its dot, with the words in the tooltip.
 struct PaceBadge: View {
     let meter: Meter
     let now: Date
+    var showsWords = true
 
     var body: some View {
         if let resetsAt = meter.resetsAt, let period = meter.period, let pace = meter.pace(now: now) {
             let (color, text) = Self.describe(pace.status, meter: meter, resetsAt: resetsAt, period: period, now: now)
             HStack(spacing: 4) {
                 Circle().fill(color).frame(width: 6, height: 6).shadow(color: color, radius: 2)
-                Text(text).lineLimit(1)
+                if showsWords { Text(text).lineLimit(1) }
             }
             .font(.system(size: 10, weight: .medium))
             .foregroundStyle(.white.opacity(0.7))
+            .help(text)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(text)
         }
     }
 
