@@ -73,8 +73,9 @@ public and buildable whatever happens to the project.
   behind the camera housing until it has something to tell you, like a meeting
   about to start. Pick how it opens and closes (spring, jelly, pop, smooth,
   snappy, or instant), drag its bottom-right corner to resize it, and pin it
-  open. Works on every display: where there's no notch, it draws one inside the
-  menu bar, or a floating pill if you'd rather.
+  open. On macOS 26, open it in Liquid Glass instead of black. Works on every
+  display: where there's no notch, it draws one inside the menu bar, or a
+  floating pill if you'd rather.
 - **Media.** What's playing in any app, with artwork, controls, a seek bar, and
   a waveform that moves with the music.
 - **Shelf.** Drop files on the notch to keep them at hand; drag them back out,

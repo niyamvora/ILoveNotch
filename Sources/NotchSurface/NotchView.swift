@@ -37,6 +37,7 @@ struct NotchView: View {
     let content: NotchContent
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
     @State private var dropTargeted = false
     @State private var justDropped = false
@@ -51,7 +52,7 @@ struct NotchView: View {
         let size = metrics.size(for: engine.state, expanded: preferences.expandedSize)
         let outline = Self.shape(for: presentation, resting: resting != nil, on: metrics)
         ZStack(alignment: .top) {
-            outline.fill(.black)
+            fill(outline, glass: showsGlass(presentation))
             if let tab = presentation.openTab {
                 expanded(tab: tab, pinned: presentation.isPinned)
                     .transition(.opacity)
@@ -128,6 +129,40 @@ struct NotchView: View {
     }
 
     private static let pillRadius: CGFloat = 100  // clamped to a capsule
+
+    /// Glass only while open, with the Glass theme, on macOS 26 and later. Closed, the notch stays
+    /// black to hide in the camera housing; Reduce Transparency and Increase Contrast keep it black,
+    /// where text needs a solid backing most.
+    private func showsGlass(_ presentation: NotchPresentationState) -> Bool {
+        guard #available(macOS 26, *) else { return false }
+        return presentation.openTab != nil && preferences.theme == .glass && !reduceTransparency
+            && contrast != .increased
+    }
+
+    /// Black, or Liquid Glass that materializes as the black fades out. The camera housing stays black
+    /// over the glass, as the notch it opened from, which also draws it on a display without one.
+    @ViewBuilder
+    private func fill(_ outline: NotchShape, glass: Bool) -> some View {
+        ZStack(alignment: .top) {
+            if #available(macOS 26, *), preferences.theme == .glass {
+                GlassEffectContainer {
+                    if glass {
+                        Color.clear
+                            .glassEffect(.regular.tint(Self.glassTint), in: outline)
+                            .glassEffectTransition(.materialize)
+                    }
+                }
+            }
+            outline.fill(.black).opacity(glass ? 0 : 1)
+            if glass, metrics.notch != nil {
+                Self.shape(for: .compact, on: metrics).fill(.black)
+                    .frame(width: metrics.compactSize.width, height: metrics.compactSize.height)
+            }
+        }
+    }
+
+    /// Dims the glass so white text stays legible over a bright desktop, as Apple dims its clear glass.
+    private static let glassTint = Color.black.opacity(0.35)
 
     /// Live activities, one-shot or ongoing, come and go on their own spring.
     private var activityMotion: Animation? {

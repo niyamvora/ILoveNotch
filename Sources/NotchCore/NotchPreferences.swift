@@ -35,6 +35,23 @@ public enum NotchAnimationStyle: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+/// How the open notch is drawn. Closed, it's always black, so it hides in the camera housing.
+public enum NotchTheme: String, CaseIterable, Identifiable, Sendable {
+    /// Solid black, like the camera housing it opens from.
+    case black
+    /// Liquid Glass over the desktop, on macOS 26 and later.
+    case glass
+
+    public var id: Self { self }
+
+    public var title: String {
+        switch self {
+        case .black: "Black"
+        case .glass: "Glass"
+        }
+    }
+}
+
 /// What a display without a notch shows: a stand-in notch as tall as its menu bar, or a floating pill.
 public enum NotchlessStyle: String, CaseIterable, Identifiable, Sendable {
     case notch, pill
@@ -108,6 +125,11 @@ public final class NotchPreferences {
     /// How the notch opens and closes.
     public var animationStyle: NotchAnimationStyle {
         didSet { defaults.set(animationStyle.rawValue, forKey: Key.animationStyle) }
+    }
+
+    /// How the open notch is drawn: black, or glass on macOS 26.
+    public var theme: NotchTheme {
+        didSet { defaults.set(theme.rawValue, forKey: Key.theme) }
     }
 
     /// A live activity when the volume changes or mutes.
@@ -199,6 +221,7 @@ public final class NotchPreferences {
         showOnAllDisplays = defaults.bool(forKey: Key.showOnAllDisplays)
         pillDisplays = Set(defaults.stringArray(forKey: Key.pillDisplays) ?? [])
         animationStyle = defaults.string(forKey: Key.animationStyle).flatMap(NotchAnimationStyle.init) ?? .spring
+        theme = defaults.string(forKey: Key.theme).flatMap(NotchTheme.init) ?? .black
         showsVolume = defaults.object(forKey: Key.showsVolume) as? Bool ?? true
         showsBattery = defaults.object(forKey: Key.showsBattery) as? Bool ?? true
         replacesVolumeDisplay = defaults.bool(forKey: Key.replacesVolumeDisplay)
@@ -252,6 +275,7 @@ public final class NotchPreferences {
         showOnAllDisplays = false
         pillDisplays = []
         animationStyle = .spring
+        theme = .black
         expandedSize = Self.defaultExpandedSize
         showsVolume = true
         showsBattery = true
@@ -267,6 +291,7 @@ public final class NotchPreferences {
         static let showOnAllDisplays = "showOnAllDisplays"
         static let pillDisplays = "pillDisplays"
         static let animationStyle = "animationStyle"
+        static let theme = "theme"
         static let expandedSize = "expandedSize"
         static let showsVolume = "showsVolume"
         static let showsBattery = "showsBattery"

@@ -65,6 +65,17 @@ struct NotchSnapshotTests {
         #expect(preferences.expandedSize == CGSize(width: 720, height: 230), "held between the largest and smallest")
     }
 
+    /// The Glass theme open, closed, and with an activity, on each kind of display. An offscreen
+    /// render can't show glass, which the window server draws, so this checks that each state draws.
+    @Test(arguments: [("glass-expanded", notched), ("glass-pill", notchless), ("glass-standin", standIn)])
+    func theGlassThemeRenders(name: String, metrics: NotchMetrics) throws {
+        let preferences = Self.preferences()
+        preferences.theme = .glass
+        try draw(name, metrics: metrics, events: [.show, .selectTab(.shelf)], preferences: preferences)
+        try draw(name + "-closed", metrics: metrics, events: [.show], preferences: preferences)
+        try draw(name + "-activity", metrics: metrics, events: [.show, .activity(song)], preferences: preferences)
+    }
+
     /// The densest layout: every tab, the pin, and Settings in the header, and the resize corner, at
     /// the smallest open size.
     @Test func everyTabFitsTheSmallestSize() throws {

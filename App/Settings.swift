@@ -136,6 +136,18 @@ private struct GeneralSettings: View {
                     clipboardKey, preferences.clipboardShortcut,
                     "Opens the Clipboard tab ready to type; Return copies the first match.")
             }
+            Picker("Theme", selection: $preferences.theme) {
+                ForEach(NotchTheme.allCases) { theme in
+                    Text(theme.title).tag(theme)
+                }
+            }
+            .pickerStyle(.segmented)
+            .disabled(!Self.glassAvailable)
+            // Shows the new look right away, the way Preview shows an animation.
+            .onChange(of: preferences.theme) { previewAnimation() }
+            Text(themeNote)
+                .font(.caption)
+                .foregroundStyle(.secondary)
             Picker("Open and close animation", selection: $preferences.animationStyle) {
                 ForEach(NotchAnimationStyle.allCases) { style in
                     Text(style.title).tag(style)
@@ -163,6 +175,23 @@ private struct GeneralSettings: View {
             Button("Reset to Defaults", role: .destructive) { preferences.reset() }
         }
         .formStyle(.grouped)
+    }
+
+    /// Liquid Glass came with macOS 26.
+    private static var glassAvailable: Bool {
+        if #available(macOS 26, *) { true } else { false }
+    }
+
+    private var themeNote: String {
+        guard Self.glassAvailable else { return "Glass needs macOS 26 or later." }
+        let note =
+            "Glass shows your desktop through the open notch, the way macOS draws Control Center. Closed, the notch "
+            + "stays black to hide in the camera housing."
+        let accessibility = NSWorkspace.shared
+        let solid =
+            accessibility.accessibilityDisplayShouldReduceTransparency
+            || accessibility.accessibilityDisplayShouldIncreaseContrast
+        return solid ? note + " Reduce Transparency and Increase Contrast keep it black." : note
     }
 
     /// What a shortcut does, or that another app already has it.
