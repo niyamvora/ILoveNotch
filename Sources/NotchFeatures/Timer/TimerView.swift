@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 import SwiftUI
 
-/// The timer tab: countdown presets or a running countdown, and a stopwatch with laps.
+/// The timer tab: countdown presets or a running countdown, a stopwatch with laps, and keep awake.
 struct TimerView: View {
     let timer: TimerFeature
 
@@ -10,23 +10,93 @@ struct TimerView: View {
             HStack(spacing: 4) {
                 modeButton("Timer", .countdown)
                 modeButton("Stopwatch", .stopwatch)
+                modeButton("Keep Awake", .keepAwake, lit: timer.keepsAwake)
             }
             switch timer.mode {
             case .countdown: countdown
             case .stopwatch: stopwatch
+            case .keepAwake: keepAwake
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
-    private func modeButton(_ title: String, _ mode: TimerFeature.Mode) -> some View {
-        Button(title) { timer.mode = mode }
-            .buttonStyle(.plain)
-            .font(.caption.weight(.semibold))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 3)
-            .background(timer.mode == mode ? .white.opacity(0.16) : .clear, in: Capsule())
-            .accessibilityAddTraits(timer.mode == mode ? .isSelected : [])
+    /// `lit` marks a mode that's running while another is showing.
+    private func modeButton(_ title: String, _ mode: TimerFeature.Mode, lit: Bool = false) -> some View {
+        Button {
+            timer.mode = mode
+        } label: {
+            HStack(spacing: 4) {
+                if lit { Image(systemName: "cup.and.saucer.fill").font(.system(size: 9)) }
+                Text(title)
+            }
+        }
+        .buttonStyle(.plain)
+        .font(.caption.weight(.semibold))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 3)
+        .background(timer.mode == mode ? .white.opacity(0.16) : .clear, in: Capsule())
+        .accessibilityLabel(lit ? "\(title), on" : title)
+        .accessibilityAddTraits(timer.mode == mode ? .isSelected : [])
+    }
+
+    /// How long to stay awake, or how long is left.
+    @ViewBuilder private var keepAwake: some View {
+        if let until = timer.awakeUntil {
+            VStack(spacing: 8) {
+                if until == .distantFuture {
+                    Label("Awake until you turn it off", systemImage: "cup.and.saucer.fill")
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .padding(.vertical, 12)
+                } else {
+                    // Redraws once a second, and only while it's on screen.
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        RollingTime(until.timeIntervalSince(context.date), countsDown: true)
+                            .font(.system(size: 40, weight: .semibold, design: .rounded))
+                    }
+                    Text("Your Mac and its display stay awake until then.")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+                HStack(spacing: 18) {
+                    if until != .distantFuture { control("+30 min") { timer.extendAwake() } }
+                    control("Turn Off", timer.allowSleep)
+                }
+            }
+        } else {
+            VStack(spacing: 10) {
+                Text("Keep your Mac and its display from sleeping through a download, a build, or a talk.")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 320)
+                HStack(spacing: 8) {
+                    ForEach(TimerFeature.awakePresets, id: \.self) { seconds in
+                        awakePreset(seconds < 3600 ? "\(Int(seconds / 60)) min" : "\(Int(seconds / 3600)) hr") {
+                            timer.keepAwake(for: seconds)
+                        }
+                        .accessibilityLabel("Keep awake for \(formatTime(seconds))")
+                    }
+                    awakePreset(nil) { timer.keepAwake(for: nil) }
+                        .help("Until you turn it off")
+                        .accessibilityLabel("Keep awake until you turn it off")
+                }
+            }
+            .padding(.top, 4)
+        }
+    }
+
+    /// A duration to stay awake for; nil for "until you turn it off".
+    private func awakePreset(_ title: String?, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Group {
+                if let title { Text(title) } else { Image(systemName: "infinity") }
+            }
+            .font(.callout.weight(.medium))
+            .frame(maxWidth: .infinity, minHeight: 34)
+            .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 9))
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder private var countdown: some View {
