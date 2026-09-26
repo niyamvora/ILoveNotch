@@ -8,7 +8,7 @@ import NotchCore
 struct NotchMetrics: Equatable {
     /// The display's frame in global coordinates.
     var screen: CGRect
-    /// The physical notch, or nil on a notchless display.
+    /// The physical notch, a stand-in drawn on a display without one, or nil for the floating pill.
     var notch: CGSize?
     /// Where the notch is centered: the middle of the gap, which can sit a hair off the display's
     /// center (half a point left on a 14" MacBook Pro), or the display's center without a notch.
@@ -23,23 +23,40 @@ struct NotchMetrics: Equatable {
     static let meterDepth: CGFloat = 26  // room under the notch for a level activity's row
     static let overshootRoom: CGFloat = 1.08  // springy and jelly animations briefly overshoot
 
-    /// The notch is the gap between the two auxiliary top areas; no insets means no notch.
-    init(screen: CGRect, safeAreaTop: CGFloat, left: CGRect?, right: CGRect?) {
+    /// The notch is the gap between the two auxiliary top areas; no insets means no notch, and then
+    /// `standIn`, when given, is drawn in the middle of the top edge instead of the pill.
+    init(screen: CGRect, safeAreaTop: CGFloat, left: CGRect?, right: CGRect?, standIn: CGSize? = nil) {
         self.screen = screen
         centerX = screen.midX
+        notch = standIn
         if safeAreaTop > 0, let left, let right {
             notch = CGSize(width: max(0, right.minX - left.maxX), height: safeAreaTop)
             centerX = (left.maxX + right.minX) / 2
         }
     }
 
-    init(screen: NSScreen) {
+    init(screen: NSScreen, standIn: CGSize? = nil) {
         self.init(
             screen: screen.frame,
             safeAreaTop: screen.safeAreaInsets.top,
             left: screen.auxiliaryTopLeftArea,
-            right: screen.auxiliaryTopRightArea
+            right: screen.auxiliaryTopRightArea,
+            standIn: standIn
         )
+    }
+
+    /// A 14" MacBook Pro's notch is 185 pt wide: the stand-in's width when there's no real one to copy.
+    static let standInWidth: CGFloat = 185
+    /// macOS's menu bar on a display without a notch, when the display can't say (it hides it).
+    static let menuBarHeight: CGFloat = 24
+
+    /// The stand-in notch for a display without one: as wide as the Mac's own notch, or a
+    /// MacBook's, and exactly as tall as the display's menu bar, so it sits inside the bar.
+    static func standIn(on screen: NSScreen, among screens: [NSScreen]) -> CGSize {
+        // Without a stand-in, a display's metrics hold only its real notch.
+        let real = screens.lazy.compactMap { NotchMetrics(screen: $0).notch }.first
+        let bar = screen.frame.maxY - screen.visibleFrame.maxY
+        return CGSize(width: real?.width ?? standInWidth, height: bar > 0 ? bar : menuBarHeight)
     }
 
     /// The camera housing, or on a notchless display the pill that stands in for it.

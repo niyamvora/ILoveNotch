@@ -102,6 +102,7 @@ that delivers it.
 - [x] Clipboard history, off until turned on: text, links, images, and files, newest first, searchable, with favorites that stay; click (or Return) copies one again
 - [x] ⌃⌥V opens the Clipboard tab from any app with the search field ready
 - [x] Skips what the copying app marks secret or temporary and copies from password managers; guides the user to "Paste from Other Apps" when macOS would ask each time
+- [x] Notch on every display: a display without a notch gets one drawn inside its menu bar, as tall as the bar and as wide as the Mac's own notch (or a MacBook's); Settings › General picks Notch or Pill per display
 
 ## Later
 

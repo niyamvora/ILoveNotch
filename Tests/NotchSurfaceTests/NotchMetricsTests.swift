@@ -16,13 +16,17 @@ private let macBookPro16 = NotchMetrics(
 /// A notchless external display to the left of the built-in one.
 private let external = NotchMetrics(
     screen: CGRect(x: -2560, y: 180, width: 2560, height: 1440), safeAreaTop: 0, left: nil, right: nil)
+/// The same display with a notch drawn in its 24 pt menu bar, as wide as the MacBook's.
+private let externalWithNotch = NotchMetrics(
+    screen: CGRect(x: -2560, y: 180, width: 2560, height: 1440), safeAreaTop: 0, left: nil, right: nil,
+    standIn: CGSize(width: 185, height: 24))
 
 private let song = Activity(feature: .media, symbol: "music.note", title: "Song", duration: .seconds(2))
 private let volume = Activity(
     feature: nil, symbol: "speaker.wave.2.fill", title: "50%", level: 0.5, duration: .seconds(1))
 
 struct NotchMetricsTests {
-    static let displays = [macBookPro14, macBookPro16, external]
+    static let displays = [macBookPro14, macBookPro16, external, externalWithNotch]
     static let presentations: [NotchPresentationState] = [
         .compact, .hoverArmed, .transient(song), .transient(volume), .expanded(tab: .media), .pinned(tab: .notes),
         .focused(tab: .notes, pinned: false),
@@ -139,6 +143,18 @@ struct NotchMetricsTests {
         #expect(external.notch == nil)
         #expect(external.size(for: .compact) == NotchMetrics.pill)
         #expect(external.topInset == NotchMetrics.pillInset)
+    }
+
+    @Test func aDisplayWithoutANotchCanHaveOneDrawnInsideItsMenuBar() {
+        #expect(externalWithNotch.notch == CGSize(width: 185, height: 24))
+        #expect(externalWithNotch.topInset == 0, "flush with the top edge, like a real one")
+        #expect(externalWithNotch.size(for: .compact) == CGSize(width: 185, height: 23), "inside the menu bar")
+        #expect(externalWithNotch.centerX == externalWithNotch.screen.midX)
+        let real = NotchMetrics(
+            screen: CGRect(x: 0, y: 0, width: 1512, height: 982), safeAreaTop: 32,
+            left: CGRect(x: 0, y: 950, width: 663, height: 32), right: CGRect(x: 848, y: 950, width: 664, height: 32),
+            standIn: CGSize(width: 100, height: 20))
+        #expect(real.notch == CGSize(width: 185, height: 32), "a real notch wins over a stand-in")
     }
 
     @Test func insetsWithoutAuxiliaryAreasAreNotANotch() {

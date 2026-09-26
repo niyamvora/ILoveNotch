@@ -21,9 +21,10 @@ final class NotchController {
     private var clickAwayMonitors: [Any] = []
     private var keyObservers: [NSObjectProtocol] = []
 
-    init(screen: NSScreen, content: NotchContent, preferences: NotchPreferences) {
+    /// `standIn` is the notch to draw when the display has none; without one, it gets the pill.
+    init(screen: NSScreen, content: NotchContent, preferences: NotchPreferences, standIn: CGSize?) {
         displayID = screen.displayID
-        metrics = NotchMetrics(screen: screen)
+        metrics = NotchMetrics(screen: screen, standIn: standIn)
         self.preferences = preferences
         panel = NotchWindow(frame: metrics.panelFrame)
         let view = NotchView(engine: engine, metrics: metrics, preferences: preferences, content: content)
@@ -141,4 +142,13 @@ extension NSScreen {
     var displayID: CGDirectDisplayID {
         (deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? 0
     }
+
+    /// The display's UUID, which, unlike its ID, stays the same across reconnects and restarts.
+    public var uuid: String {
+        guard let uuid = CGDisplayCreateUUIDFromDisplayID(displayID)?.takeRetainedValue() else { return "\(displayID)" }
+        return CFUUIDCreateString(nil, uuid) as String
+    }
+
+    /// Whether it has a camera notch of its own.
+    public var hasNotch: Bool { safeAreaInsets.top > 0 }
 }

@@ -35,6 +35,20 @@ public enum NotchAnimationStyle: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+/// What a display without a notch shows: a stand-in notch as tall as its menu bar, or a floating pill.
+public enum NotchlessStyle: String, CaseIterable, Identifiable, Sendable {
+    case notch, pill
+
+    public var id: Self { self }
+
+    public var title: String {
+        switch self {
+        case .notch: "Notch"
+        case .pill: "Pill"
+        }
+    }
+}
+
 /// A keyboard shortcut, kept the way Carbon's hot keys take it: a virtual key code, the same on
 /// every keyboard layout, and Carbon modifier flags. `key` is what that key typed when recorded.
 public struct KeyShortcut: Codable, Hashable, Sendable {
@@ -76,6 +90,19 @@ public final class NotchPreferences {
     /// Show a notch on every display, not just the built-in (or main) one.
     public var showOnAllDisplays: Bool {
         didSet { defaults.set(showOnAllDisplays, forKey: Key.showOnAllDisplays) }
+    }
+
+    /// Displays without a notch that show the floating pill, by display UUID; the rest get a notch.
+    public private(set) var pillDisplays: Set<String> {
+        didSet { defaults.set(pillDisplays.sorted(), forKey: Key.pillDisplays) }
+    }
+
+    public func notchlessStyle(for display: String) -> NotchlessStyle {
+        pillDisplays.contains(display) ? .pill : .notch
+    }
+
+    public func setNotchlessStyle(_ style: NotchlessStyle, for display: String) {
+        if style == .pill { pillDisplays.insert(display) } else { pillDisplays.remove(display) }
     }
 
     /// How the notch opens and closes.
@@ -170,6 +197,7 @@ public final class NotchPreferences {
         defaults.set(disabled.map(\.rawValue).sorted(), forKey: Key.disabledFeatures)
         defaults.set(FeatureID.allCases.map(\.rawValue), forKey: Key.seenFeatures)
         showOnAllDisplays = defaults.bool(forKey: Key.showOnAllDisplays)
+        pillDisplays = Set(defaults.stringArray(forKey: Key.pillDisplays) ?? [])
         animationStyle = defaults.string(forKey: Key.animationStyle).flatMap(NotchAnimationStyle.init) ?? .spring
         showsVolume = defaults.object(forKey: Key.showsVolume) as? Bool ?? true
         showsBattery = defaults.object(forKey: Key.showsBattery) as? Bool ?? true
@@ -222,6 +250,7 @@ public final class NotchPreferences {
     public func reset() {
         disabledFeatures = Self.offByDefault
         showOnAllDisplays = false
+        pillDisplays = []
         animationStyle = .spring
         expandedSize = Self.defaultExpandedSize
         showsVolume = true
@@ -236,6 +265,7 @@ public final class NotchPreferences {
         static let disabledFeatures = "disabledFeatures"
         static let seenFeatures = "seenFeatures"
         static let showOnAllDisplays = "showOnAllDisplays"
+        static let pillDisplays = "pillDisplays"
         static let animationStyle = "animationStyle"
         static let expandedSize = "expandedSize"
         static let showsVolume = "showsVolume"

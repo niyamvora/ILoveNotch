@@ -16,6 +16,8 @@ public final class PanelCoordinator {
     /// Ongoing activities by the feature that raised them, oldest first.
     private var ongoing: [(feature: FeatureID, activity: Activity)] = []
     private var showingAllDisplays = false
+    /// The displays that had the pill when the notches were last built.
+    private var builtPills: Set<String> = []
     private var observers: [(center: NotificationCenter, token: NSObjectProtocol)] = []
 
     public init(preferences: NotchPreferences, content: NotchContent) {
@@ -33,7 +35,7 @@ public final class PanelCoordinator {
         observeContinuously { [weak self] in
             guard let self else { return }
             let tabs = preferences.tabs
-            if preferences.showOnAllDisplays != showingAllDisplays {
+            if preferences.showOnAllDisplays != showingAllDisplays || preferences.pillDisplays != builtPills {
                 showingAllDisplays = preferences.showOnAllDisplays
                 rebuild()
             }
@@ -128,9 +130,15 @@ public final class PanelCoordinator {
 
     private func rebuild() {
         for controller in controllers { controller.close() }
-        let screens = showingAllDisplays ? NSScreen.screens : [NSScreen.preferredForNotch].compactMap { $0 }
+        let all = NSScreen.screens
+        let screens = showingAllDisplays ? all : [NSScreen.preferredForNotch].compactMap { $0 }
+        builtPills = preferences.pillDisplays
         controllers = screens.map { screen in
-            let controller = NotchController(screen: screen, content: content, preferences: preferences)
+            // A display without a notch gets one drawn, unless the user picked the pill for it.
+            let pill = screen.hasNotch || preferences.notchlessStyle(for: screen.uuid) == .pill
+            let standIn = pill ? nil : NotchMetrics.standIn(on: screen, among: all)
+            let controller = NotchController(
+                screen: screen, content: content, preferences: preferences, standIn: standIn)
             controller.onPresentationChange = { [weak self] in
                 guard let self else { return }
                 onPresentationsChange?(presentations)
@@ -179,6 +187,6 @@ public final class PanelCoordinator {
 extension NSScreen {
     /// The built-in display with a notch, else the display with the menu bar.
     static var preferredForNotch: NSScreen? {
-        screens.first { $0.safeAreaInsets.top > 0 } ?? screens.first
+        screens.first(where: \.hasNotch) ?? screens.first
     }
 }

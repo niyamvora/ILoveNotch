@@ -121,6 +121,7 @@ private struct GeneralSettings: View {
             Text("Otherwise ILoveNotch uses the built-in display's notch, or the main display.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            NotchlessDisplays(preferences: preferences)
             LabeledContent("Open the notch") {
                 ShortcutRecorder(shortcut: $preferences.notchShortcut, hotKey: notchKey)
             }
@@ -188,6 +189,37 @@ private struct GeneralSettings: View {
             loginError = error.localizedDescription
         }
         launchAtLogin = SMAppService.mainApp.status == .enabled
+    }
+}
+
+/// For each connected display without a notch: a notch drawn in its menu bar, or the floating pill.
+private struct NotchlessDisplays: View {
+    let preferences: NotchPreferences
+    @State private var screens = NSScreen.screens.filter { !$0.hasNotch }
+
+    var body: some View {
+        Group {
+            ForEach(screens, id: \.uuid) { screen in
+                Picker(
+                    screen.localizedName,
+                    selection: Binding(
+                        get: { preferences.notchlessStyle(for: screen.uuid) },
+                        set: { preferences.setNotchlessStyle($0, for: screen.uuid) })
+                ) {
+                    ForEach(NotchlessStyle.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+            }
+            Text(
+                "A display without a notch gets one as tall as its menu bar and as wide as a MacBook's, or a "
+                    + "floating pill\(screens.isEmpty ? ", which you can pick here when one is connected" : "")."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)) {
+            _ in screens = NSScreen.screens.filter { !$0.hasNotch }
+        }
     }
 }
 

@@ -48,7 +48,7 @@ still to be set.
 - [ ] Plugging in and removing an external display; changing resolution and scaling
 - [ ] Clamshell mode with an external display
 - [ ] Full-screen apps: no notch over them
-- [ ] Notchless external display: the floating pill
+- [ ] Notchless external display: the drawn notch sits inside the menu bar at every scaling, and the pill when picked
 - [ ] Charger in and out: the battery activity
 - [ ] Camera mirror: allow, deny, and revoke while running; the camera light turns off when the tab closes
 - [ ] Waveform: allow and deny system audio capture; switching output devices while playing
