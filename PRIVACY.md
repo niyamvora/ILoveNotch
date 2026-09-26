@@ -65,5 +65,19 @@ default). Results are cached in `~/Library/Application Support/OpenNotch/` so
 the tab paints at once. Turning a provider off deletes its cached results. The
 Mac App Store edition doesn't include the AI Usage tab.
 
+## Agent status
+
+Agent status is off until you connect a tool in the Agents tab or in
+**Settings › Features › Agents**. Connecting adds hooks to that tool's own
+settings file (`~/.claude/settings.json` for Claude Code, `~/.codex/hooks.json`
+for Codex) and first keeps a copy of the file as it was in
+`~/Library/Application Support/OpenNotch/Backups`. The hooks run a small script,
+`~/Library/Application Support/OpenNotch/ilovenotch-agent-hook`, which writes one
+file per session into `~/Library/Application Support/OpenNotch/Agents`: the
+session's state, its project folder, the app it runs in, its process ID, and
+the tool's own words for what it's waiting for. Your prompts, code, and tool
+output are never written, and nothing leaves your Mac. Disconnecting removes the
+hooks, and with no tool connected, the script and the session files too.
+
 A change that weakens any of these points must say so in its pull request and
 update this file.
