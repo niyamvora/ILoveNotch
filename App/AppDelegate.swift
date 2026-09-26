@@ -46,6 +46,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         super.init()
     }
     private var coordinator: PanelCoordinator?
+    /// Show in Notch messages that arrived while launching, before there was a notch to show them.
+    private var pendingMessages: [Activity] = []
     private var statusItem: StatusItemController?
     private let updater = Updater()
     private lazy var settings = SettingsWindowController(
@@ -152,6 +154,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         coordinator.start()
         self.coordinator = coordinator
+        pendingMessages.forEach(showInNotch)
+        pendingMessages = []
         observeContinuously { [weak self] in self?.updateSystemActivities() }
         observeContinuously { [weak self] in
             guard let self else { return }
@@ -167,6 +171,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         statusItem = StatusItemController(updater: updater) { [weak self] in self?.settings.show() }
+    }
+
+    /// Show in Notch links from scripts and other apps: ilovenotch://show?title=….
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls {
+            guard let message = ShowInNotch.activity(from: url) else {
+                Log.features.info("Ignored a link: \(url.absoluteString, privacy: .private)")
+                continue
+            }
+            showInNotch(message)
+        }
+    }
+
+    /// Shows a message from outside ILoveNotch, from a link or the Shortcuts action, as a live
+    /// activity.
+    func showInNotch(_ message: Activity) {
+        guard let coordinator else {
+            pendingMessages.append(message)
+            return
+        }
+        coordinator.broadcast(.activity(message))
     }
 
     func applicationWillTerminate(_ notification: Notification) {

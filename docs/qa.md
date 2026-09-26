@@ -63,3 +63,4 @@ still to be set.
 - [ ] macOS 15.6
 - [x] macOS 26 (development)
 - [ ] macOS 27
+- [ ] macOS 27: a "When I receive a notification" automation can pass the notification to Show in Notch

@@ -98,6 +98,9 @@ public and buildable whatever happens to the project.
 - **System activities.** Volume, charging and battery, and Bluetooth accessory
   batteries show briefly in the notch, and it can stand in for the macOS volume
   display.
+- **Show in Notch.** A Shortcuts action and an `ilovenotch://` link put your own
+  message in the notch, from any shortcut, automation, script, or app.
+  [More below](#show-in-notch).
 - **Updates.** A build from this checkout updates itself from the menu bar;
   signed releases update through Sparkle. A sandboxed Mac App Store edition
   builds from the same code.
@@ -247,6 +250,21 @@ to its own service. What it reads and sends is in
 [OpenUsage](https://github.com/robinebers/openusage) (MIT), and ILoveNotch isn't
 affiliated with it. The tab is in the GitHub build only: reading other tools'
 sign-ins doesn't fit the App Store's sandbox.
+
+## Show in Notch
+
+Shortcuts has a **Show in Notch** action, with a message, an SF Symbol, and how
+many seconds to show it, so any shortcut or automation can put a message in the
+notch. Scripts and other apps can open a link instead:
+
+```bash
+open -g "ilovenotch://show?title=Build%20done&symbol=hammer.fill&seconds=5"
+```
+
+A message shows for 1 to 30 seconds (4 by default) and is never stored. It's
+only ever displayed: links in it aren't opened, line breaks and control
+characters are removed, and it's cut to 80 characters. Both editions have it,
+the App Store one too.
 
 ## Tasks and notes
 

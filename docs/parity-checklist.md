@@ -95,6 +95,7 @@ that delivers it.
 - [x] A countdown in the closed notch for the five minutes before a meeting with a link, opening with its name; hovering it opens the Calendar tab
 - [x] A keyboard shortcut from any app (⌃⌥O, recorded in Settings › General) opens the notch on the display under the pointer; it, Escape, or a click away closes it
 - [x] Keep Awake in the Timer tab: the Mac and its display stay awake for 30 minutes to 4 hours or until turned off, shown in the closed notch with the time left; it ends when the Mac sleeps anyway, on quit, or when the Timer tab is turned off
+- [x] Show in Notch: a Shortcuts action and an `ilovenotch://show` link put a message and a symbol in the notch for 1 to 30 seconds, in both editions, without taking focus
 
 ## Later
 
