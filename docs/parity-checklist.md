@@ -99,6 +99,9 @@ that delivers it.
 - [x] Agent status: an Agents tab lists Claude Code and Codex sessions, working, waiting for approval, or finished, with a button back to each one's terminal
 - [x] While an agent waits for approval the closed notch shows it until it's answered, and a session that finishes while its app is in the background is announced
 - [x] Connecting a tool adds hooks to its own settings next to any others, and disconnecting removes exactly those; GitHub build only
+- [x] Clipboard history, off until turned on: text, links, images, and files, newest first, searchable, with favorites that stay; click (or Return) copies one again
+- [x] ⌃⌥V opens the Clipboard tab from any app with the search field ready
+- [x] Skips what the copying app marks secret or temporary and copies from password managers; guides the user to "Paste from Other Apps" when macOS would ask each time
 
 ## Later
 

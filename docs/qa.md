@@ -30,6 +30,10 @@ the installed app. Gates are in the [plan](plan/implementation-plan.md#8-perform
 | 8-hour idle | to run | | |
 | 8-hour active | to run | | |
 
+Clipboard history's poll, which runs only while the user has it on, was measured on its own on
+2026-09-26 (same Mac): 60 checks in 30 seconds cost 13 ms of CPU including process start, about
+0.04% of one core, and 2 wakeups a second. Off, it costs nothing.
+
 The media helper, a separate process, used about 7 MB. In the 30-minute run the notch was used
 once (60% CPU in that sample): memory rose to 130 MB and was back to 41 MB within a minute, so
 it's released, not leaked. The 120 MB gate is for the resting notch; a gate for the open notch is

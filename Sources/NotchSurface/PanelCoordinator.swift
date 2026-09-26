@@ -66,11 +66,30 @@ public final class PanelCoordinator {
             dismissAll()
             return false
         }
-        let pointer = NSEvent.mouseLocation
-        guard let controller = controllers.first(where: { $0.screenFrame.contains(pointer) }) ?? controllers.first
-        else { return false }
+        guard let controller = controllerUnderPointer else { return false }
         controller.engine.send(.clicked)
         return controller.engine.state.presentation.openTab != nil
+    }
+
+    /// A tab's own shortcut: opens `tab` on the display under the pointer and gives it the keyboard,
+    /// or closes it when it's already open there. Returns whether it opened.
+    @discardableResult
+    public func toggle(_ tab: FeatureID) -> Bool {
+        // A disabled tab would open the first enabled one instead.
+        guard preferences.isEnabled(tab), let controller = controllerUnderPointer else { return false }
+        if controller.engine.state.presentation.openTab == tab {
+            dismissAll()
+            return false
+        }
+        controller.engine.send(.selectTab(tab))
+        guard controller.engine.state.presentation.openTab == tab else { return false }
+        controller.focusKeyboard()
+        return true
+    }
+
+    private var controllerUnderPointer: NotchController? {
+        let pointer = NSEvent.mouseLocation
+        return controllers.first { $0.screenFrame.contains(pointer) } ?? controllers.first
     }
 
     /// Closes every open notch, pinned ones too.

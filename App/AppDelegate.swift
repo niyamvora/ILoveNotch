@@ -22,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     #endif
     private let media = MediaFeature()
     private let shelf = ShelfFeature()
+    private let clipboard = ClipboardFeature()
     private let calendar: CalendarFeature
     private let tasks: TasksFeature
     private let notes = NotesFeature()
@@ -40,6 +41,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let escapeKey = HotKey()
     /// Starts a new note from any app, while Notes has it on.
     private let quickNoteKey = HotKey()
+    /// Opens the Clipboard tab from any app, ready to search.
+    private let clipboardKey = HotKey()
 
     override init() {
         let eventStore = EventStore()  // shared, and only created when Calendar or Tasks first needs it
@@ -56,6 +59,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         preferences: preferences,
         updater: updater,
         notchKey: notchKey,
+        clipboardKey: clipboardKey,
         previewAnimation: { [weak self] in self?.coordinator?.previewAnimation() },
         featureSettings: { [unowned self] in self.settingsView(for: $0) },
         usageSettings: usageSettings)
@@ -70,9 +74,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var featureList: [any NotchFeature] {
         #if APP_STORE
-            [media, shelf, calendar, tasks, notes, shortcuts, timer, mirror]
+            [media, shelf, clipboard, calendar, tasks, notes, shortcuts, timer, mirror]
         #else
-            [media, shelf, calendar, tasks, notes, shortcuts, timer, mirror, usage, agents]
+            [media, shelf, clipboard, calendar, tasks, notes, shortcuts, timer, mirror, usage, agents]
         #endif
     }
 
@@ -80,6 +84,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch feature {
         case .media: return AnyView(media.view)
         case .shelf: return AnyView(shelf.view)
+        case .clipboard: return AnyView(clipboard.view)
         case .calendar: return AnyView(calendar.view)
         case .tasks: return AnyView(tasks.view)
         case .notes: return AnyView(notes.view)
@@ -105,6 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch feature {
         case .media: return AnyView(media.settingsView)
         case .shelf: return AnyView(shelf.settingsView)
+        case .clipboard: return AnyView(clipboard.settingsView)
         case .calendar: return AnyView(calendar.settingsView)
         case .tasks: return AnyView(tasks.settingsView)
         case .shortcuts: return AnyView(shortcuts.settingsView)
@@ -142,6 +148,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             escapeKey.shortcut = .escape
         }
         escapeKey.onPress = { [weak coordinator] in coordinator?.dismissAll() }
+        clipboardKey.onPress = { [weak self, weak coordinator] in
+            guard let self, coordinator?.toggle(.clipboard) == true else { return }
+            clipboard.wantsSearch = true
+        }
+        clipboard.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
+        clipboard.onPicked = { [weak coordinator] in coordinator?.dismissAll() }
         media.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         shelf.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         calendar.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
@@ -176,6 +188,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         observeContinuously { [weak self] in
             guard let self else { return }
             notchKey.shortcut = preferences.notchShortcut
+            clipboardKey.shortcut = preferences.isEnabled(.clipboard) ? preferences.clipboardShortcut : nil
         }
         // Accessibility access arrives while running; this is posted when it changes.
         DistributedNotificationCenter.default().addObserver(

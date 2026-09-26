@@ -84,6 +84,7 @@ struct NotchPreferencesTests {
 
     @Test func theNotchShortcutStartsAsControlOptionOAndCanBeChangedOrCleared() {
         #expect(NotchPreferences(defaults: defaults).notchShortcut?.display == "⌃⌥O")
+        #expect(NotchPreferences(defaults: defaults).clipboardShortcut?.display == "⌃⌥V")
         let command = KeyShortcut(keyCode: 49, modifiers: KeyShortcut.command | KeyShortcut.shift, key: "Space")
         NotchPreferences(defaults: defaults).notchShortcut = command
         #expect(NotchPreferences(defaults: defaults).notchShortcut == command)
