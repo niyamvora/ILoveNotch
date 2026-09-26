@@ -17,10 +17,12 @@ public struct DayEvent: Identifiable, Hashable, Sendable {
     public var meeting: MeetingLink?
     /// Declined, or canceled by the organizer: nothing to join.
     public var isDeclined: Bool
+    /// Yours to change from the notch: in a calendar that takes changes, with nobody else invited.
+    /// Invitations and meetings are changed in Calendar, which can tell the others.
+    public var isEditable: Bool
 
     init(_ event: EKEvent) {
-        // Recurring events share an identifier, so the start date keeps occurrences apart.
-        id = "\(event.calendarItemIdentifier)@\(event.startDate.timeIntervalSince1970)"
+        id = Self.id(for: event)
         title = event.title ?? "Untitled"
         start = event.startDate
         end = event.endDate
@@ -30,11 +32,12 @@ public struct DayEvent: Identifiable, Hashable, Sendable {
         isDeclined =
             event.status == .canceled
             || event.attendees?.first(where: \.isCurrentUser)?.participantStatus == .declined
+        isEditable = event.calendar?.allowsContentModifications == true && (event.attendees ?? []).isEmpty
     }
 
     init(
         id: String, title: String, start: Date, end: Date, isAllDay: Bool = false, color: RGB? = nil,
-        meeting: MeetingLink? = nil, isDeclined: Bool = false
+        meeting: MeetingLink? = nil, isDeclined: Bool = false, isEditable: Bool = true
     ) {
         self.id = id
         self.title = title
@@ -44,6 +47,12 @@ public struct DayEvent: Identifiable, Hashable, Sendable {
         self.color = color
         self.meeting = meeting
         self.isDeclined = isDeclined
+        self.isEditable = isEditable
+    }
+
+    /// Recurring events share an identifier, so the start date keeps occurrences apart.
+    static func id(for event: EKEvent) -> String {
+        "\(event.calendarItemIdentifier)@\(event.startDate.timeIntervalSince1970)"
     }
 
     /// All-day events first, then by start time.
@@ -174,6 +183,53 @@ public final class CalendarFeature: NotchFeature {
         show(notice: "Added \u{201C}\(draft.title)\u{201D}, \(when)")
         reload()
         return true
+    }
+
+    /// Renames or moves an event of yours: only this occurrence, for a repeating one. An all-day
+    /// event keeps its days. Returns whether it was saved.
+    @discardableResult
+    public func update(_ event: DayEvent, title: String, start: Date, end: Date) -> Bool {
+        let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty, event.isAllDay || end > start, let stored = stored(event) else { return false }
+        stored.title = title
+        if !event.isAllDay {
+            stored.startDate = start
+            stored.endDate = end
+        }
+        do {
+            try eventStore.store.save(stored, span: .thisEvent, commit: true)
+        } catch {
+            Log.features.error("Couldn't change an event: \(error.localizedDescription, privacy: .public)")
+            show(notice: "Couldn't change the event")
+            return false
+        }
+        reload()
+        watchMeetings()
+        return true
+    }
+
+    /// Deletes an event of yours from its calendar: only this occurrence, for a repeating one.
+    public func delete(_ event: DayEvent) {
+        guard let stored = stored(event) else { return }
+        do {
+            try eventStore.store.remove(stored, span: .thisEvent, commit: true)
+        } catch {
+            Log.features.error("Couldn't delete an event: \(error.localizedDescription, privacy: .public)")
+            show(notice: "Couldn't delete the event")
+            return
+        }
+        events.removeAll { $0.id == event.id }
+        show(notice: "Deleted \u{201C}\(event.title)\u{201D}")
+        watchMeetings()
+    }
+
+    /// The EventKit event behind `event`: that occurrence, for a repeating one, whose identifier is
+    /// shared by every occurrence.
+    private func stored(_ event: DayEvent) -> EKEvent? {
+        guard access == .granted, event.isEditable else { return nil }
+        let store = eventStore.store
+        let around = store.predicateForEvents(withStart: event.start - 1, end: event.end + 1, calendars: nil)
+        return store.events(matching: around).first { DayEvent.id(for: $0) == event.id }
     }
 
     /// Ticks off a task listed under today's events.

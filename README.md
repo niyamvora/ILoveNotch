@@ -82,8 +82,9 @@ public and buildable whatever happens to the project.
 - **Clipboard.** Turn on a history of what you copy (text, links, images, and
   files), search it with ⌃⌥V from any app, and copy anything again, with
   favorites that stay. Passwords and anything marked private are skipped.
-- **Calendar and Tasks.** Today's events with the tasks due today, and an
-  event field that understands "Lunch tomorrow 1pm". A Join button for Zoom,
+- **Calendar and Tasks.** Today's events with the tasks due today, an event
+  field that understands "Lunch tomorrow 1pm", and your own events to edit or
+  delete right in the notch. A Join button for Zoom,
   Google Meet, Teams, Webex, Whereby, Jitsi, and FaceTime calls, and a
   countdown in the closed notch for the five minutes before one starts. Your
   Apple Reminders, grouped by date or list, synced to your iPhone through
