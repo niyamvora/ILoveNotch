@@ -78,6 +78,9 @@ public and buildable whatever happens to the project.
   a waveform that moves with the music.
 - **Shelf.** Drop files on the notch to keep them at hand; drag them back out,
   preview them with Quick Look, or send them with AirDrop.
+- **Clipboard.** Turn on a history of what you copy (text, links, images, and
+  files), search it with ⌃⌥V from any app, and copy anything again, with
+  favorites that stay. Passwords and anything marked private are skipped.
 - **Calendar and Tasks.** Today's events with the tasks due today, and an
   event field that understands "Lunch tomorrow 1pm". A Join button for Zoom,
   Google Meet, Teams, Webex, Whereby, Jitsi, and FaceTime calls, and a
@@ -135,7 +138,9 @@ Measured over a real 20-hour workday on an Apple M5 Pro MacBook (24 GB, macOS
 
 1. **No polling timers.** State changes come from events (hover, clicks, system
    notifications). The only timers are one-shot deadlines, like the hover dwell,
-   cancelled the moment they stop mattering. Idle app = idle CPU.
+   cancelled the moment they stop mattering. Idle app = idle CPU. The one
+   exception is clipboard history, since macOS has no "clipboard changed"
+   event: off until you turn it on, it then reads a counter twice a second.
 2. **Accessory app.** No Dock icon (`LSUIElement`), one small menu bar item for
    Settings and Quit, and the notch never steals focus (`nonactivatingPanel`).
 3. **Lazy features.** Each feature module is `stopped`, `background` (cheap
@@ -161,7 +166,7 @@ hover, clicks, drags, sleep/lock, display changes
 | `App/` | App target generated from `project.yml`: wires features in, menu bar item, Settings |
 | `NotchCore` | State machine, `NotchEngine`, `FeatureHost` lifecycle, preferences, typed logging and signposts. No AppKit. |
 | `NotchSurface` | Fixed click-through `NSPanel` per display, animatable `NotchShape`, `PanelCoordinator` (displays, sleep, lock), notch geometry from **public** APIs (`safeAreaInsets`, `auxiliaryTop*Area`) |
-| `NotchFeatures` | Feature modules (Media, Shelf, Calendar, Tasks, Notes, Shortcuts, Timer, Mirror), each a `NotchFeature` with its views and settings, and the event-driven system monitors (volume, battery, accessories, volume keys) |
+| `NotchFeatures` | Feature modules (Media, Shelf, Clipboard, Calendar, Tasks, Notes, Shortcuts, Timer, Mirror), each a `NotchFeature` with its views and settings, and the event-driven system monitors and hooks (volume, battery, accessories, volume keys, keyboard shortcuts, Show in Notch) |
 | `NotchUsage` | The GitHub build's developer tabs: AI Usage (provider tiles, rings, pace, spend, and trends, over providers adapted from [OpenUsage](https://github.com/robinebers/openusage) (MIT) in `NotchUsage/OpenUsage`) and Agents (Claude Code and Codex hooks, in `NotchUsage/Agents`) |
 | `ThirdParty/` | [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter) (BSD-3-Clause) as a git submodule |
 | `Tests/` | Unit tests (reducer transitions and fuzzing, engine, feature host, preferences, geometry, features), offscreen snapshot tests, XCTest performance tests, and OpenUsage's provider tests on its fixtures (`OpenUsageTests`) |

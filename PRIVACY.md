@@ -18,6 +18,13 @@ ILoveNotch is local-first.
   volume keys and passes every other event through untouched.
 - Messages sent with the Show in Notch action or an `ilovenotch://` link are
   only displayed: they're never stored, and nothing in them is opened.
+- Clipboard history is off until you turn it on in the Clipboard tab. Then it
+  keeps what you copy (text, links, images, and file locations) in
+  `~/Library/Application Support/OpenNotch` on this Mac only, up to 200 items
+  plus your favorites. It skips anything the copying app marks secret or
+  temporary and anything copied in a password manager. **Clear History**
+  removes everything but favorites, and turning it off stops reading the
+  clipboard.
 - To move the media waveform with the music, ILoveNotch listens to your Mac's
   audio output, and macOS asks for "system audio recording" permission the first
   time. It listens only while the Media tab is open and something plays, turns

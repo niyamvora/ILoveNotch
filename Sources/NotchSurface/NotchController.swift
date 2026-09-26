@@ -56,7 +56,7 @@ final class NotchController {
     }
 
     /// Makes the panel key so a text field in it can take typing, without activating the app. Key
-    /// status moves the notch to its focused state.
+    /// status moves the notch to its focused state, and closing hands the keyboard back.
     func focusKeyboard() {
         panel.makeKeyAndOrderFront(nil)
     }

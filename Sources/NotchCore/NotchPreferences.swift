@@ -117,6 +117,18 @@ public final class NotchPreferences {
     public nonisolated static let defaultNotchShortcut = KeyShortcut(
         keyCode: 31, modifiers: KeyShortcut.control | KeyShortcut.option, key: "O")
 
+    /// Opens the Clipboard tab from any app, ready to search. Nil once the user clears it.
+    public var clipboardShortcut: KeyShortcut? {
+        didSet {
+            let data = clipboardShortcut.flatMap { try? JSONEncoder().encode($0) } ?? Data()
+            defaults.set(data, forKey: Key.clipboardShortcut)
+        }
+    }
+
+    /// ⌃⌥V: V for paste, beside the notch's ⌃⌥O.
+    public nonisolated static let defaultClipboardShortcut = KeyShortcut(
+        keyCode: 9, modifiers: KeyShortcut.control | KeyShortcut.option, key: "V")
+
     /// The open notch's size, set by dragging its bottom-right corner. Always within the minimum and
     /// maximum.
     public private(set) var expandedSize: CGSize {
@@ -163,11 +175,13 @@ public final class NotchPreferences {
         showsBattery = defaults.object(forKey: Key.showsBattery) as? Bool ?? true
         replacesVolumeDisplay = defaults.bool(forKey: Key.replacesVolumeDisplay)
         showsAccessoryBattery = defaults.bool(forKey: Key.showsAccessoryBattery)
-        if let data = defaults.data(forKey: Key.notchShortcut) {
-            notchShortcut = try? JSONDecoder().decode(KeyShortcut.self, from: data)
-        } else {
-            notchShortcut = Self.defaultNotchShortcut
+        // Stored empty means cleared; nothing stored means the default.
+        func shortcut(_ key: String, default value: KeyShortcut) -> KeyShortcut? {
+            guard let data = defaults.data(forKey: key) else { return value }
+            return try? JSONDecoder().decode(KeyShortcut.self, from: data)
         }
+        notchShortcut = shortcut(Key.notchShortcut, default: Self.defaultNotchShortcut)
+        clipboardShortcut = shortcut(Key.clipboardShortcut, default: Self.defaultClipboardShortcut)
         if let size = defaults.array(forKey: Key.expandedSize) as? [Double], size.count == 2 {
             expandedSize = Self.clamped(CGSize(width: size[0], height: size[1]))
         } else {
@@ -215,6 +229,7 @@ public final class NotchPreferences {
         replacesVolumeDisplay = false
         showsAccessoryBattery = false
         notchShortcut = Self.defaultNotchShortcut
+        clipboardShortcut = Self.defaultClipboardShortcut
     }
 
     private enum Key {
@@ -228,6 +243,7 @@ public final class NotchPreferences {
         static let replacesVolumeDisplay = "replacesVolumeDisplay"
         static let showsAccessoryBattery = "showsAccessoryBattery"
         static let notchShortcut = "notchShortcut"
+        static let clipboardShortcut = "clipboardShortcut"
     }
 }
 

@@ -13,6 +13,7 @@ final class SettingsWindowController {
     private let preferences: NotchPreferences
     private let updater: Updater
     private let notchKey: HotKey
+    private let clipboardKey: HotKey
     private let previewAnimation: () -> Void
     private let featureSettings: (FeatureID) -> AnyView?
     private let usageSettings: AnyView?
@@ -22,12 +23,14 @@ final class SettingsWindowController {
     /// `featureSettings` supplies each feature's own settings, shown under its toggle; `usageSettings`,
     /// when this edition has AI Usage, gets a tab of its own.
     init(
-        preferences: NotchPreferences, updater: Updater, notchKey: HotKey, previewAnimation: @escaping () -> Void,
-        featureSettings: @escaping (FeatureID) -> AnyView?, usageSettings: AnyView?
+        preferences: NotchPreferences, updater: Updater, notchKey: HotKey, clipboardKey: HotKey,
+        previewAnimation: @escaping () -> Void, featureSettings: @escaping (FeatureID) -> AnyView?,
+        usageSettings: AnyView?
     ) {
         self.preferences = preferences
         self.updater = updater
         self.notchKey = notchKey
+        self.clipboardKey = clipboardKey
         self.previewAnimation = previewAnimation
         self.featureSettings = featureSettings
         self.usageSettings = usageSettings
@@ -38,8 +41,9 @@ final class SettingsWindowController {
         if let tab { selection.tab = tab }
         if window == nil {
             let root = SettingsView(
-                preferences: preferences, updater: updater, notchKey: notchKey, previewAnimation: previewAnimation,
-                featureSettings: featureSettings, usageSettings: usageSettings, selection: selection)
+                preferences: preferences, updater: updater, notchKey: notchKey, clipboardKey: clipboardKey,
+                previewAnimation: previewAnimation, featureSettings: featureSettings, usageSettings: usageSettings,
+                selection: selection)
             let window = NSWindow(contentViewController: NSHostingController(rootView: root))
             window.title = "ILoveNotch Settings"
             window.styleMask = [.titled, .closable]
@@ -64,6 +68,7 @@ struct SettingsView: View {
     let preferences: NotchPreferences
     let updater: Updater
     let notchKey: HotKey
+    let clipboardKey: HotKey
     let previewAnimation: () -> Void
     let featureSettings: (FeatureID) -> AnyView?
     let usageSettings: AnyView?
@@ -71,9 +76,12 @@ struct SettingsView: View {
 
     var body: some View {
         TabView(selection: $selection.tab) {
-            GeneralSettings(preferences: preferences, notchKey: notchKey, previewAnimation: previewAnimation)
-                .tabItem { Label("General", systemImage: "gearshape") }
-                .tag(SettingsSelection.Tab.general)
+            GeneralSettings(
+                preferences: preferences, notchKey: notchKey, clipboardKey: clipboardKey,
+                previewAnimation: previewAnimation
+            )
+            .tabItem { Label("General", systemImage: "gearshape") }
+            .tag(SettingsSelection.Tab.general)
             FeatureSettings(preferences: preferences, featureSettings: featureSettings)
                 .tabItem { Label("Features", systemImage: "square.grid.2x2") }
                 .tag(SettingsSelection.Tab.features)
@@ -96,6 +104,7 @@ struct SettingsView: View {
 private struct GeneralSettings: View {
     @Bindable var preferences: NotchPreferences
     let notchKey: HotKey
+    let clipboardKey: HotKey
     let previewAnimation: () -> Void
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginError: String?
@@ -112,19 +121,20 @@ private struct GeneralSettings: View {
             Text("Otherwise ILoveNotch uses the built-in display's notch, or the main display.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            LabeledContent("Keyboard shortcut") {
+            LabeledContent("Open the notch") {
                 ShortcutRecorder(shortcut: $preferences.notchShortcut, hotKey: notchKey)
             }
-            Group {
-                if notchKey.isAvailable {
-                    Text("Opens the notch from any app, on the display under the pointer. Press it or Escape to close.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text("Another app already uses \(preferences.notchShortcut?.display ?? "it"). Record another.")
-                        .foregroundStyle(.red)
+            shortcutNote(
+                notchKey, preferences.notchShortcut,
+                "From any app, on the display under the pointer. Press it again or Escape to close.")
+            if preferences.isEnabled(.clipboard) {
+                LabeledContent("Search the clipboard") {
+                    ShortcutRecorder(shortcut: $preferences.clipboardShortcut, hotKey: clipboardKey)
                 }
+                shortcutNote(
+                    clipboardKey, preferences.clipboardShortcut,
+                    "Opens the Clipboard tab ready to type; Return copies the first match.")
             }
-            .font(.caption)
             Picker("Open and close animation", selection: $preferences.animationStyle) {
                 ForEach(NotchAnimationStyle.allCases) { style in
                     Text(style.title).tag(style)
@@ -152,6 +162,18 @@ private struct GeneralSettings: View {
             Button("Reset to Defaults", role: .destructive) { preferences.reset() }
         }
         .formStyle(.grouped)
+    }
+
+    /// What a shortcut does, or that another app already has it.
+    private func shortcutNote(_ hotKey: HotKey, _ shortcut: KeyShortcut?, _ explanation: String) -> some View {
+        Group {
+            if hotKey.isAvailable {
+                Text(explanation).foregroundStyle(.secondary)
+            } else {
+                Text("Another app already uses \(shortcut?.display ?? "it"). Record another.").foregroundStyle(.red)
+            }
+        }
+        .font(.caption)
     }
 
     private func setLaunchAtLogin(_ enabled: Bool) {
