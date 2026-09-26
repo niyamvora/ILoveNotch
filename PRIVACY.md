@@ -16,6 +16,8 @@ ILoveNotch is local-first.
 - Replacing the macOS volume display is off until you turn it on. It asks for
   Accessibility access to catch the volume keys; ILoveNotch takes only the three
   volume keys and passes every other event through untouched.
+- Messages sent with the Show in Notch action or an `ilovenotch://` link are
+  only displayed: they're never stored, and nothing in them is opened.
 - To move the media waveform with the music, ILoveNotch listens to your Mac's
   audio output, and macOS asks for "system audio recording" permission the first
   time. It listens only while the Media tab is open and something plays, turns
