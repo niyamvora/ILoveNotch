@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import Foundation
 
 /// A feature that can own the expanded notch.
 public enum FeatureID: String, CaseIterable, Hashable, Sendable {
@@ -34,8 +35,8 @@ public enum FeatureID: String, CaseIterable, Hashable, Sendable {
     }
 }
 
-/// A one-shot live activity shown on the compact notch, such as a track change, a file drop, or
-/// the volume changing.
+/// A live activity shown on the compact notch: one-shot, such as a track change, a file drop, or
+/// the volume changing, or ongoing, such as a meeting about to start, until its feature clears it.
 public struct Activity: Hashable, Sendable {
     /// The tab that raised it, which opens when it's hovered or clicked. Nil for a system activity,
     /// such as volume or battery, that belongs to no tab and shows whatever tabs are enabled.
@@ -46,14 +47,21 @@ public struct Activity: Hashable, Sendable {
     public var title: String
     /// 0...1 for a meter beside the title, such as the volume or the battery's charge.
     public var level: Double?
+    /// How long a one-shot activity shows. Ongoing activities ignore it.
     public var duration: Duration
+    /// Shown instead of the title: the time left until this moment, ticking down to 0:00.
+    public var countdown: Date?
 
-    public init(feature: FeatureID?, symbol: String, title: String, level: Double? = nil, duration: Duration) {
+    public init(
+        feature: FeatureID?, symbol: String, title: String, level: Double? = nil, duration: Duration,
+        countdown: Date? = nil
+    ) {
         self.feature = feature
         self.symbol = symbol
         self.title = title
         self.level = level
         self.duration = duration
+        self.countdown = countdown
     }
 }
 
@@ -134,6 +142,8 @@ public enum NotchEvent: Hashable, Sendable {
     /// Files were dropped on the notch.
     case dropped
     case activity(Activity)
+    /// The activity the resting notch shows until it's replaced or cleared (nil).
+    case setOngoing(Activity?)
     /// The enabled features changed, in tab order.
     case setTabs([FeatureID])
     case suspend(SuspendReason)
@@ -175,8 +185,18 @@ public struct NotchState: Hashable, Sendable {
     public private(set) var suspensions: Set<SuspendReason> = []
     /// Kept in every state so a late collapse deadline can't close a notch the pointer is on.
     public private(set) var pointerInside = false
+    /// Shown by the resting notch instead of hiding behind the camera housing, while its feature
+    /// is enabled. One-shot activities show over it.
+    public private(set) var ongoing: Activity?
 
     public init() {}
+
+    /// The ongoing activity the notch shows right now: only while it rests, and only for an
+    /// enabled feature.
+    public var restingActivity: Activity? {
+        guard presentation == .compact, let ongoing, shows(ongoing) else { return nil }
+        return ongoing
+    }
 
     /// Applies one event and returns the effects to run. Pure: no clocks, no I/O.
     public mutating func handle(_ event: NotchEvent) -> [NotchEffect] {
@@ -216,6 +236,8 @@ public struct NotchState: Hashable, Sendable {
             default:
                 break
             }
+        case (_, .setOngoing(let activity)):
+            ongoing = activity
 
         // Suspending, attaching, and detaching win over everything else.
         case (_, .suspend(let reason)):
@@ -237,17 +259,21 @@ public struct NotchState: Hashable, Sendable {
         case (.suspended, _):
             break
 
-        // Opening; with no tabs enabled there is nothing to open, so hovering doesn't arm.
+        // Opening; with no tabs enabled there is nothing to open, so hovering doesn't arm. Like a
+        // live activity, an ongoing one opens the feature that shows it.
         case (.compact, .pointerEntered) where !tabs.isEmpty:
+            lastTab = restingActivity?.feature ?? lastTab
             presentation = .hoverArmed
             return [.schedule(.hoverDwell, after: NotchTiming.hoverDwell)]
+        case (.compact, .clicked):
+            open(restingActivity?.feature ?? lastTab)
         case (.transient(let activity), .pointerEntered) where !tabs.isEmpty:
             // Hovering a live activity opens the feature that raised it, or the last tab for a
             // system activity.
             lastTab = activity.feature ?? lastTab
             presentation = .hoverArmed
             return [.schedule(.hoverDwell, after: NotchTiming.hoverDwell)]
-        case (.compact, .clicked), (.hoverArmed, .clicked), (.hoverArmed, .deadline(.hoverDwell)):
+        case (.hoverArmed, .clicked), (.hoverArmed, .deadline(.hoverDwell)):
             open(lastTab)
         case (.transient(let activity), .clicked):
             open(activity.feature ?? lastTab)

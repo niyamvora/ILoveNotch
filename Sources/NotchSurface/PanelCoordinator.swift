@@ -13,6 +13,8 @@ public final class PanelCoordinator {
     private let content: NotchContent
     private var controllers: [NotchController] = []
     private var suspensions: Set<SuspendReason> = []
+    /// Ongoing activities by the feature that raised them, oldest first.
+    private var ongoing: [(feature: FeatureID, activity: Activity)] = []
     private var showingAllDisplays = false
     private var observers: [(center: NotificationCenter, token: NSObjectProtocol)] = []
 
@@ -36,6 +38,7 @@ public final class PanelCoordinator {
                 rebuild()
             }
             broadcast(.setTabs(tabs))
+            broadcast(.setOngoing(shownOngoing))
             onPresentationsChange?(presentations)
         }
     }
@@ -53,6 +56,19 @@ public final class PanelCoordinator {
     /// Gives the keyboard to the first open notch, for typing started from a keyboard shortcut.
     public func focusKeyboard() {
         controllers.first { $0.engine.state.presentation.openTab != nil }?.focusKeyboard()
+    }
+
+    /// Shows `activity` on every resting notch until `feature` replaces it, or clears it with nil.
+    /// With several at once the newest shows, and the others wait underneath until it clears.
+    public func setOngoing(_ activity: Activity?, for feature: FeatureID) {
+        ongoing.removeAll { $0.feature == feature }
+        if let activity { ongoing.append((feature, activity)) }
+        broadcast(.setOngoing(shownOngoing))
+    }
+
+    /// The newest ongoing activity whose feature is enabled.
+    private var shownOngoing: Activity? {
+        ongoing.last { preferences.isEnabled($0.feature) }?.activity
     }
 
     /// Opens every closed notch and closes it again, to preview the open and close animation. Only
@@ -79,6 +95,7 @@ public final class PanelCoordinator {
                 onPresentationsChange?(presentations)
             }
             controller.engine.send(.setTabs(preferences.tabs))
+            controller.engine.send(.setOngoing(shownOngoing))
             for reason in suspensions { controller.engine.send(.suspend(reason)) }
             controller.engine.send(.show)
             return controller

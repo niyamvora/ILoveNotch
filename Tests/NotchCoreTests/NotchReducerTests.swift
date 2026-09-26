@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import Foundation
 import Testing
 
 @testable import NotchCore
@@ -8,6 +9,10 @@ private let drop = Activity(feature: .shelf, symbol: "tray.full", title: "2 file
 /// A system activity: it belongs to no tab.
 private let volume = Activity(
     feature: nil, symbol: "speaker.wave.2.fill", title: "50%", level: 0.5, duration: .seconds(1))
+/// An ongoing activity: it stays in the resting notch until its feature clears it.
+private let meeting = Activity(
+    feature: .calendar, symbol: "video.fill", title: "Standup", duration: .zero,
+    countdown: Date(timeIntervalSince1970: 1_790_000_000))
 
 /// The state a fresh reducer reaches after `events`.
 private func after(_ events: NotchEvent...) -> NotchState { after(events) }
@@ -161,6 +166,40 @@ struct NotchReducerTests {
         #expect(after(.show, .setTabs([]), .activity(volume), .pointerEntered).presentation == .transient(volume))
     }
 
+    @Test func anOngoingActivityRestsInTheClosedNotchUntilItsFeatureClearsIt() {
+        var state = after(.show)
+        #expect(state.handle(.setOngoing(meeting)).isEmpty, "no deadline: it stays until it's cleared")
+        #expect(state.presentation == .compact && state.restingActivity == meeting)
+        _ = state.handle(.setOngoing(nil))
+        #expect(state.restingActivity == nil)
+        #expect(after(.setOngoing(meeting), .show).restingActivity == meeting, "it waits while the notch is hidden")
+    }
+
+    @Test func hoveringOrClickingAnOngoingActivityOpensItsFeature() {
+        var hovered = after(.show, .setOngoing(meeting))
+        _ = hovered.handle(.pointerEntered)
+        #expect(hovered.restingActivity == nil, "only a resting notch shows it")
+        _ = hovered.handle(.deadline(.hoverDwell))
+        #expect(hovered.presentation == .expanded(tab: .calendar))
+        #expect(after(.show, .setOngoing(meeting), .clicked).presentation == .expanded(tab: .calendar))
+        let closed = after(.show, .setOngoing(meeting), .clicked, .dismiss)
+        #expect(closed.restingActivity == meeting, "and it's back when the notch closes")
+    }
+
+    @Test func oneShotActivitiesShowOverAnOngoingOne() {
+        var state = after(.show, .setOngoing(meeting), .activity(song))
+        #expect(state.presentation == .transient(song) && state.restingActivity == nil)
+        _ = state.handle(.deadline(.activityEnd))
+        #expect(state.restingActivity == meeting)
+    }
+
+    @Test func anOngoingActivityRestsOnlyWhileItsFeatureIsEnabled() {
+        #expect(after(.show, .setOngoing(meeting), .setTabs([.notes])).restingActivity == nil)
+        #expect(after(.show, .setTabs([.notes]), .setOngoing(meeting), .clicked).presentation == .expanded(tab: .notes))
+        let system = Activity(feature: nil, symbol: "bell.fill", title: "Hi", duration: .zero)
+        #expect(after(.show, .setTabs([]), .setOngoing(system)).restingActivity == system, "a system one always rests")
+    }
+
     @Test func activitiesDoNotInterruptAnOpenNotch() {
         var state = after(.show, .clicked)
         #expect(state.handle(.activity(song)).isEmpty)
@@ -237,7 +276,7 @@ struct NotchReducerTests {
                 .show, .hide, .pointerEntered, .pointerExited, .clicked, .clickedOutside, .dismiss, .togglePin,
                 .beginTextInput, .endTextInput, .dragEntered, .dragExited, .dropped, .activity(song),
                 .activity(drop), .activity(volume), .setTabs(FeatureID.allCases), .setTabs([.notes, .shelf]),
-                .setTabs([]),
+                .setTabs([]), .setOngoing(meeting), .setOngoing(nil),
             ] + FeatureID.allCases.map(NotchEvent.selectTab) + reasons.map(NotchEvent.suspend)
             + reasons.map(NotchEvent.resume)
         var state = NotchState()
@@ -269,6 +308,10 @@ struct NotchReducerTests {
             }
             if case .transient(let activity) = presentation, let feature = activity.feature {
                 try #require(state.tabs.contains(feature), "\(event) showed a disabled feature's activity")
+            }
+            if let resting = state.restingActivity {
+                try #require(presentation == .compact, "\(event) showed an ongoing activity in \(presentation)")
+                try #require(resting.feature.map(state.tabs.contains) ?? true, "\(event) rested a disabled feature")
             }
             if presentation == .hoverArmed { try #require(state.pointerInside) }
             if presentation != .hidden {

@@ -18,12 +18,17 @@ private let notchless = NotchMetrics(
 private let song = Activity(feature: .media, symbol: "music.note", title: "Midnight City", duration: .seconds(3))
 private let volume = Activity(
     feature: nil, symbol: "speaker.wave.2.fill", title: "56%", level: 0.56, duration: .seconds(1))
+private let meeting = Activity(
+    feature: .calendar, symbol: "video.fill", title: "Standup", duration: .zero,
+    countdown: Date(timeIntervalSinceNow: 272))
 
 private let snapshotCases: [(name: String, metrics: NotchMetrics, events: [NotchEvent])] = [
     ("compact", notched, [.show]),
     ("hover", notched, [.show, .pointerEntered]),
     ("activity", notched, [.show, .activity(song)]),
     ("volume", notched, [.show, .activity(volume)]),
+    ("ongoing", notched, [.show, .setOngoing(meeting)]),
+    ("pill-ongoing", notchless, [.show, .setOngoing(meeting)]),
     ("expanded-media", notched, [.show, .clicked]),
     ("pinned-notes", notched, [.show, .selectTab(.notes), .togglePin]),
     ("pill-compact", notchless, [.show]),

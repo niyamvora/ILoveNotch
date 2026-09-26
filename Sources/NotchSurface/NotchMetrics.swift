@@ -19,6 +19,7 @@ struct NotchMetrics: Equatable {
     static let pillInset: CGFloat = 3  // gap above the floating pill
     static let hoverGrowth = CGSize(width: 12, height: 4)  // hover feedback
     static let activityWing: CGFloat = 96  // room beside the notch for a live activity
+    static let ongoingWing: CGFloat = 64  // narrower for an ongoing one, which stays over the menu bar
     static let meterDepth: CGFloat = 26  // room under the notch for a level activity's row
     static let overshootRoom: CGFloat = 1.08  // springy and jelly animations briefly overshoot
 
@@ -80,6 +81,13 @@ struct NotchMetrics: Equatable {
         case .expanded, .pinned, .focused:
             expandedSize(expanded)
         }
+    }
+
+    /// The notch as `state` draws it: like `size(for:)`, but a resting notch with an ongoing activity
+    /// grows wings for it.
+    func size(for state: NotchState, expanded: CGSize = NotchPreferences.defaultExpandedSize) -> CGSize {
+        guard state.restingActivity != nil else { return size(for: state.presentation, expanded: expanded) }
+        return CGSize(width: housing.width + Self.ongoingWing * 2, height: housing.height)
     }
 
     /// Gap between the top of the display and the shape: none on a notch, a little above a pill.

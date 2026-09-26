@@ -47,8 +47,9 @@ struct NotchView: View {
 
     var body: some View {
         let presentation = engine.state.presentation
-        let size = metrics.size(for: presentation, expanded: preferences.expandedSize)
-        let outline = Self.shape(for: presentation, on: metrics)
+        let resting = engine.state.restingActivity
+        let size = metrics.size(for: engine.state, expanded: preferences.expandedSize)
+        let outline = Self.shape(for: presentation, resting: resting != nil, on: metrics)
         ZStack(alignment: .top) {
             outline.fill(.black)
             if let tab = presentation.openTab {
@@ -56,6 +57,9 @@ struct NotchView: View {
                     .transition(.opacity)
             } else if case .transient(let activity) = presentation {
                 live(activity)
+                    .transition(.opacity)
+            } else if let resting {
+                live(resting)
                     .transition(.opacity)
             }
         }
@@ -92,6 +96,7 @@ struct NotchView: View {
             dropTargeted = targeted
         }
         .animation(motion(for: presentation), value: presentation)
+        .animation(activityMotion, value: resting)
         .animation(reduceMotion ? nil : .spring(response: 0.26, dampingFraction: 0.8), value: dropTargeted)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("ILoveNotch")
@@ -102,7 +107,10 @@ struct NotchView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
-    static func shape(for presentation: NotchPresentationState, on metrics: NotchMetrics) -> NotchShape {
+    /// `resting` is a resting notch showing an ongoing activity, which takes a live activity's shape.
+    static func shape(for presentation: NotchPresentationState, resting: Bool = false, on metrics: NotchMetrics)
+        -> NotchShape
+    {
         let open = presentation.openTab != nil
         guard metrics.notch != nil else {
             return NotchShape(topRadius: 0, bottomRadius: open ? 24 : Self.pillRadius, flushTop: false)
@@ -111,12 +119,19 @@ struct NotchView: View {
         case .expanded, .pinned, .focused:
             return NotchShape(topRadius: Self.expandedTopRadius, bottomRadius: Self.expandedBottomRadius)
         case .hoverArmed, .transient: return NotchShape(topRadius: NotchMetrics.flare, bottomRadius: 13)
+        case .compact where resting: return NotchShape(topRadius: NotchMetrics.flare, bottomRadius: 13)
         // Closed: rounder than the housing's own corners, so the shape stays hidden behind it.
         default: return NotchShape(topRadius: NotchMetrics.flare, bottomRadius: 10)
         }
     }
 
     private static let pillRadius: CGFloat = 100  // clamped to a capsule
+
+    /// Live activities, one-shot or ongoing, come and go on their own spring.
+    private var activityMotion: Animation? {
+        if reduceMotion { return .easeInOut(duration: 0.12) }
+        return preferences.animationStyle == .instant ? nil : .spring(response: 0.3, dampingFraction: 0.85)
+    }
 
     /// Opening and closing in the user's chosen style. Hover only nudges and live activities keep
     /// their own spring; Reduce Motion swaps everything for a short ease.
@@ -125,7 +140,7 @@ struct NotchView: View {
         let style = preferences.animationStyle
         switch presentation {
         case .hoverArmed: return style == .instant ? nil : .easeOut(duration: 0.12)
-        case .transient: return style == .instant ? nil : .spring(response: 0.3, dampingFraction: 0.85)
+        case .transient: return activityMotion
         default: break
         }
         let opening = presentation.openTab != nil
@@ -335,7 +350,8 @@ struct NotchView: View {
     }
 
     /// A live activity: its symbol and title on either side of the physical notch, or, for a level
-    /// like the volume or the battery's charge, one row as wide as the notch just below it.
+    /// like the volume or the battery's charge, one row as wide as the notch just below it. A
+    /// countdown shows the time left in place of the title, which VoiceOver still reads.
     private func live(_ activity: Activity) -> some View {
         Group {
             if let level = activity.level {
@@ -345,9 +361,19 @@ struct NotchView: View {
                     Image(systemName: activity.symbol)
                         .font(.system(size: 13, weight: .semibold))
                     Spacer(minLength: metrics.housing.width)
-                    Text(activity.title)
-                        .font(.system(size: 12, weight: .medium))
-                        .lineLimit(1)
+                    Group {
+                        if let countdown = activity.countdown {
+                            // ponytail: redraws once a second while a countdown shows; a per-minute
+                            // timeline if a soak ever notices.
+                            let now = Date.now
+                            let left = Text(timerInterval: now...max(countdown, now), countsDown: true)
+                            left.monospacedDigit().accessibilityLabel(activity.title).accessibilityValue(left)
+                        } else {
+                            Text(activity.title)
+                        }
+                    }
+                    .font(.system(size: 12, weight: .medium))
+                    .lineLimit(1)
                 }
                 .padding(.horizontal, 14)
                 .frame(height: metrics.housing.height)
