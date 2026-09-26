@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 import Foundation
 import Network
+import os
 
 /// Why a transfer stopped before it finished.
 enum QuickShareError: Error, Equatable, Sendable {
@@ -68,6 +69,12 @@ final class FrameLink: Sendable {
     private let input: AsyncStream<LinkEvent>.Continuation
     private let connection: NWConnection
     private let queue = DispatchQueue(label: "cafe.opennotch.quickshare", qos: .userInitiated)
+    /// Bytes handed to the network and not yet sent, and the most there have been at once.
+    private let unsent = OSAllocatedUnfairLock(initialState: (now: 0, peak: 0))
+
+    /// A sender that waits for each chunk to go out keeps this near one chunk, whatever the size of
+    /// the file, which is what keeps memory flat.
+    var peakUnsent: Int { unsent.withLock { $0.peak } }
 
     init(_ connection: NWConnection) {
         self.connection = connection
@@ -112,9 +119,15 @@ final class FrameLink: Sendable {
         var bytes = Data(capacity: 4 + frame.count)
         withUnsafeBytes(of: UInt32(frame.count).bigEndian) { bytes.append(contentsOf: $0) }
         bytes.append(frame)
+        let count = bytes.count
+        unsent.withLock {
+            $0.now += count
+            $0.peak = max($0.peak, $0.now)
+        }
         connection.send(
             content: bytes,
-            completion: .contentProcessed { [input] error in
+            completion: .contentProcessed { [input, unsent] error in
+                unsent.withLock { $0.now -= count }
                 if let error {
                     input.yield(.failed(QuickShareError(error)))
                 } else if let event {
