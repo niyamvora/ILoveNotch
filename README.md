@@ -68,12 +68,12 @@ public and buildable whatever happens to the project.
 
 ## What it does
 
-- **The notch.** Opens when you hover it, click it, or pull down with two
-  fingers, and closes when you move away. Closed, it hides behind the camera
-  housing until it has something to tell you, like a meeting about to start.
-  Pick how it opens and closes (spring, jelly, pop, smooth, snappy, or
-  instant), drag its bottom-right corner to resize it, and pin it open. Works on
-  every display, as a floating pill where there's no notch.
+- **The notch.** Opens when you hover it, click it, pull down with two fingers,
+  or press ⌃⌥O in any app, and closes when you move away. Closed, it hides
+  behind the camera housing until it has something to tell you, like a meeting
+  about to start. Pick how it opens and closes (spring, jelly, pop, smooth,
+  snappy, or instant), drag its bottom-right corner to resize it, and pin it
+  open. Works on every display, as a floating pill where there's no notch.
 - **Media.** What's playing in any app, with artwork, controls, a seek bar, and
   a waveform that moves with the music.
 - **Shelf.** Drop files on the notch to keep them at hand; drag them back out,

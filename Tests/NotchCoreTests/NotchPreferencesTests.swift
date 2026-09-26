@@ -82,6 +82,19 @@ struct NotchPreferencesTests {
         #expect(NotchPreferences(defaults: defaults).animationStyle == .spring)
     }
 
+    @Test func theNotchShortcutStartsAsControlOptionOAndCanBeChangedOrCleared() {
+        #expect(NotchPreferences(defaults: defaults).notchShortcut?.display == "⌃⌥O")
+        let command = KeyShortcut(keyCode: 49, modifiers: KeyShortcut.command | KeyShortcut.shift, key: "Space")
+        NotchPreferences(defaults: defaults).notchShortcut = command
+        #expect(NotchPreferences(defaults: defaults).notchShortcut == command)
+        #expect(command.display == "⇧⌘Space", "modifiers read in the order menus show them")
+        let cleared = NotchPreferences(defaults: defaults)
+        cleared.notchShortcut = nil
+        #expect(NotchPreferences(defaults: defaults).notchShortcut == nil, "cleared stays cleared")
+        cleared.reset()
+        #expect(NotchPreferences(defaults: defaults).notchShortcut == NotchPreferences.defaultNotchShortcut)
+    }
+
     @Test func plusAndMinusResizeInProportion() {
         let preferences = NotchPreferences(defaults: defaults)
         var larger: [CGSize] = []

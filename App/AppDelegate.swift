@@ -32,7 +32,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let battery = BatteryMonitor()
     private let accessories = AccessoryMonitor()
     private let volumeKeys = VolumeKeyTap()
-    private let quickNote = QuickNoteHotKey()
+    /// Opens and closes the notch from any app.
+    private let notchKey = HotKey()
+    /// Escape, only while a notch the shortcut opened is still open.
+    private let escapeKey = HotKey()
+    /// Starts a new note from any app, while Notes has it on.
+    private let quickNoteKey = HotKey()
 
     override init() {
         let eventStore = EventStore()  // shared, and only created when Calendar or Tasks first needs it
@@ -46,6 +51,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var settings = SettingsWindowController(
         preferences: preferences,
         updater: updater,
+        notchKey: notchKey,
         previewAnimation: { [weak self] in self?.coordinator?.previewAnimation() },
         featureSettings: { [unowned self] in self.settingsView(for: $0) },
         usageSettings: usageSettings)
@@ -113,7 +119,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         coordinator.onPresentationsChange = { [weak self] presentations in
             guard let self else { return }
             features.update(presentations: presentations, enabled: Set(preferences.tabs))
+            if !presentations.contains(where: { $0.openTab != nil }) { escapeKey.shortcut = nil }
         }
+        notchKey.onPress = { [weak self, weak coordinator] in
+            guard let self, coordinator?.toggleNotch() == true else { return }
+            escapeKey.shortcut = .escape
+        }
+        escapeKey.onPress = { [weak coordinator] in coordinator?.dismissAll() }
         media.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         shelf.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         calendar.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
@@ -122,7 +134,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         shortcuts.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         tasks.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         notes.onSendToTasks = { [tasks] in tasks.add($0) }
-        quickNote.onPress = { [weak self] in self?.startQuickNote() }
+        quickNoteKey.onPress = { [weak self] in self?.startQuickNote() }
         volume.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         battery.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         accessories.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
@@ -140,6 +152,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         coordinator.start()
         self.coordinator = coordinator
         observeContinuously { [weak self] in self?.updateSystemActivities() }
+        observeContinuously { [weak self] in
+            guard let self else { return }
+            notchKey.shortcut = preferences.notchShortcut
+        }
         // Accessibility access arrives while running; this is posted when it changes.
         DistributedNotificationCenter.default().addObserver(
             forName: Notification.Name("com.apple.accessibility.api"), object: nil, queue: .main
@@ -159,7 +175,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         battery.stop()
         accessories.stop()
         volumeKeys.stop()
-        quickNote.stop()
     }
 
     /// Opens the notch on Notes with a new note, ready to type. The tab gets a moment to come on
@@ -187,6 +202,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             volumeKeys.stop()
         }
-        notes.quickNoteShortcut && preferences.isEnabled(.notes) ? quickNote.start() : quickNote.stop()
+        quickNoteKey.shortcut = notes.quickNoteShortcut && preferences.isEnabled(.notes) ? .newNote : nil
     }
 }
