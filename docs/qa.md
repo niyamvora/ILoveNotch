@@ -20,8 +20,8 @@ candidate; the rest are manual passes still to run before a public release.
 - [x] Quick Share: protobuf encoding against protobuf's own examples, frames and records round-trip,
   the UKEY2 key schedule and 4-digit code against an independent implementation, tampered, replayed,
   and off-curve messages refused, hostile file names, and this Mac sending to itself over loopback
-  (1 file, 101 files, 200 MB byte-for-byte with flat memory, declines, cancels from either side, a
-  stalled handshake, split and oversized frames) (`NotchTransferTests`)
+  (1 file, 101 files, 200 MB byte-for-byte with one chunk in flight at a time, declines, cancels from
+  either side, a stalled handshake, split and oversized frames) (`NotchTransferTests`)
 
 ## Performance
 
