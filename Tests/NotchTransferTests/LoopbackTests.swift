@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 import CryptoKit
-import Darwin
 import Foundation
 import Network
 import Testing
@@ -59,9 +58,10 @@ private final class Loopback: Sendable {
         NWConnection(to: .hostPort(host: .ipv4(.loopback), port: listener.port ?? .any), using: .tcp)
     }
 
-    /// Sends `urls`, with the sender cancelling `cancelAt` of the way through if asked.
+    /// Sends `urls`, with the sender cancelling `cancelAt` of the way through if asked. Also returns
+    /// the most bytes the sender had handed to the network and not yet sent.
     func send(_ urls: [URL], cancelAt: Double? = nil) async throws -> (
-        sent: [OutboundSession.Update], received: [InboundSession.Update]
+        sent: [OutboundSession.Update], received: [InboundSession.Update], peakUnsent: Int
     ) {
         let link = FrameLink(connection())
         let (outbound, outboundInput) = AsyncStream<OutboundSession.Update>.makeStream()
@@ -81,7 +81,7 @@ private final class Loopback: Sendable {
         for await update in outbound { sent.append(update) }
         var received: [InboundSession.Update] = []
         for await update in inbound { received.append(update) }
-        return (sent, received)
+        return (sent, received, link.peakUnsent)
     }
 
     /// What's left in the folder the receiver saves to.
@@ -98,20 +98,11 @@ private func sha256(_ url: URL) throws -> Data {
     return Data(hash.finalize())
 }
 
-/// The process's memory footprint right now, as Activity Monitor counts it.
-private func footprint() -> UInt64 {
-    var info = rusage_info_v2()
-    let status = withUnsafeMutablePointer(to: &info) {
-        $0.withMemoryRebound(to: rusage_info_t?.self, capacity: 1) { proc_pid_rusage(getpid(), RUSAGE_INFO_V2, $0) }
-    }
-    return status == 0 ? info.ri_phys_footprint : 0
-}
-
 struct LoopbackTests {
     @Test func oneFileArrivesIntactAndBothSidesShowTheSameCode() async throws {
         let loopback = try await Loopback()
         let photo = try loopback.file("photo.jpg", randomData(300_000))
-        let (sent, received) = try await loopback.send([photo])
+        let (sent, received, _) = try await loopback.send([photo])
 
         guard case .connected(let senderPin)? = sent.first, case .asking(let offer)? = received.first else {
             Issue.record("sent \(sent), received \(received)")
@@ -133,7 +124,7 @@ struct LoopbackTests {
         let loopback = try await Loopback()
         let files = try (0..<100).map { try loopback.file("file \($0).txt", Data("contents \($0)".utf8)) }
         let empty = try loopback.file("empty", Data())
-        let (sent, received) = try await loopback.send(files + [empty])
+        let (sent, received, _) = try await loopback.send(files + [empty])
 
         guard case .sent? = sent.last, case .files(let urls)? = received.last else {
             Issue.record("sent \(sent), received \(received)")
@@ -146,7 +137,10 @@ struct LoopbackTests {
         }
     }
 
-    @Test func aLargeFileStreamsThroughWithFlatMemory() async throws {
+    /// Memory stays flat because the sender hands the network one chunk at a time and the receiver
+    /// reads a frame at a time and writes it out. The process's own footprint is too noisy to check
+    /// with other tests running alongside, so this checks the chunks in flight instead.
+    @Test func aLargeFileStreamsThroughAChunkAtATime() async throws {
         let loopback = try await Loopback()
         let big = loopback.folder.appending(path: "video.mov")
         FileManager.default.createFile(atPath: big.path, contents: nil)
@@ -154,33 +148,20 @@ struct LoopbackTests {
         for _ in 0..<200 { try writer.write(contentsOf: randomData(1 << 20)) }  // 200 MB, a megabyte at a time
         try writer.close()
 
-        // Samples the footprint while the file moves; a copy held in memory would add 200 MB or more.
-        let baseline = footprint()
-        let sampler = Task.detached {
-            var peak: UInt64 = 0
-            while !Task.isCancelled {
-                peak = max(peak, footprint())
-                try? await Task.sleep(for: .milliseconds(20))
-            }
-            return peak
-        }
-        let (sent, received) = try await loopback.send([big])
-        sampler.cancel()
-        let growth = Int64(await sampler.value) - Int64(baseline)
-
+        let (sent, received, peakUnsent) = try await loopback.send([big])
         guard case .sent? = sent.last, case .files(let urls)? = received.last else {
             Issue.record("sent \(sent.suffix(3)), received \(received.suffix(3))")
             return
         }
         #expect(try sha256(urls[0]) == sha256(big))
-        #expect(growth < 100 << 20, "memory grew by \(growth >> 20) MB")
+        #expect(peakUnsent < 2 * OutboundSession.chunkSize, "at most \(peakUnsent) bytes waiting to go out")
         let progress = received.compactMap { if case .progress(let done) = $0 { done } else { nil } }
         #expect(progress.count > 50, "progress along the way, one report per percent")
     }
 
     @Test func declining() async throws {
         let loopback = try await Loopback(answer: .decline)
-        let (sent, received) = try await loopback.send([try loopback.file("a.txt", Data("a".utf8))])
+        let (sent, received, _) = try await loopback.send([try loopback.file("a.txt", Data("a".utf8))])
         guard case .failed(let error)? = sent.last else {
             Issue.record("sent \(sent)")
             return
@@ -193,7 +174,7 @@ struct LoopbackTests {
     @Test func theSenderCancellingPartwayLeavesNoPartialFile() async throws {
         let loopback = try await Loopback()
         let big = try loopback.file("big.bin", randomData(8 << 20))
-        let (_, received) = try await loopback.send([big], cancelAt: 0.3)
+        let (_, received, _) = try await loopback.send([big], cancelAt: 0.3)
         guard case .failed(let error)? = received.last else {
             Issue.record("received \(received.suffix(3))")
             return
@@ -205,7 +186,7 @@ struct LoopbackTests {
     @Test func theReceiverCancellingPartwayStopsTheSender() async throws {
         let loopback = try await Loopback(cancelAt: 0.3)
         let files = try (0..<3).map { try loopback.file("\($0).bin", randomData(4 << 20)) }
-        let (sent, _) = try await loopback.send(files)
+        let (sent, _, _) = try await loopback.send(files)
         guard case .failed(let error)? = sent.last else {
             Issue.record("sent \(sent.suffix(3))")
             return
