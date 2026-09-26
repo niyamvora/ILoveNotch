@@ -26,6 +26,10 @@ public final class ShelfFeature: NotchFeature {
     public private(set) var locations: [ShelfItem.ID: URL] = [:]
     /// Raised when files land on the shelf.
     @ObservationIgnored public var onActivity: ((Activity) -> Void)?
+    /// Sends files to an Android phone, in the build that can (the GitHub build's Quick Share).
+    @ObservationIgnored public var sendToAndroid: (([URL]) -> Void)?
+    /// Receiving from Android, for the footer, in the build that can.
+    @ObservationIgnored public var androidControl: AnyView?
 
     // ponytail: a fixed cap keeps the shelf and its bookmark checks bounded; make it a setting if asked.
     static let capacity = 100
