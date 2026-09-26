@@ -22,7 +22,7 @@ An **original, open-source** macOS menu-notch utility — turns the notch on App
 Silicon MacBooks into an interactive tray for media, files, your calendar, tasks,
 notes, shortcuts, timers, your camera, and how much of your AI plans you've
 used. Built native (SwiftUI + AppKit) with a **hard focus on low RAM and
-near-zero idle CPU**.
+near-zero idle CPU** ([measured](#efficiency)).
 
 <p align="center">
   <img src="docs/media/ai-usage.gif" width="760" alt="The open notch on the AI Usage tab: Claude and Codex as cards with rings and bars, then Claude's limits, spend, and daily usage chart">
@@ -87,6 +87,20 @@ Applications, and open it. It updates itself from then on.
 Notch utilities are genuinely useful, but the popular closed-source one is
 unmaintained and drew complaints about heavy RAM/CPU use. ILoveNotch is a free,
 maintained, efficient alternative anyone can inspect and improve.
+
+## Efficiency
+
+Measured over a real 20-hour workday on an Apple M5 Pro MacBook (24 GB, macOS
+26.6.2), 24–25 September 2026.
+
+<p align="center">
+  <img src="docs/media/efficiency/barely-there.png" width="49%" alt="Barely there: 0.45% of the Mac's total energy over a 20-hour workday, 0.0% CPU at rest, never kept the Mac awake or woke it, and 77 MB of memory, flat">
+  <img src="docs/media/efficiency/energy.png" width="49%" alt="Used less energy than Finder: 0.45% of the Mac's energy, about 100 times less than VS Code and 34 times less than Chrome, 13th of 47 apps and services">
+  <img src="docs/media/efficiency/wakeups.png" width="49%" alt="150 times fewer CPU wakeups than Chrome: 1,502, against 224,112 for Chrome and 525,651 for VS Code, and 2 minutes 49 seconds of CPU time in 20 hours">
+  <img src="docs/media/efficiency/sleep.png" width="49%" alt="Never keeps your Mac awake: no sleep-blocking requests and no wakes over 20 hours and 4 lid-closed sleeps">
+  <img src="docs/media/efficiency/memory.png" width="49%" alt="Memory stayed flat over 20 hours: about 77 MB in active use from hour 15 to hour 20, most of it the 30-day Claude usage history and the interface">
+  <img src="docs/media/efficiency/peak-memory.png" width="49%" alt="Up to 95% less peak memory reading AI usage logs: 120 MB down to 6 MB for an 80 MB log, and 223 MB down to 20 MB for the 8 largest logs">
+</p>
 
 ## Design principles (the efficiency story)
 
