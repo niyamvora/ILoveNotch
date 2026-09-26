@@ -54,16 +54,48 @@ struct NotchMetricsTests {
     }
 
     @Test(arguments: displays)
-    func anOngoingActivityGrowsNarrowerWingsThanAOneShotOne(metrics: NotchMetrics) {
-        let awake = Activity(feature: .timer, symbol: "cup.and.saucer.fill", title: "Awake", duration: .zero)
+    func aLiveActivityTakesOnlyTheRoomItsTitleNeeds(metrics: NotchMetrics) {
+        let title = String(repeating: "A very long video title ", count: 4)
+        let short = metrics.size(for: .transient(song))
+        let long = metrics.size(
+            for: .transient(Activity(feature: .media, symbol: "play.fill", title: title, duration: .zero)))
+        #expect(short.width < long.width, "a short title, short wings")
+        #expect(long.width == metrics.housing.width + NotchMetrics.activityWing * 2, "a long one stops at the ceiling")
+        #expect(short.height == metrics.housing.height && long.width <= metrics.panelFrame.width)
+    }
+
+    @Test(arguments: displays)
+    func anOngoingActivityRestsInTheMenuBarOnNarrowerWings(metrics: NotchMetrics) {
+        let project = Activity(
+            feature: .agents, symbol: "hand.raised.fill", title: String(repeating: "project ", count: 10),
+            duration: .zero)
         var state = NotchState()
         _ = state.handle(.show)
-        _ = state.handle(.setOngoing(awake))
+        _ = state.handle(.setOngoing(project))
         let resting = metrics.size(for: state)
-        #expect(resting.height == metrics.housing.height, "it stays in the menu bar")
-        #expect(resting.width > metrics.housing.width && resting.width < metrics.size(for: .transient(song)).width)
+        let housing = metrics.housing
+        let ceiling = CGSize(width: housing.width + NotchMetrics.ongoingWing * 2, height: housing.height)
+        #expect(resting == ceiling, "a long title stops at the ongoing ceiling, in the menu bar")
+        #expect(resting.width < metrics.size(for: .transient(project)).width, "narrower than a one-shot's")
         _ = state.handle(.clicked)
-        #expect(metrics.size(for: state) == metrics.size(for: .expanded(tab: .timer)), "open, it's an open notch")
+        #expect(metrics.size(for: state) == metrics.size(for: .expanded(tab: .agents)), "open, it's an open notch")
+    }
+
+    @Test(arguments: ["2 waiting", "OpenNotch", "Awake"])
+    func anOngoingActivitysWordsFitUncut(title: String) {
+        let activity = Activity(feature: nil, symbol: "bell.fill", title: title, duration: .zero)
+        #expect(NotchMetrics.wing(for: activity, ongoing: true) == NotchMetrics.wing(for: activity), "not cut short")
+    }
+
+    @Test func aCountdownMakesRoomForItsLongestReading() {
+        let now = Date(timeIntervalSince1970: 1_790_000_000)
+        func wing(_ seconds: TimeInterval) -> CGFloat {
+            let countdown = Activity(
+                feature: .calendar, symbol: "video.fill", title: "Standup", duration: .zero, countdown: now + seconds)
+            return NotchMetrics.wing(for: countdown, ongoing: true, now: now)
+        }
+        #expect(wing(300) < wing(2 * 3600), "hours need more room than minutes")
+        #expect(wing(2 * 3600) <= NotchMetrics.ongoingWing)
     }
 
     @Test(arguments: displays)
