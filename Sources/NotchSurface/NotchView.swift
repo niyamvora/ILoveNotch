@@ -95,6 +95,8 @@ struct NotchView: View {
             }
             dropTargeted = targeted
         }
+        // An ongoing activity's tab reaches out on the right while the rest stays over the camera.
+        .offset(x: metrics.offset(for: engine.state))
         .animation(motion(for: presentation), value: presentation)
         .animation(activityMotion, value: resting)
         .animation(reduceMotion ? nil : .spring(response: 0.26, dampingFraction: 0.8), value: dropTargeted)
@@ -349,45 +351,54 @@ struct NotchView: View {
             }
     }
 
-    /// A live activity: its symbol and title snug against either side of the physical notch, on wings
-    /// just wide enough for the title, or, for a level like the volume or the battery's charge, one
-    /// row as wide as the notch just below it. A countdown shows the time left in place of the
-    /// title, which VoiceOver still reads.
+    /// A live activity, its symbol and title together: a one-shot activity in a row just under the
+    /// camera housing, like a level such as the volume or the battery's charge; an ongoing one in a
+    /// tab beside the housing, over the menu bar, where it can stay without covering windows. On a
+    /// display without a notch, both sit inside the pill. A countdown shows the time left in place of
+    /// the title, which VoiceOver still reads.
     private func live(_ activity: Activity, ongoing: Bool = false) -> some View {
         Group {
-            if let level = activity.level {
-                levelRow(activity, level: level)
-            } else {
-                let wing = NotchMetrics.wing(for: activity, ongoing: ongoing)
+            if ongoing, metrics.notch != nil {
                 HStack(spacing: 0) {
-                    Image(systemName: activity.symbol)
-                        .font(.system(size: 13, weight: .semibold))
-                        .padding(.trailing, NotchMetrics.wingInset)
-                        .frame(width: wing, alignment: .trailing)
                     // Nothing under the camera housing, where it couldn't be seen.
                     Color.clear.frame(width: metrics.housing.width)
-                    Group {
-                        if let countdown = activity.countdown {
-                            // ponytail: redraws once a second while a countdown shows; a per-minute
-                            // timeline if a soak ever notices.
-                            let now = Date.now
-                            let left = Text(timerInterval: now...max(countdown, now), countsDown: true)
-                            left.monospacedDigit().accessibilityLabel(activity.title).accessibilityValue(left)
-                        } else {
-                            Text(activity.title)
-                        }
-                    }
-                    .font(.system(size: 12, weight: .medium))
-                    .lineLimit(1)
-                    .padding(.leading, NotchMetrics.wingInset)
-                    .padding(.trailing, NotchMetrics.wingOutset)
-                    .frame(width: wing, alignment: .leading)
+                    label(activity)
+                        .padding(.leading, NotchMetrics.wingInset)
+                        .padding(.trailing, NotchMetrics.wingOutset)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(height: metrics.housing.height)
+            } else if let level = activity.level {
+                levelRow(activity, level: level)
+            } else {
+                label(activity)
+                    .padding(.horizontal, NotchMetrics.rowPadding)
+                    .frame(height: metrics.notch == nil ? metrics.housing.height : NotchMetrics.meterDepth)
+                    .padding(.top, metrics.notch == nil ? 0 : metrics.housing.height)
             }
         }
         .foregroundStyle(.white)
         .accessibilityElement(children: .combine)
+    }
+
+    private func label(_ activity: Activity) -> some View {
+        HStack(spacing: NotchMetrics.labelSpacing) {
+            Image(systemName: activity.symbol)
+                .font(.system(size: 12, weight: .semibold))
+            Group {
+                if let countdown = activity.countdown {
+                    // ponytail: redraws once a second while a countdown shows; a per-minute
+                    // timeline if a soak ever notices.
+                    let now = Date.now
+                    let left = Text(timerInterval: now...max(countdown, now), countsDown: true)
+                    left.monospacedDigit().accessibilityLabel(activity.title).accessibilityValue(left)
+                } else {
+                    Text(activity.title)
+                }
+            }
+            .font(.system(size: 12, weight: .medium))
+            .lineLimit(1)
+        }
     }
 
     /// Symbol, meter, and value side by side, under the camera housing (or inside the pill).
