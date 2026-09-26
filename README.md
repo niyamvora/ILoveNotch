@@ -56,6 +56,16 @@ Applications, and open it. It updates itself from then on.
   [TestFlight beta](https://testflight.apple.com/join/6p3zqhCS).
 - **From source:** see [Build & run](#build--run).
 
+## Coming from NotchNook?
+
+NotchNook's license server went offline in September 2026, so paid licenses
+stopped activating, and lo.cafe
+[told customers to use an alternative](https://x.com/locafe_24h/status/2095262917486665735).
+ILoveNotch covers the everyday things: now playing, a file shelf, and your
+calendar, plus Reminders, notes, Shortcuts, and timers. There's no license,
+account, or server that can go away, and it's MIT licensed, so the code stays
+public and buildable whatever happens to the project.
+
 ## What it does
 
 - **The notch.** Opens when you hover it, click it, or pull down with two
@@ -84,9 +94,11 @@ Applications, and open it. It updates itself from then on.
 
 ## Why
 
-Notch utilities are genuinely useful, but the popular closed-source one is
-unmaintained and drew complaints about heavy RAM/CPU use. ILoveNotch is a free,
-maintained, efficient alternative anyone can inspect and improve.
+Notch utilities are genuinely useful, but the popular closed-source one drew
+complaints about heavy RAM/CPU use, and in September 2026 its license server
+went offline, so paid licenses stopped working. ILoveNotch is a free, efficient
+alternative with nothing to switch off: no license, no account, no server, and
+code anyone can inspect, build, and improve.
 
 ## Efficiency
 
