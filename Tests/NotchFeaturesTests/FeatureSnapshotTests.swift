@@ -11,6 +11,8 @@ import Testing
 struct FeatureSnapshotTests {
     /// The content area of an expanded notch.
     private let size = CGSize(width: 428, height: 200)
+    /// The content area of the smallest open notch.
+    private static let smallest = CGSize(width: 350, height: 132)
 
     @Test func mediaWithATrack() throws {
         let media = MediaFeature(bundle: Bundle(for: SnapshotMarker.self))
@@ -62,7 +64,7 @@ struct FeatureSnapshotTests {
     }
 
     /// The tab as the notch shows it: white on black, dark mode, in the content area.
-    private func inNotch(_ view: some View) -> some View {
+    private func inNotch(_ view: some View, size: CGSize) -> some View {
         view
             .frame(width: size.width, height: size.height)
             .padding(16)
@@ -103,6 +105,10 @@ struct FeatureSnapshotTests {
             notes.update(notes.add(), text: text)
         }
         try render(notes.view, name: "notes")
+        try render(notes.view, name: "notes-smallest", size: Self.smallest)
+        notes.search = "milk"  // search stays open while it has text
+        try render(notes.view, name: "notes-searching")
+        notes.search = ""
         let id = notes.add()
         notes.update(id, text: "# Trip\n- [ ] passport\n- [x] tickets\n- **socks**\n> pack light")
         notes.setColor(id, .mint)
@@ -164,8 +170,9 @@ struct FeatureSnapshotTests {
         try render(ShortcutsFeature().view, name: "shortcuts-loading")
     }
 
-    private func render(_ view: some View, name: String) throws {
-        let host = NSHostingView(rootView: inNotch(view))
+    private func render(_ view: some View, name: String, size: CGSize? = nil) throws {
+        let size = size ?? self.size
+        let host = NSHostingView(rootView: inNotch(view, size: size))
         let window = NSWindow(
             contentRect: CGRect(x: 0, y: 0, width: size.width + 32, height: size.height + 32),
             styleMask: .borderless, backing: .buffered, defer: false)
