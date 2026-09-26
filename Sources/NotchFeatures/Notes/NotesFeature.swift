@@ -48,10 +48,6 @@ public final class NotesFeature: NotchFeature {
     public var sort: NoteSort {
         didSet { defaults.set(sort.rawValue, forKey: Self.sortKey) }
     }
-    /// Show notes formatted (headings, lists, checkboxes) instead of as editable text.
-    public var showsFormatted: Bool {
-        didSet { defaults.set(showsFormatted, forKey: Self.formattedKey) }
-    }
     /// Per-feature setting: Control-Option-N opens a new note from anywhere.
     public var quickNoteShortcut: Bool {
         didSet { defaults.set(quickNoteShortcut, forKey: Self.shortcutKey) }
@@ -68,7 +64,6 @@ public final class NotesFeature: NotchFeature {
     @ObservationIgnored public var onSendToTasks: ((String) -> Bool)?
 
     private static let sortKey = "notes.sort"
-    private static let formattedKey = "notes.showsFormatted"
     private static let shortcutKey = "notes.quickNoteShortcut"
     private static let folderKey = "notes.folderBookmark"
     @ObservationIgnored private let defaultDirectory: URL
@@ -84,7 +79,6 @@ public final class NotesFeature: NotchFeature {
         self.defaults = defaults
         defaultDirectory = directory ?? AppSupport.file("Notes")
         sort = defaults.string(forKey: Self.sortKey).flatMap(NoteSort.init(rawValue:)) ?? .modified
-        showsFormatted = defaults.bool(forKey: Self.formattedKey)
         quickNoteShortcut = defaults.object(forKey: Self.shortcutKey) as? Bool ?? true
         let chosen = directory == nil ? defaults.data(forKey: Self.folderKey).flatMap(Self.resolve) : nil
         self.directory = chosen ?? defaultDirectory
@@ -129,7 +123,6 @@ public final class NotesFeature: NotchFeature {
     /// for the keyboard.
     public func quickCapture() {
         search = ""
-        showsFormatted = false
         if selected?.isEmpty != true { add() }
         wantsEditorFocus = true
     }
@@ -153,22 +146,11 @@ public final class NotesFeature: NotchFeature {
         change(id) { $0.isPinned.toggle() }
     }
 
-    /// Ticks or unticks the checkbox on one line of a note.
-    public func toggleTask(_ id: Note.ID, line: Int) {
-        guard let note = notes.first(where: { $0.id == id }) else { return }
-        update(id, text: NoteLine.toggleTask(in: note.text, line: line))
-    }
-
-    /// Sends a note's unticked checklist items to Tasks, or only the one on `line`. Returns how many
-    /// were added.
+    /// Sends a note's unticked checklist items to Tasks. Returns how many were added.
     @discardableResult
-    public func sendToTasks(_ id: Note.ID, line: Int? = nil) -> Int {
+    public func sendToTasks(_ id: Note.ID) -> Int {
         guard let note = notes.first(where: { $0.id == id }), let send = onSendToTasks else { return 0 }
-        let items = NoteLine.parse(note.text).compactMap { item -> String? in
-            guard line == nil || item.id == line, case .task(false, let text) = item.kind else { return nil }
-            let title = text.trimmingCharacters(in: .whitespaces)
-            return title.isEmpty ? nil : title
-        }
+        let items = note.openChecklistItems
         guard !items.isEmpty else {
             show(notice: "No unticked checklist items")
             return 0

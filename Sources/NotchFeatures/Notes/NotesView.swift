@@ -3,9 +3,9 @@ import AppKit
 import SwiftUI
 
 /// The notes tab: a searchable list of notes beside an editor. Hovering a note lights it up and shows
-/// its pin and delete buttons; the selection slides between notes. The editor can show the note
-/// formatted, with checkboxes to tick and send to Tasks. Clicking into a field gives the notch
-/// keyboard focus; Escape or clicking elsewhere hands it back.
+/// its pin and delete buttons; the selection slides between notes. A note's unticked checklist items
+/// can go to Tasks. Clicking into a field gives the notch keyboard focus; Escape or clicking
+/// elsewhere hands it back.
 struct NotesView: View {
     @Bindable var notes: NotesFeature
     @Namespace private var selectionSpace
@@ -175,25 +175,15 @@ struct NotesView: View {
         if let note = notes.selected {
             VStack(alignment: .leading, spacing: 4) {
                 toolbar(note)
-                Group {
-                    if notes.showsFormatted {
-                        NoteFormattedView(
-                            note: note, toggle: { notes.toggleTask(note.id, line: $0) },
-                            send: { _ = notes.sendToTasks(note.id, line: $0) }
-                        )
-                        .onTapGesture(count: 2) { withAnimation(spring) { notes.showsFormatted = false } }
-                    } else {
-                        TextEditor(text: Binding(get: { note.text }, set: { notes.update(note.id, text: $0) }))
-                            .font(.callout)
-                            .scrollContentBackground(.hidden)
-                            .focused($editorFocused)
-                            .accessibilityLabel("Note text")
-                    }
-                }
-                .padding(6)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .background(tint(note.color), in: RoundedRectangle(cornerRadius: 8))
-                .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: note.color)
+                TextEditor(text: Binding(get: { note.text }, set: { notes.update(note.id, text: $0) }))
+                    .font(.callout)
+                    .scrollContentBackground(.hidden)
+                    .focused($editorFocused)
+                    .accessibilityLabel("Note text")
+                    .padding(6)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .background(tint(note.color), in: RoundedRectangle(cornerRadius: 8))
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: note.color)
                 footer(note)
             }
         }
@@ -227,17 +217,14 @@ struct NotesView: View {
                     symbol: note.isPinned ? "pin.fill" : "pin", help: note.isPinned ? "Unpin" : "Pin to top",
                     isOn: note.isPinned
                 ) { withAnimation(spring) { notes.togglePin(note.id) } }
-                ToolbarButton(
-                    symbol: notes.showsFormatted ? "pencil" : "text.badge.checkmark",
-                    help: notes.showsFormatted ? "Edit text" : "Show formatted", isOn: notes.showsFormatted
-                ) { withAnimation(spring) { notes.showsFormatted.toggle() } }
+                Spacer(minLength: 0)
+                // What the note is (color, pin) on the left; what to do with its text on the right.
                 if note.hasOpenChecklist {
                     ToolbarButton(symbol: "checklist", help: "Send unticked items to Tasks", isOn: false) {
                         _ = notes.sendToTasks(note.id)
                     }
                     .transition(.opacity)
                 }
-                Spacer(minLength: 0)
                 ShareLink(item: note.text, subject: Text(note.title)) {
                     Image(systemName: "square.and.arrow.up")
                 }

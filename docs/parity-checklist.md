@@ -62,7 +62,7 @@ that delivers it.
 - [x] Alerts at the due time through Reminders, and a due task shown on the notch with Done and Snooze
 - [x] Calendar lists tasks due today and adds events typed in plain words
 - [x] Notes with hover highlights, a sliding selection, colors, pins, search, and sort
-- [x] Formatted view of a note with tickable checklists that can be sent to Tasks
+- [x] A note's unticked checklist items ("- [ ]") sent to Tasks in one click
 - [x] Notes in a folder of your choice (such as iCloud Drive) to reach them on iPhone, where files you named keep their names; share to Apple Notes
 - [x] Control-Option-N opens a new note from any app
 
