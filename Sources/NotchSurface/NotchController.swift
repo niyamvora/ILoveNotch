@@ -53,6 +53,12 @@ final class NotchController {
         Log.surface.info("Notch on display \(self.displayID, privacy: .public), notch: \(self.metrics.notch != nil)")
     }
 
+    /// Makes the panel key so a text field in it can take typing, without activating the app. Key
+    /// status moves the notch to its focused state.
+    func focusKeyboard() {
+        panel.makeKeyAndOrderFront(nil)
+    }
+
     /// Tears the notch down. Call before dropping the controller.
     func close() {
         stopClickAway()

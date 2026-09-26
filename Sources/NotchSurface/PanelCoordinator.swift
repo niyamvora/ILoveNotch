@@ -45,6 +45,16 @@ public final class PanelCoordinator {
         for controller in controllers { controller.engine.send(event) }
     }
 
+    /// Opens `tab` on every notch, as if the user had chosen it.
+    public func open(_ tab: FeatureID) {
+        broadcast(.selectTab(tab))
+    }
+
+    /// Gives the keyboard to the first open notch, for typing started from a keyboard shortcut.
+    public func focusKeyboard() {
+        controllers.first { $0.engine.state.presentation.openTab != nil }?.focusKeyboard()
+    }
+
     /// Opens every closed notch and closes it again, to preview the open and close animation. Only
     /// notches the preview opened are closed, and only if nothing (like a pin) changed them since.
     public func previewAnimation() {
