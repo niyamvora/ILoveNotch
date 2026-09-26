@@ -61,6 +61,7 @@ that delivers it.
 - [x] Hover actions on a task: due date, priority, list, rename, delete, and block time in Calendar
 - [x] Alerts at the due time through Reminders, and a due task shown on the notch with Done and Snooze
 - [x] Calendar lists tasks due today and adds events typed in plain words
+- [x] Your own events edited in place (title and time) or deleted, from hover buttons, a double-click, or the context menu; invitations are left to Calendar
 - [x] Notes with hover highlights, a sliding selection, colors, pins, search, and sort
 - [x] A note's unticked checklist items ("- [ ]") sent to Tasks in one click
 - [x] Notes in a folder of your choice (such as iCloud Drive) to reach them on iPhone, where files you named keep their names; share to Apple Notes
