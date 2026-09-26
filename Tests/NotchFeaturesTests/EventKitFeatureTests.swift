@@ -60,8 +60,106 @@ struct EventKitFeatureTests {
     @Test func settingsPersist() {
         let store = EventStore()
         CalendarFeature(eventStore: store, defaults: defaults).showsAllDay = false
-        TasksFeature(eventStore: store, defaults: defaults).listID = "work"
+        CalendarFeature(eventStore: store, defaults: defaults).showsTasks = false
+        let tasks = TasksFeature(eventStore: store, defaults: defaults)
+        #expect(tasks.alertsInNotch && tasks.alertsAtDueTime && tasks.blockMinutes == 30, "defaults")
+        tasks.listID = "work"
+        tasks.groupsByList = true
+        tasks.alertsInNotch = false
+        tasks.blockMinutes = 45
         #expect(!CalendarFeature(eventStore: store, defaults: defaults).showsAllDay)
-        #expect(TasksFeature(eventStore: store, defaults: defaults).listID == "work")
+        #expect(!CalendarFeature(eventStore: store, defaults: defaults).showsTasks)
+        let relaunched = TasksFeature(eventStore: store, defaults: defaults)
+        #expect(relaunched.listID == "work" && relaunched.groupsByList)
+        #expect(!relaunched.alertsInNotch && relaunched.blockMinutes == 45)
+    }
+
+    @Test func quickAddReadsPriorityListAndRepeats() {
+        let draft = TaskDraft.parse("Water plants !! #Home every week")
+        #expect(draft.title == "Water plants")
+        #expect(draft.priority == .medium)
+        #expect(draft.list == "Home")
+        #expect(draft.repeats == .weekly)
+        #expect(draft.due != nil, "a repeating task starts today")
+
+        let plain = TaskDraft.parse("Buy milk")
+        #expect(plain.title == "Buy milk" && !plain.hasDetails)
+        #expect(TaskDraft.parse("!!!").title == "!!!", "a line of only marks stays the title")
+    }
+
+    @Test func quickAddReadsDatesAndTimes() throws {
+        let draft = TaskDraft.parse("Call mom tomorrow at 5pm !!!")
+        let due = try #require(draft.due)
+        #expect(draft.title == "Call mom")
+        #expect(draft.priority == .high)
+        #expect(draft.hasTime)
+        #expect(Calendar.current.isDateInTomorrow(due))
+        #expect(Calendar.current.component(.hour, from: due) == 17)
+    }
+
+    @Test func eventsAreReadFromPlainWords() throws {
+        let draft = try #require(EventDraft.parse("Lunch with Sam tomorrow 1pm for 90 min"))
+        #expect(draft.title == "Lunch with Sam")
+        #expect(!draft.isAllDay)
+        #expect(draft.duration == 90 * 60)
+        #expect(Calendar.current.isDateInTomorrow(draft.start))
+        #expect(EventDraft.parse("Lunch with Sam") == nil, "an event needs a time")
+    }
+
+    @Test func tasksGroupByWhenTheyAreDue() throws {
+        let calendar = Calendar.current
+        let now = try #require(calendar.date(bySettingHour: 12, minute: 0, second: 0, of: noon))
+        let today = calendar.startOfDay(for: now)
+        func day(_ offset: Int) -> Date { calendar.date(byAdding: .day, value: offset, to: today)! }
+        #expect(TaskGroup(due: nil, hasTime: false, now: now) == .someday)
+        #expect(TaskGroup(due: day(-1), hasTime: false, now: now) == .overdue)
+        #expect(TaskGroup(due: today, hasTime: false, now: now) == .today, "a day's task isn't late until it ends")
+        #expect(TaskGroup(due: now - 60, hasTime: true, now: now) == .overdue, "a timed task is late once it passes")
+        #expect(TaskGroup(due: day(1), hasTime: false, now: now) == .tomorrow)
+        #expect(TaskGroup(due: day(3), hasTime: false, now: now) == .thisWeek)
+        #expect(TaskGroup(due: day(30), hasTime: false, now: now) == .later)
+    }
+
+    @Test func sectionsFollowTheChosenGrouping() throws {
+        let tasks = TasksFeature(eventStore: EventStore(), defaults: defaults)
+        let now = Date.now
+        tasks.show(
+            tasks: [
+                TaskItem(id: "1", title: "late", due: now - 86_400 * 2, listTitle: "Work"),
+                TaskItem(id: "2", title: "someday", listTitle: "Home"),
+            ],
+            completed: [])
+        #expect(tasks.sections(now: now).map(\.title) == ["Overdue", "No Date"])
+        #expect(tasks.sections(now: now).first?.isOverdue == true)
+        tasks.groupsByList = true
+        #expect(Set(tasks.sections(now: now).map(\.title)) == ["Work", "Home"])
+    }
+
+    @Test func prioritiesMapToRemindersValues() {
+        for priority in TaskPriority.allCases {
+            #expect(TaskPriority(eventKit: priority.eventKitValue) == priority)
+        }
+        #expect(TaskPriority(eventKit: 3) == .high)
+        #expect(TaskPriority(eventKit: 7) == .low)
+        #expect(TaskPriority.high.marks == "!!!")
+    }
+
+    @Test func listNamesMatchLooselyAndBlocksStartOnTheQuarterHour() {
+        #expect(TasksFeature.listName("Work Stuff", matches: "workstuff"))
+        #expect(!TasksFeature.listName("Work", matches: "Home"))
+        let quarterHour = Date(timeIntervalSinceReferenceDate: 811_692_000)
+        let start = TaskItem.blockStart(for: TaskItem(id: "1", title: "t"), now: quarterHour + 7 * 60)
+        #expect(start == quarterHour + 15 * 60)
+        let ahead = TaskItem(id: "2", title: "t", due: noon + 7200, hasTime: true)
+        #expect(TaskItem.blockStart(for: ahead, now: noon) == noon + 7200, "a due time still ahead is kept")
+    }
+
+    @Test func dueLabelsAreShortAndRelative() throws {
+        let calendar = Calendar.current
+        let now = try #require(calendar.date(bySettingHour: 12, minute: 0, second: 0, of: noon))
+        let tomorrow = try #require(calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)))
+        #expect(DueLabel.text(for: calendar.startOfDay(for: now), hasTime: false, now: now) == "Today")
+        #expect(DueLabel.text(for: tomorrow, hasTime: false, now: now) == "Tomorrow")
+        #expect(DueLabel.text(for: tomorrow + 3600 * 9, hasTime: true, now: now).hasPrefix("Tomorrow "))
     }
 }

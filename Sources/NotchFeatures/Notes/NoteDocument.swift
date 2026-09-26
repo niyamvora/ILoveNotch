@@ -1,0 +1,195 @@
+// SPDX-License-Identifier: MIT
+import Foundation
+
+/// A note's colour, stored by name so other Markdown apps see a readable value.
+public enum NoteColor: String, CaseIterable, Identifiable, Sendable {
+    case red
+    case orange
+    case yellow
+    case green
+    case mint
+    case blue
+    case purple
+    case pink
+
+    public var id: String { rawValue }
+    public var name: String { rawValue.capitalized }
+}
+
+/// One note: a Markdown file. Its colour and pin live in a small front matter block at the top of the
+/// file (the `---` header Obsidian and other Markdown apps read), written only when one is set, so an
+/// uncoloured note stays plain text.
+public struct Note: Identifiable, Equatable, Sendable {
+    public let id: UUID
+    /// The note's text, without the front matter.
+    public var text: String
+    public var modified: Date
+    public var created: Date
+    public var color: NoteColor?
+    public var isPinned = false
+    /// The file's name in the notes folder; nil until the note is first saved.
+    var fileName: String?
+    /// Front matter lines other apps wrote, kept as they were.
+    var otherFields: [String] = []
+
+    public init(
+        id: UUID, text: String, modified: Date, created: Date? = nil, color: NoteColor? = nil, isPinned: Bool = false
+    ) {
+        self.id = id
+        self.text = text
+        self.modified = modified
+        self.created = created ?? modified
+        self.color = color
+        self.isPinned = isPinned
+    }
+
+    /// Reads a note file's contents.
+    init(id: UUID, fileName: String, contents: String, modified: Date, created: Date?) {
+        let (fields, body) = Self.splitFrontMatter(contents)
+        self.init(id: id, text: body, modified: modified, created: created)
+        self.fileName = fileName
+        for line in fields {
+            let parts = line.split(separator: ":", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
+            switch (parts.first?.lowercased(), parts.count == 2 ? parts[1] : nil) {
+            case ("color"?, let value?), ("colour"?, let value?):
+                color = NoteColor(rawValue: value.lowercased())
+            case ("pinned"?, let value?):
+                isPinned = value.lowercased() == "true"
+            default:
+                otherFields.append(line)
+            }
+        }
+    }
+
+    /// The first non-empty line, without Markdown heading marks, or "New Note".
+    public var title: String {
+        let line = text.split(whereSeparator: \.isNewline).lazy
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .map { $0.drop { $0 == "#" }.trimmingCharacters(in: .whitespaces) }
+            .first { !$0.isEmpty }
+        return line ?? "New Note"
+    }
+
+    /// A few lines after the title, for the hover preview.
+    public var preview: String {
+        let lines = text.split(whereSeparator: \.isNewline)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        return lines.dropFirst().prefix(4).joined(separator: "\n")
+    }
+
+    public var wordCount: Int { text.split { $0.isWhitespace || $0.isNewline }.count }
+
+    public var isEmpty: Bool { text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+
+    /// Whether the note has checklist items not yet ticked.
+    public var hasOpenChecklist: Bool {
+        NoteLine.parse(text).contains { $0.kind.isOpenTask }
+    }
+
+    /// What goes on disk: front matter, when there's anything for it, then the text.
+    var fileContents: String {
+        var fields: [String] = []
+        if let color { fields.append("color: \(color.rawValue)") }
+        if isPinned { fields.append("pinned: true") }
+        fields += otherFields
+        guard !fields.isEmpty else { return text }
+        return "---\n" + fields.joined(separator: "\n") + "\n---\n" + text
+    }
+
+    /// A file name from the title: "Groceries.md". Characters Finder and iCloud reject become dashes.
+    static func fileBase(for title: String) -> String {
+        let forbidden = CharacterSet(charactersIn: "/\\:?*\"<>|").union(.newlines).union(.controlCharacters)
+        var base = String(String.UnicodeScalarView(title.unicodeScalars.map { forbidden.contains($0) ? "-" : $0 }))
+        base = base.trimmingCharacters(in: .whitespaces)
+        while base.hasPrefix(".") { base.removeFirst() }
+        base = String(base.prefix(80)).trimmingCharacters(in: .whitespaces)
+        return base.isEmpty ? "Note" : base
+    }
+
+    /// Splits a leading `---` block off a file. Anything else, including a lone `---` rule, is text.
+    static func splitFrontMatter(_ contents: String) -> (fields: [String], body: String) {
+        let lines = contents.replacingOccurrences(of: "\r\n", with: "\n")
+            .split(separator: "\n", omittingEmptySubsequences: false)
+        guard lines.first == "---", let end = lines.dropFirst().firstIndex(of: "---") else { return ([], contents) }
+        let header = lines[1..<end].map(String.init)
+        // Front matter is "key: value" lines; anything else means the dashes were a rule.
+        let isField = { (line: String) in line.contains(":") || line.trimmingCharacters(in: .whitespaces).isEmpty }
+        guard header.allSatisfy(isField) else { return ([], contents) }
+        let body = lines[(end + 1)...].joined(separator: "\n")
+        return (header.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }, body)
+    }
+}
+
+/// One line of a note, as the formatted view draws it.
+public struct NoteLine: Identifiable, Equatable, Sendable {
+    public enum Kind: Equatable, Sendable {
+        case heading(level: Int, text: String)
+        case task(done: Bool, text: String)
+        case bullet(String)
+        case numbered(String, text: String)
+        case quote(String)
+        case rule
+        case text(String)
+        case blank
+
+        /// A checklist item not yet ticked.
+        public var isOpenTask: Bool {
+            if case .task(done: false, _) = self { return true }
+            return false
+        }
+    }
+
+    /// The line's index in the note's text, so a checkbox can be ticked in place.
+    public var id: Int
+    public var kind: Kind
+
+    public static func parse(_ text: String) -> [NoteLine] {
+        text.split(separator: "\n", omittingEmptySubsequences: false).enumerated().map { index, line in
+            NoteLine(id: index, kind: Self.kind(of: String(line)))
+        }
+    }
+
+    static func kind(of line: String) -> Kind {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        if trimmed.isEmpty { return .blank }
+        if trimmed == "---" || trimmed == "***" || trimmed == "___" { return .rule }
+        if trimmed.hasPrefix("#") {
+            let level = trimmed.prefix { $0 == "#" }.count
+            let rest = trimmed.dropFirst(level)
+            if level <= 6, rest.first == " " {
+                return .heading(level: level, text: rest.trimmingCharacters(in: .whitespaces))
+            }
+        }
+        if let marker = trimmed.first, "-*+".contains(marker), trimmed.dropFirst().first == " " {
+            let item = trimmed.dropFirst(2)
+            for (box, done) in [("[ ] ", false), ("[x] ", true), ("[X] ", true)] where item.hasPrefix(box) {
+                return .task(done: done, text: String(item.dropFirst(box.count)))
+            }
+            if item == "[ ]" || item == "[x]" || item == "[X]" { return .task(done: item != "[ ]", text: "") }
+            return .bullet(String(item))
+        }
+        let digits = trimmed.prefix { $0.isNumber }
+        if !digits.isEmpty, digits.count < 4 {
+            let rest = trimmed.dropFirst(digits.count)
+            if let mark = rest.first, mark == "." || mark == ")", rest.dropFirst().first == " " {
+                return .numbered(String(digits), text: String(rest.dropFirst(2)))
+            }
+        }
+        if trimmed.hasPrefix(">") { return .quote(trimmed.dropFirst().trimmingCharacters(in: .whitespaces)) }
+        return .text(line)
+    }
+
+    /// The note's text with the checkbox on line `index` ticked or unticked.
+    public static func toggleTask(in text: String, line index: Int) -> String {
+        var lines = text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        guard lines.indices.contains(index) else { return text }
+        let line = lines[index]
+        if let open = line.range(of: "[ ]") {
+            lines[index] = line.replacingCharacters(in: open, with: "[x]")
+        } else if let done = line.range(of: "[x]", options: .caseInsensitive) {
+            lines[index] = line.replacingCharacters(in: done, with: "[ ]")
+        }
+        return lines.joined(separator: "\n")
+    }
+}

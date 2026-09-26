@@ -24,6 +24,10 @@ extension CalendarFeature {
         return Group {
             AccessRow(access: calendar.access, pane: "Privacy_Calendars", request: calendar.requestAccess)
             Toggle("Show all-day events", isOn: $calendar.showsAllDay)
+            Toggle(isOn: $calendar.showsTasks) {
+                Text("Show tasks due today")
+                Text("Lists open reminders due today or overdue under your events, once Tasks has access.")
+            }
         }
         .onAppear(perform: calendar.refreshAccess)
     }
@@ -41,11 +45,75 @@ extension TasksFeature {
                 }
             }
             .help("New tasks go to this list, or to your default list when showing all lists.")
+            Toggle("Group by list instead of due date", isOn: $tasks.groupsByList)
+            Toggle(isOn: $tasks.alertsAtDueTime) {
+                Text("Alert at the due time")
+                Text("New tasks with a time get an alert, which Reminders shows on your iPhone, iPad, and Mac.")
+            }
+            Toggle(isOn: $tasks.alertsInNotch) {
+                Text("Show due tasks on the notch")
+                Text("When a task's time comes, the notch shows it with Done and Snooze.")
+            }
+            Picker("Block time for", selection: $tasks.blockMinutes) {
+                ForEach([15, 30, 45, 60, 90], id: \.self) { minutes in
+                    Text("\(minutes) minutes").tag(minutes)
+                }
+            }
+            .help("How long the Calendar event is when you block time for a task.")
         }
         .onAppear {
             tasks.refreshAccess()
             tasks.loadLists()
         }
+    }
+}
+
+extension NotesFeature {
+    public var settingsView: some View {
+        NotesSettings(notes: self)
+    }
+}
+
+private struct NotesSettings: View {
+    @Bindable var notes: NotesFeature
+
+    var body: some View {
+        Group {
+            LabeledContent {
+                HStack {
+                    Button("Choose\u{2026}", action: chooseFolder)
+                    if notes.usesCustomFolder {
+                        Button("Use Default") { notes.useDefaultFolder() }
+                    }
+                }
+            } label: {
+                Text("Folder: \(notes.usesCustomFolder ? notes.directory.lastPathComponent : "On this Mac")")
+                Text(
+                    "Pick a folder in iCloud Drive to reach your notes from the Files app or a Markdown app on "
+                        + "iPhone. Notes on this Mac move to the new folder.")
+            }
+            Picker("Sort notes by", selection: $notes.sort) {
+                ForEach(NoteSort.allCases) { sort in Text(sort.name).tag(sort) }
+            }
+            Toggle(isOn: $notes.quickNoteShortcut) {
+                Text("Control-Option-N starts a new note")
+                Text("Opens the notch on Notes from any app, ready to type.")
+            }
+        }
+    }
+
+    private func chooseFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.prompt = "Use Folder"
+        panel.message = "Choose where ILoveNotch keeps your notes."
+        let iCloudDrive = FileManager.default.homeDirectoryForCurrentUser
+            .appending(path: "Library/Mobile Documents/com~apple~CloudDocs", directoryHint: .isDirectory)
+        if FileManager.default.fileExists(atPath: iCloudDrive.path) { panel.directoryURL = iCloudDrive }
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        notes.chooseFolder(url)
     }
 }
 

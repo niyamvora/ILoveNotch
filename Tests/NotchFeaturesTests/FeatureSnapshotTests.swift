@@ -63,13 +63,20 @@ struct FeatureSnapshotTests {
     }
 
     @Test func notesWithAFewNotes() throws {
-        let notes = NotesFeature(directory: FileManager.default.temporaryDirectory.appending(path: "N-\(UUID())"))
+        let notes = NotesFeature(
+            directory: FileManager.default.temporaryDirectory.appending(path: "N-\(UUID())"),
+            defaults: UserDefaults(suiteName: "N-\(UUID())")!)
         notes.phase = .foreground
         try render(notes.view, name: "notes-empty")
         for text in ["Groceries\n- oat milk\n- coffee", "Ideas for the notch", "Meeting notes\nShip Phase 4"] {
             notes.update(notes.add(), text: text)
         }
         try render(notes.view, name: "notes")
+        let id = notes.add()
+        notes.update(id, text: "# Trip\n- [ ] passport\n- [x] tickets\n- **socks**\n> pack light")
+        notes.setColor(id, .mint)
+        notes.showsFormatted = true
+        try render(notes.view, name: "notes-formatted")
     }
 
     @Test func tasksWithACompletedSection() throws {
@@ -87,6 +94,24 @@ struct FeatureSnapshotTests {
             ])
         tasks.showsCompleted = true
         try render(tasks.view, name: "tasks")
+        tasks.show(
+            tasks: [TaskItem(id: "6", title: "Stand-up", due: now, hasTime: true, priority: .high)], completed: [],
+            alerting: TaskItem(id: "6", title: "Stand-up", due: now, hasTime: true))
+        try render(tasks.view, name: "tasks-alert")
+    }
+
+    @Test func calendarWithEventsAndTasks() throws {
+        let calendar = CalendarFeature(eventStore: EventStore(), defaults: UserDefaults(suiteName: "C-\(UUID())")!)
+        let now = Date.now
+        calendar.show(
+            events: [
+                DayEvent(
+                    id: "1", title: "Design review", start: now - 1800, end: now + 1800,
+                    color: RGB(red: 0.3, green: 0.6, blue: 1)),
+                DayEvent(id: "2", title: "Gym", start: now + 7200, end: now + 10_800),
+            ],
+            dueTasks: [TaskItem(id: "3", title: "Pay rent", due: Calendar.current.startOfDay(for: now))])
+        try render(calendar.view, name: "calendar")
     }
 
     @Test func eventKitTabsBeforeAccess() throws {
