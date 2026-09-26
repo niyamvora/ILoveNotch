@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import AppKit
 import NotchCore
 import SwiftUI
 
@@ -139,21 +140,31 @@ struct NotchView: View {
             && contrast != .increased
     }
 
-    /// Black, or Liquid Glass that materializes as the black fades out. The camera housing stays black
-    /// over the glass, as the notch it opened from, which also draws it on a display without one.
+    /// Black, or glass that materializes as the black fades out. The camera housing stays black over
+    /// the glass, as the notch it opened from, which also draws it on a display without one.
+    ///
+    /// Liquid Glass shows what's behind its window only while the window is key, which the notch
+    /// almost never is (it leaves the keyboard with your app); otherwise it draws a flat, opaque gray.
+    /// So the desktop behind is blurred here by a view that stays live whatever the key window is,
+    /// and the Liquid Glass on top samples that blur, adding its lensing at the edges, with a faint
+    /// rim where Apple's catches the light.
     @ViewBuilder
     private func fill(_ outline: NotchShape, glass: Bool) -> some View {
         ZStack(alignment: .top) {
             if #available(macOS 26, *), preferences.theme == .glass {
+                if glass { BehindWindowBlur().transition(.opacity) }
                 GlassEffectContainer {
                     if glass {
                         Color.clear
-                            .glassEffect(.regular.tint(Self.glassTint), in: outline)
+                            .glassEffect(.clear, in: outline)
                             .glassEffectTransition(.materialize)
                     }
                 }
+                if glass { outline.stroke(Self.rim, lineWidth: 1.5).transition(.opacity) }
             }
-            outline.fill(.black).opacity(glass ? 0 : 1)
+            // A trace of black stays under the glass: the window server sends a click to the window
+            // below wherever this one draws nothing, which closed the notch mid-click.
+            outline.fill(.black).opacity(glass ? 0.01 : 1)
             if glass, metrics.notch != nil {
                 Self.shape(for: .compact, on: metrics).fill(.black)
                     .frame(width: metrics.compactSize.width, height: metrics.compactSize.height)
@@ -161,8 +172,12 @@ struct NotchView: View {
         }
     }
 
-    /// Dims the glass so white text stays legible over a bright desktop, as Apple dims its clear glass.
-    private static let glassTint = Color.black.opacity(0.35)
+    /// Fades out toward the top edge, which sits against the top of the screen.
+    private static let rim = LinearGradient(
+        stops: [
+            .init(color: .clear, location: 0), .init(color: .white.opacity(0.22), location: 0.35),
+            .init(color: .white.opacity(0.08), location: 1),
+        ], startPoint: .top, endPoint: .bottom)
 
     /// Live activities, one-shot or ongoing, come and go on their own spring.
     private var activityMotion: Animation? {
@@ -463,6 +478,25 @@ struct NotchView: View {
         .padding(.horizontal, 16)
         .frame(height: metrics.notch == nil ? metrics.housing.height : NotchMetrics.meterDepth)
         .padding(.top, metrics.notch == nil ? 0 : metrics.housing.height)
+    }
+}
+
+/// What's behind the notch's window, blurred and dark, and live whether or not the window is key.
+private struct BehindWindowBlur: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = PassThroughEffectView()
+        view.material = .hudWindow
+        view.blendingMode = .behindWindow
+        view.state = .active
+        view.appearance = NSAppearance(named: .darkAqua)  // the notch's content is white
+        return view
+    }
+
+    func updateNSView(_ view: NSVisualEffectView, context: Context) {}
+
+    /// Clicks go to the notch's content, which SwiftUI draws over it.
+    private final class PassThroughEffectView: NSVisualEffectView {
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
     }
 }
 

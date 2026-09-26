@@ -106,7 +106,7 @@ that delivers it.
 - [x] ⌃⌥V opens the Clipboard tab from any app with the search field ready
 - [x] Skips what the copying app marks secret or temporary and copies from password managers; guides the user to "Paste from Other Apps" when macOS would ask each time
 - [x] Notch on every display: a display without a notch gets one drawn inside its menu bar, as tall as the bar and as wide as the Mac's own notch (or a MacBook's); Settings › General picks Notch or Pill per display
-- [x] Glass look: Settings › General › Theme opens the notch in Liquid Glass on macOS 26, dimmed so white text stays legible; closed it stays black in the camera housing, and Reduce Transparency, Increase Contrast, and macOS 14 and 15 keep it black
+- [x] Glass look: Settings › General › Theme opens the notch in glass on macOS 26, a live blur of what's behind it with Liquid Glass edges, the same on every tab whether or not the notch has the keyboard, and clickable everywhere; closed it stays black in the camera housing, and Reduce Transparency, Increase Contrast, and macOS 14 and 15 keep it black
 
 ## Android sharing ([plan](filesharing.md))
 

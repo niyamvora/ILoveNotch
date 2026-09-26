@@ -67,9 +67,10 @@ still to be set.
 - [ ] Notes in an iCloud Drive folder: edits reach the iPhone's Files app, and a file named there keeps its name
 - [ ] Control-Option-N starts a note from another app and hands the keyboard back when the notch closes
 - [ ] Light and dark mode, Increase Contrast, Reduce Motion, Reduce Transparency, VoiceOver, keyboard-only use
-- [ ] Glass theme (macOS 26): every tab's text readable over a white, a black, and a busy wallpaper; the glass
-  materializes as the notch opens and the closed notch stays black; the housing stays black on a drawn notch;
-  Reduce Transparency and Increase Contrast switch it to black while it's open
+- [ ] Glass theme (macOS 26): every tab's text readable over a white, a black, and a busy wallpaper, and the glass
+  the same on every tab, before and after typing in one; clicks on empty glass and between a tab's icon strokes
+  stay in the notch; the closed notch stays black, and so does the housing on a drawn notch; Reduce Transparency
+  and Increase Contrast switch it to black while it's open
 
 ### Android (Quick Share), with a real phone on the same Wi-Fi
 
