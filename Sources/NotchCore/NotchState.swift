@@ -3,13 +3,14 @@ import Foundation
 
 /// A feature that can own the expanded notch.
 public enum FeatureID: String, CaseIterable, Hashable, Sendable {
-    case media, shelf, calendar, tasks, notes, shortcuts, timer, mirror, usage, agents
+    case media, shelf, clipboard, calendar, tasks, notes, shortcuts, timer, mirror, usage, agents
 
     /// SF Symbol for tabs and settings.
     public var symbol: String {
         switch self {
         case .media: "play.circle"
         case .shelf: "tray.full"
+        case .clipboard: "doc.on.clipboard"
         case .calendar: "calendar"
         case .tasks: "checklist"
         case .notes: "note.text"
@@ -25,6 +26,7 @@ public enum FeatureID: String, CaseIterable, Hashable, Sendable {
         switch self {
         case .media: "Media"
         case .shelf: "Shelf"
+        case .clipboard: "Clipboard"
         case .calendar: "Calendar"
         case .tasks: "Tasks"
         case .notes: "Notes"

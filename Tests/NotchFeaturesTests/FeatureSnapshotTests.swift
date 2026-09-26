@@ -41,6 +41,26 @@ struct FeatureSnapshotTests {
         try render(shelf.view, name: "shelf")
     }
 
+    @Test func clipboardOffThenWithAHistory() throws {
+        let folder = FileManager.default.temporaryDirectory.appending(path: "ClipboardSnapshot-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let pasteboard = NSPasteboard(name: .init("ClipboardSnapshot.\(UUID().uuidString)"))
+        let clipboard = ClipboardFeature(
+            pasteboard: pasteboard, defaults: UserDefaults(suiteName: "CS-\(UUID())")!,
+            storeURL: folder.appending(path: "clipboard.json"), imagesURL: folder.appending(path: "Clipboard"),
+            frontmostApp: { ("com.apple.Safari", "Safari") })
+        clipboard.phase = .foreground
+        try render(clipboard.view, name: "clipboard-off")
+        clipboard.startRecording()
+        for text in ["Meeting at 4 in the big room", "https://github.com/niyamvora/ILoveNotch", "make install"] {
+            pasteboard.clearContents()
+            pasteboard.setString(text, forType: .string)
+            clipboard.check()
+        }
+        clipboard.toggleFavorite(try #require(clipboard.items.last))
+        try render(clipboard.view, name: "clipboard")
+    }
+
     /// The tab as the notch shows it: white on black, dark mode, in the content area.
     private func inNotch(_ view: some View) -> some View {
         view
