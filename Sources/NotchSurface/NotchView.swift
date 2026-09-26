@@ -59,7 +59,7 @@ struct NotchView: View {
                 live(activity)
                     .transition(.opacity)
             } else if let resting {
-                live(resting)
+                live(resting, ongoing: true)
                     .transition(.opacity)
             }
         }
@@ -349,18 +349,23 @@ struct NotchView: View {
             }
     }
 
-    /// A live activity: its symbol and title on either side of the physical notch, or, for a level
-    /// like the volume or the battery's charge, one row as wide as the notch just below it. A
-    /// countdown shows the time left in place of the title, which VoiceOver still reads.
-    private func live(_ activity: Activity) -> some View {
+    /// A live activity: its symbol and title snug against either side of the physical notch, on wings
+    /// just wide enough for the title, or, for a level like the volume or the battery's charge, one
+    /// row as wide as the notch just below it. A countdown shows the time left in place of the
+    /// title, which VoiceOver still reads.
+    private func live(_ activity: Activity, ongoing: Bool = false) -> some View {
         Group {
             if let level = activity.level {
                 levelRow(activity, level: level)
             } else {
+                let wing = NotchMetrics.wing(for: activity, ongoing: ongoing)
                 HStack(spacing: 0) {
                     Image(systemName: activity.symbol)
                         .font(.system(size: 13, weight: .semibold))
-                    Spacer(minLength: metrics.housing.width)
+                        .padding(.trailing, NotchMetrics.wingInset)
+                        .frame(width: wing, alignment: .trailing)
+                    // Nothing under the camera housing, where it couldn't be seen.
+                    Color.clear.frame(width: metrics.housing.width)
                     Group {
                         if let countdown = activity.countdown {
                             // ponytail: redraws once a second while a countdown shows; a per-minute
@@ -374,8 +379,10 @@ struct NotchView: View {
                     }
                     .font(.system(size: 12, weight: .medium))
                     .lineLimit(1)
+                    .padding(.leading, NotchMetrics.wingInset)
+                    .padding(.trailing, NotchMetrics.wingOutset)
+                    .frame(width: wing, alignment: .leading)
                 }
-                .padding(.horizontal, 14)
                 .frame(height: metrics.housing.height)
             }
         }
@@ -399,11 +406,13 @@ struct NotchView: View {
                     }
                 }
                 .accessibilityHidden(true)
+            // The value gets its room before the meter, which takes what's left: "Claude 85%", not "Claude 8…".
             Text(activity.title)
                 .font(.system(size: 11, weight: .semibold))
                 .monospacedDigit()
                 .lineLimit(1)
                 .frame(minWidth: 30, alignment: .trailing)
+                .layoutPriority(1)
         }
         .padding(.horizontal, 16)
         .frame(height: metrics.notch == nil ? metrics.housing.height : NotchMetrics.meterDepth)

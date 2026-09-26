@@ -18,8 +18,10 @@ struct NotchMetrics: Equatable {
     static let pill = CGSize(width: 180, height: 26)  // resting shape on a notchless display
     static let pillInset: CGFloat = 3  // gap above the floating pill
     static let hoverGrowth = CGSize(width: 12, height: 4)  // hover feedback
-    static let activityWing: CGFloat = 96  // room beside the notch for a live activity
-    static let ongoingWing: CGFloat = 64  // narrower for an ongoing one, which stays over the menu bar
+    static let activityWing: CGFloat = 120  // the most room a live activity takes beside the notch
+    static let ongoingWing: CGFloat = 90  // less for an ongoing one, which stays over the menu bar
+    static let wingInset: CGFloat = 10  // between a live activity's symbol or text and the notch
+    static let wingOutset: CGFloat = 12  // between its text and the wing's outer end
     static let meterDepth: CGFloat = 26  // room under the notch for a level activity's row
     static let overshootRoom: CGFloat = 1.08  // springy and jelly animations briefly overshoot
 
@@ -93,8 +95,8 @@ struct NotchMetrics: Equatable {
             notch == nil
                 ? housing
                 : CGSize(width: housing.width + Self.hoverGrowth.width, height: housing.height + Self.meterDepth)
-        case .transient:
-            CGSize(width: housing.width + Self.activityWing * 2, height: housing.height)
+        case .transient(let activity):
+            CGSize(width: housing.width + Self.wing(for: activity) * 2, height: housing.height)
         case .expanded, .pinned, .focused:
             expandedSize(expanded)
         }
@@ -103,8 +105,23 @@ struct NotchMetrics: Equatable {
     /// The notch as `state` draws it: like `size(for:)`, but a resting notch with an ongoing activity
     /// grows wings for it.
     func size(for state: NotchState, expanded: CGSize = NotchPreferences.defaultExpandedSize) -> CGSize {
-        guard state.restingActivity != nil else { return size(for: state.presentation, expanded: expanded) }
-        return CGSize(width: housing.width + Self.ongoingWing * 2, height: housing.height)
+        guard let resting = state.restingActivity else { return size(for: state.presentation, expanded: expanded) }
+        return CGSize(width: housing.width + Self.wing(for: resting, ongoing: true) * 2, height: housing.height)
+    }
+
+    /// How far a live activity reaches out beside the notch: just enough for its text, measured in
+    /// the font it's drawn in, between a floor and a ceiling (lower for an ongoing activity). Both
+    /// sides get the same, so the shape stays centered on the camera. A countdown makes room for
+    /// its longest reading.
+    static func wing(for activity: Activity, ongoing: Bool = false, now: Date = .now) -> CGFloat {
+        var text = activity.title
+        var font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        if let countdown = activity.countdown {
+            text = countdown.timeIntervalSince(now) >= 3600 ? "0:00:00" : "00:00"
+            font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
+        }
+        let width = (text as NSString).size(withAttributes: [.font: font]).width.rounded(.up)
+        return min(max(width + wingInset + wingOutset, 40), ongoing ? ongoingWing : activityWing)
     }
 
     /// Gap between the top of the display and the shape: none on a notch, a little above a pill.
@@ -124,13 +141,11 @@ struct NotchMetrics: Equatable {
     /// moves or resizes; only the shape inside it animates.
     var panelFrame: CGRect {
         let largest = [
-            size(for: .hoverArmed), size(for: .transient(Self.sizingActivity)),
+            size(for: .hoverArmed), CGSize(width: housing.width + Self.activityWing * 2, height: housing.height),
             size(for: .expanded(tab: .media), expanded: NotchPreferences.maximumExpandedSize),
         ]
         let width = min(largest.map(\.width).max()! * Self.overshootRoom, screen.width)
         let height = min(largest.map(\.height).max()! * Self.overshootRoom + topInset, screen.height)
         return CGRect(x: centerX - width / 2, y: screen.maxY - height, width: width, height: height)
     }
-
-    private static let sizingActivity = Activity(feature: .media, symbol: "", title: "", duration: .zero)
 }
