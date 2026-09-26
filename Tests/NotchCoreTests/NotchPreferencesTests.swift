@@ -96,6 +96,16 @@ struct NotchPreferencesTests {
         #expect(NotchPreferences(defaults: defaults).notchShortcut == NotchPreferences.defaultNotchShortcut)
     }
 
+    @Test func displaysWithoutANotchGetOneUnlessThePillIsPicked() {
+        let preferences = NotchPreferences(defaults: defaults)
+        #expect(preferences.notchlessStyle(for: "studio-display") == .notch)
+        preferences.setNotchlessStyle(.pill, for: "studio-display")
+        #expect(NotchPreferences(defaults: defaults).notchlessStyle(for: "studio-display") == .pill)
+        #expect(NotchPreferences(defaults: defaults).notchlessStyle(for: "another-display") == .notch)
+        preferences.reset()
+        #expect(NotchPreferences(defaults: defaults).notchlessStyle(for: "studio-display") == .notch)
+    }
+
     @Test func plusAndMinusResizeInProportion() {
         let preferences = NotchPreferences(defaults: defaults)
         var larger: [CGSize] = []
