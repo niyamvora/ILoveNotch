@@ -87,6 +87,10 @@ struct FeatureSnapshotTests {
             ])
         tasks.showsCompleted = true
         try render(tasks.view, name: "tasks")
+        tasks.show(
+            tasks: [TaskItem(id: "6", title: "Stand-up", due: now, hasTime: true, priority: .high)], completed: [],
+            alerting: TaskItem(id: "6", title: "Stand-up", due: now, hasTime: true))
+        try render(tasks.view, name: "tasks-alert")
     }
 
     @Test func eventKitTabsBeforeAccess() throws {

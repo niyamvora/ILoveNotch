@@ -41,6 +41,21 @@ extension TasksFeature {
                 }
             }
             .help("New tasks go to this list, or to your default list when showing all lists.")
+            Toggle("Group by list instead of due date", isOn: $tasks.groupsByList)
+            Toggle(isOn: $tasks.alertsAtDueTime) {
+                Text("Alert at the due time")
+                Text("New tasks with a time get an alert, which Reminders shows on your iPhone, iPad, and Mac.")
+            }
+            Toggle(isOn: $tasks.alertsInNotch) {
+                Text("Show due tasks on the notch")
+                Text("When a task's time comes, the notch shows it with Done and Snooze.")
+            }
+            Picker("Block time for", selection: $tasks.blockMinutes) {
+                ForEach([15, 30, 45, 60, 90], id: \.self) { minutes in
+                    Text("\(minutes) minutes").tag(minutes)
+                }
+            }
+            .help("How long the Calendar event is when you block time for a task.")
         }
         .onAppear {
             tasks.refreshAccess()
