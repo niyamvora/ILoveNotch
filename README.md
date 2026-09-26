@@ -78,7 +78,10 @@ public and buildable whatever happens to the project.
 - **Media.** What's playing in any app, with artwork, controls, a seek bar, and
   a waveform that moves with the music.
 - **Shelf.** Drop files on the notch to keep them at hand; drag them back out,
-  preview them with Quick Look, or send them with AirDrop.
+  preview them with Quick Look, or send them with AirDrop. Android phones
+  share with it too, over Quick Share on your Wi-Fi: send shelf files to a
+  phone, and accept files and links from one right in the notch.
+  [More below](#android).
 - **Clipboard.** Turn on a history of what you copy (text, links, images, and
   files), search it with ⌃⌥V from any app, and copy anything again, with
   favorites that stay. Passwords and anything marked private are skipped.
@@ -170,6 +173,7 @@ hover, clicks, drags, sleep/lock, display changes
 | `NotchSurface` | Fixed click-through `NSPanel` per display, animatable `NotchShape`, `PanelCoordinator` (displays, sleep, lock), notch geometry from **public** APIs (`safeAreaInsets`, `auxiliaryTop*Area`) |
 | `NotchFeatures` | Feature modules (Media, Shelf, Clipboard, Calendar, Tasks, Notes, Shortcuts, Timer, Mirror), each a `NotchFeature` with its views and settings, and the event-driven system monitors and hooks (volume, battery, accessories, volume keys, keyboard shortcuts, Show in Notch) |
 | `NotchUsage` | The GitHub build's developer tabs: AI Usage (provider tiles, rings, pace, spend, and trends, over providers adapted from [OpenUsage](https://github.com/robinebers/openusage) (MIT) in `NotchUsage/OpenUsage`) and Agents (Claude Code and Codex hooks, in `NotchUsage/Agents`) |
+| `NotchTransfer` | The GitHub build's Android sharing: Quick Share on Apple's own frameworks (Bonjour, CryptoKit, Network.framework) in `NotchTransfer/QuickShare`, with the shelf's request card, the send window, and settings |
 | `ThirdParty/` | [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter) (BSD-3-Clause) as a git submodule |
 | `Tests/` | Unit tests (reducer transitions and fuzzing, engine, feature host, preferences, geometry, features), offscreen snapshot tests, XCTest performance tests, and OpenUsage's provider tests on its fixtures (`OpenUsageTests`) |
 
@@ -295,6 +299,60 @@ A message shows for 1 to 30 seconds (4 by default) and is never stored. It's
 only ever displayed: links in it aren't opened, line breaks and control
 characters are removed, and it's cut to 80 characters. Both editions have it,
 the App Store one too.
+
+## Android
+
+The shelf shares with Android phones over Quick Share, Android's own AirDrop,
+on your Wi-Fi. Nothing gets installed on the phone, and nothing goes through
+the internet or a server.
+
+- **From a phone.** On the phone, tap **Share › Quick Share** and pick your
+  Mac. The notch opens on the shelf with the phone's name, what it's sending,
+  and a 4-digit code that matches the phone's. Nothing is saved until you
+  **Accept**. Files go to Downloads (or a folder you choose), each one only once
+  it has arrived whole, and onto the shelf. A link or text goes to the
+  clipboard, and a web link gets **Open**.
+- **To a phone.** Right-click a shelf file and choose **Send to Android…**, or
+  click **Send to Android** under the shelf. A window like AirDrop's lists the
+  phones nearby; pick one and accept on the phone. If the phone isn't listed,
+  scan the window's QR code with its camera: Quick Share opens and the files go
+  straight to it.
+
+Phones can't see your Mac until you say so. **Receive from Android** under the
+shelf makes it visible for 10 minutes, and **Settings › Features › Shelf** has
+**Off** (the default), **While the notch is open** (and for a minute after), or
+**Always**, along with the name phones see and where files go. While the Mac is
+asleep or locked, it's never visible. macOS asks once for Local Network access.
+
+Good to know:
+
+- **Same Wi-Fi only.** Guest, hotel, and office networks that keep devices
+  apart block it, and the speed is your router's.
+- **Phones that don't show up in the list.** Most phones announce themselves on
+  Wi-Fi only after a Bluetooth signal a Mac can't send, and Samsung's never do
+  without it. The QR code works for all of them. Other phones show up while
+  Quick Share's receive screen is open and set to **Everyone**.
+- **Everyone, not Contacts.** Contacts-only sharing needs a Google account, so
+  your Mac appears to anyone nearby while it's visible, and asks you first
+  every time.
+- **Unofficial.** Quick Share isn't an API Google offers for the Mac, so an
+  Android update could change it; the code lives in one module
+  (`NotchTransfer/QuickShare`) to fix quickly. It's in the GitHub build for
+  now.
+
+If the phone doesn't see your Mac, check **Visible** shows under the shelf, that
+both are on the same Wi-Fi, and that ILoveNotch is on in **System Settings ›
+Privacy & Security › Local Network** (and allowed through the firewall, if it
+asked). To see what happens during a transfer:
+
+```bash
+log stream --level debug --predicate 'subsystem == "cafe.opennotch.app" && category == "transfer"'
+```
+
+ILoveNotch's own implementation follows the message definitions in Google's
+open-source Quick Share code ([google/nearby](https://github.com/google/nearby),
+Apache-2.0) and the protocol notes of
+[NearDrop](https://github.com/grishka/NearDrop).
 
 ## Tasks and notes
 
