@@ -6,7 +6,8 @@ ILoveNotch is local-first.
 - The network is used for two things only: the update check against GitHub
   Releases, and the AI Usage providers you turn on (below). With no provider
   on, the AI Usage tab never touches the network.
-- Everything ILoveNotch creates (settings, notes, shelf items) stays on your Mac.
+- Everything ILoveNotch creates (settings, notes, shelf items) stays on your Mac,
+  unless you choose a notes folder that syncs, such as one in iCloud Drive.
 - System permissions (Calendar, Reminders, Camera, and so on) are requested only
   when you enable the feature that needs them. Denying one disables only that
   feature.

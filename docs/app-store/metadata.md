@@ -41,11 +41,14 @@ Drop files on the notch to keep them close, then drag them out, preview them wit
 send them with AirDrop.
 
 CALENDAR AND TASKS
-Today's events at a glance, and your Reminders, so tasks you check off sync to your iPhone.
+Today's events and the tasks due today at a glance, and your Reminders, synced to your iPhone. Add
+a task in plain words, like "Pay rent Friday 9am", group tasks by date or list, block time for
+one in Calendar, and see it on the notch when it's due.
 
 NOTES, SHORTCUTS, AND TIMER
-Quick notes that save as you type, your shortcuts one click away, a timer, and a stopwatch with
-laps.
+Markdown notes that save as you type, with colors, pins, search, and checklists you can tick, in a
+folder of your choice such as iCloud Drive. Your shortcuts one click away, a timer, and a
+stopwatch with laps.
 
 MIRROR
 A quick look at your camera before a call, only while its tab is open.
