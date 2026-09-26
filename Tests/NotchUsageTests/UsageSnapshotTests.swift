@@ -11,8 +11,9 @@ import Testing
 struct UsageSnapshotTests {
     private let defaults = UserDefaults(suiteName: "UsageSnapshots.\(UUID().uuidString)")!
     private let cache = FileManager.default.temporaryDirectory.appending(path: "usage-snap-\(UUID().uuidString).json")
-    /// The content area of the default open notch, and of the largest.
+    /// The content area of the default open notch, the smallest, and the largest.
     private static let size = CGSize(width: 396, height: 192)
+    private static let smallest = CGSize(width: 350, height: 132)
     private static let largest = CGSize(width: 656, height: 382)
 
     private static let now = Date()
@@ -45,11 +46,14 @@ struct UsageSnapshotTests {
             refreshedAt: now.addingTimeInterval(-120))
     }
 
-    private func usage(with snapshots: [ProviderSnapshot]) throws -> UsageFeature {
+    /// A feature with these providers on, and `offered` ones off, in the tray.
+    private func usage(with snapshots: [ProviderSnapshot], offered: [(String, String)] = []) throws -> UsageFeature {
         let cached = Dictionary(uniqueKeysWithValues: snapshots.map { ($0.providerID, $0) })
         try JSONEncoder().encode(cached).write(to: cache)
         defaults.set(snapshots.map(\.providerID), forKey: "usage.enabledProviders")
-        let runtimes = snapshots.map { FakeRuntime(id: $0.providerID, name: $0.displayName, used: 0) }
+        let runtimes = (snapshots.map { ($0.providerID, $0.displayName) } + offered).map {
+            FakeRuntime(id: $0.0, name: $0.1, used: 0)
+        }
         return UsageFeature(defaults: defaults, cacheURL: cache, runtimes: { runtimes })
     }
 
@@ -63,16 +67,26 @@ struct UsageSnapshotTests {
         try await render(UsageView(usage: usage), name: "usage-dashboard")
     }
 
-    @Test func cardsShareTheWidthAndALastShortRowSitsCentered() {
-        let one = CardGrid.frames(count: 1, width: 396, height: 128)
-        #expect(one == [CGRect(x: 0, y: 0, width: 396, height: 128)], "one card spans the row")
-        let two = CardGrid.frames(count: 2, width: 396, height: 128)
+    @Test func cardsShareTheWidthAndShrinkToFitTheNotch() {
+        // The room for cards in the default notch, under the header and over the tray.
+        let room = CGSize(width: 396, height: 136)
+        let one = CardGrid.plan(count: 1, in: room)
+        #expect(one.frames == [CGRect(x: 0, y: 0, width: 396, height: 128)], "one card spans the row")
+        let two = CardGrid.plan(count: 2, in: room).frames
         #expect(two.map(\.width) == [194, 194] && two[1].minX == 202, "two share it")
-        let three = CardGrid.frames(count: 3, width: 396, height: 128)
-        #expect(three[2] == CGRect(x: 101, y: 136, width: 194, height: 128), "the third sits centered below")
-        let four = CardGrid.frames(count: 4, width: 396, height: 128)
-        #expect(four.map(\.origin) == [.zero, CGPoint(x: 202, y: 0), CGPoint(x: 0, y: 136), CGPoint(x: 202, y: 136)])
-        #expect(CardGrid.frames(count: 4, width: 656, height: 128).allSatisfy { $0.minY == 0 }, "wider fits a row")
+        let three = CardGrid.plan(count: 3, in: room)
+        #expect(three.frames.allSatisfy { $0.minY == 0 } && three.card.height == 128, "three fit a row, full height")
+
+        let tall = CardGrid.plan(count: 3, in: CGSize(width: 396, height: 300)).frames
+        #expect(tall[2] == CGRect(x: 101, y: 136, width: 194, height: 128), "with room, the third sits centered below")
+        #expect(CardGrid.plan(count: 4, in: CGSize(width: 656, height: 326)).frames.allSatisfy { $0.minY == 0 })
+
+        // The smallest notch: three cards in a row, as tall as the room, nothing cut off.
+        let smallest = CardGrid.plan(count: 3, in: CGSize(width: 350, height: 76))
+        #expect(!smallest.scrolls && smallest.frames.allSatisfy { $0.maxY <= 76 } && smallest.card.height == 76)
+        let crowded = CardGrid.plan(count: 11, in: CGSize(width: 350, height: 76))
+        #expect(crowded.scrolls && crowded.card.height == CardGrid.minimum.height, "too many to fit scroll")
+        #expect(crowded.card.width >= CardGrid.minimum.width)
     }
 
     @Test(arguments: 1...4)
@@ -83,6 +97,18 @@ struct UsageSnapshotTests {
                 Self.sample(provider.0, provider.1, session: [42, 86, 97, 15][index], weekly: [71, 40, 88, 5][index])
             })
         try await render(UsageView(usage: usage), name: "usage-cards-\(count)", size: CGSize(width: 396, height: 330))
+    }
+
+    @Test func threeCardsFitTheSmallestAndLargestNotch() async throws {
+        let three = [
+            Self.sample("claude", "Claude", session: 42, weekly: 71),
+            Self.sample("codex", "Codex", session: 86, weekly: 40),
+            Self.sample("cursor", "Cursor", session: 97, weekly: 88),
+        ]
+        // The tightest room there is: the smallest notch, with the tray under the cards.
+        let offering = try usage(with: three, offered: [("copilot", "Copilot")])
+        try await render(UsageView(usage: offering), name: "usage-cards-3-smallest", size: Self.smallest)
+        try await render(UsageView(usage: try usage(with: three)), name: "usage-cards-3-largest", size: Self.largest)
     }
 
     @Test func aProviderShowsEveryLimitSpendAndItsTrend() async throws {

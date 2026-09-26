@@ -32,20 +32,22 @@ struct UsageView: View {
         }
     }
 
-    /// The cards, then the tray. Spacing is tight so a row of cards and the tray fit the default size.
+    /// The cards, then the tray. The cards take the room between the two, sized to fit it.
     private func dashboard(now: Date) -> some View {
         VStack(spacing: 6) {
             UsageHeader(usage: usage, now: now)
-            ScrollView {
-                CardGrid {
-                    ForEach(usage.enabledProviders) { provider in
+            GeometryReader { space in
+                let providers = usage.enabledProviders
+                let plan = CardGrid.plan(count: providers.count, in: space.size)
+                let cards = CardGrid(plan: plan) {
+                    ForEach(providers) { provider in
                         Button {
                             selected = provider.id
                         } label: {
                             ProviderTile(
                                 provider: provider, snapshot: usage.snapshots[provider.id],
                                 error: usage.errors[provider.id], refreshing: usage.refreshing.contains(provider.id),
-                                now: now)
+                                size: plan.card, now: now)
                         }
                         .buttonStyle(.plain)
                         .contextMenu {
@@ -53,9 +55,12 @@ struct UsageView: View {
                         }
                     }
                 }
-                .padding(.vertical, 2)
+                if plan.scrolls {
+                    ScrollView { cards }.fadingEdges(length: 6)
+                } else {
+                    cards
+                }
             }
-            .fadingEdges(length: 6)
             if usage.providers.contains(where: { !usage.isEnabled($0.id) }) { ProviderTray(usage: usage) }
         }
         // The same local check onboarding runs, so the tray knows which tools are signed in.
@@ -63,44 +68,66 @@ struct UsageView: View {
     }
 }
 
-/// The providers' cards: as many columns as fit, and every card as wide as its column, so one card
-/// spans the row and two share it. A last row that isn't full sits centered, so a third card sits
-/// under the middle of the first two.
+/// The providers' cards, fitted to the room the notch has. Cards share a row's width, so one card
+/// spans the row and two share it, and a last row that isn't full sits centered. The grid takes
+/// the number of columns that keeps cards closest to full size, and each card shows as much as its
+/// size holds; only when even the shortest cards don't fit does it scroll.
 struct CardGrid: Layout {
-    static let minimumWidth: CGFloat = 158
     static let spacing: CGFloat = 8
+    /// A card with room for everything: its ring, three limits, and when the headline resets.
+    static let full = CGSize(width: 158, height: 128)
+    /// The smallest card: a name, a headline number, and a thin bar.
+    static let minimum = CGSize(width: 80, height: 40)
 
-    /// Where each of `count` cards of `height` goes across `width`.
-    static func frames(count: Int, width: CGFloat, height: CGFloat) -> [CGRect] {
-        guard count > 0 else { return [] }
-        let columns = max(1, min(count, Int((width + spacing) / (minimumWidth + spacing))))
-        let cardWidth = (width - spacing * CGFloat(columns - 1)) / CGFloat(columns)
-        return (0..<count).map { index in
+    struct Plan: Equatable {
+        var frames: [CGRect]
+        var card: CGSize
+        /// The cards need more height than there is, at their smallest.
+        var scrolls: Bool
+    }
+
+    let plan: Plan
+
+    /// Where each of `count` cards goes in `space`.
+    static func plan(count: Int, in space: CGSize) -> Plan {
+        guard count > 0 else { return Plan(frames: [], card: .zero, scrolls: false) }
+        func rows(_ columns: Int) -> Int { (count + columns - 1) / columns }
+        func card(columns: Int) -> CGSize {
+            let rowCount = CGFloat(rows(columns))
+            return CGSize(
+                width: (space.width - spacing * CGFloat(columns - 1)) / CGFloat(columns),
+                height: min(full.height, (space.height - spacing * (rowCount - 1)) / rowCount))
+        }
+        /// How near a card comes to a full one, by its tighter side.
+        func fit(_ columns: Int) -> CGFloat {
+            let size = card(columns: columns)
+            return min(size.width / full.width, size.height / full.height)
+        }
+        // The best fit; between equals, fewer rows, then wider cards.
+        let usable = (1...count).filter { $0 == 1 || card(columns: $0).width >= minimum.width }
+        let columns = usable.max { (fit($0), -rows($0), -$0) < (fit($1), -rows($1), -$1) } ?? 1
+        var size = card(columns: columns)
+        let scrolls = size.height < minimum.height
+        if scrolls { size.height = minimum.height }
+        let frames = (0..<count).map { index in
             let row = index / columns
             let inRow = min(columns, count - row * columns)
-            let rowWidth = cardWidth * CGFloat(inRow) + spacing * CGFloat(inRow - 1)
-            let x = (width - rowWidth) / 2 + CGFloat(index % columns) * (cardWidth + spacing)
-            return CGRect(x: x, y: CGFloat(row) * (height + spacing), width: cardWidth, height: height)
+            let rowWidth = size.width * CGFloat(inRow) + spacing * CGFloat(inRow - 1)
+            let x = (space.width - rowWidth) / 2 + CGFloat(index % columns) * (size.width + spacing)
+            return CGRect(x: x, y: CGFloat(row) * (size.height + spacing), width: size.width, height: size.height)
         }
+        return Plan(frames: frames, card: size, scrolls: scrolls)
     }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let width = proposal.width ?? Self.minimumWidth
-        let frames = Self.frames(count: subviews.count, width: width, height: cardHeight(subviews))
-        return CGSize(width: width, height: frames.last?.maxY ?? 0)
+        CGSize(width: proposal.width ?? plan.frames.map(\.maxX).max() ?? 0, height: plan.frames.last?.maxY ?? 0)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let frames = Self.frames(count: subviews.count, width: bounds.width, height: cardHeight(subviews))
-        for (subview, frame) in zip(subviews, frames) {
+        for (subview, frame) in zip(subviews, plan.frames) {
             let origin = CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY)
             subview.place(at: origin, proposal: ProposedViewSize(frame.size))
         }
-    }
-
-    /// Cards have one fixed height; the tallest is asked, in case one ever differs.
-    private func cardHeight(_ subviews: Subviews) -> CGFloat {
-        subviews.map { $0.sizeThatFits(ProposedViewSize(width: Self.minimumWidth, height: nil)).height }.max() ?? 0
     }
 }
 
@@ -140,50 +167,42 @@ private struct UsageHeader: View {
     }
 }
 
-/// One provider at a glance: its headline limit as a ring, up to three limits as bars, and when the
-/// headline resets.
+/// One provider at a glance, showing as much as its card holds: its headline limit as a ring beside
+/// up to three limits as bars, then when the headline resets. Smaller, the ring goes, then limits one
+/// by one, then the reset line, down to the name, the headline number, and a thin bar.
 private struct ProviderTile: View {
-    /// ponytail: fixed so the tiles in a row line up. Fonts are fixed-size, so the header, three bars
-    /// and the footer always fit; showing a fourth bar needs a taller tile.
-    static let height: CGFloat = 128
-
     let provider: UsageProvider
     let snapshot: ProviderSnapshot?
     let error: String?
     let refreshing: Bool
+    /// The card's size in the grid.
+    let size: CGSize
     let now: Date
 
     var body: some View {
         let style = ProviderStyle.of(provider.id)
-        let meters = snapshot?.meters ?? []
-        VStack(alignment: .leading, spacing: 7) {
-            HStack(spacing: 6) {
-                ProviderLogo(providerID: provider.id, name: provider.name, size: 13)
-                    .foregroundStyle(style.end)
-                Text(provider.name)
-                    .font(.system(size: 12, weight: .semibold))
-                    .lineLimit(1)
-                if let plan = snapshot?.plan, !plan.isEmpty { PlanPill(plan: plan, style: style) }
-                Spacer(minLength: 0)
-                status
-            }
-            if let headline = meters.first {
-                HStack(spacing: 10) {
-                    UsageRing(meter: headline, style: style, size: 56)
+        Group {
+            if let headline = snapshot?.meters.first {
+                ViewThatFits(in: .vertical) {
+                    if size.width >= CardGrid.full.width { withRing(headline, style: style) }
+                    bars(3, headline: headline, style: style)
+                    bars(2, headline: headline, style: style)
+                    bars(1, headline: headline, style: style)
+                    bars(1, headline: headline, style: style, footer: false)
                     VStack(alignment: .leading, spacing: 5) {
-                        ForEach(meters.prefix(3)) { meter in miniMeter(meter, style: style) }
+                        header(style, value: headline.headline)
+                        MeterBar(meter: headline, style: style, height: 3)
                     }
                 }
-                Spacer(minLength: 0)
-                footer(headline)
             } else {
-                placeholder(style: style)
-                Spacer(minLength: 0)
+                VStack(alignment: .leading, spacing: 7) {
+                    header(style)
+                    placeholder(style: style)
+                }
             }
         }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)  // as wide as the grid makes it
-        .frame(height: Self.height, alignment: .top)
+        .padding(size.height < CardGrid.full.height ? 8 : 10)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)  // the grid's size
         .background {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(
@@ -197,6 +216,65 @@ private struct ProviderTile: View {
         .accessibilityHint("Shows every limit")
     }
 
+    /// The ring beside three limits, then the reset line: a card with room for everything.
+    private func withRing(_ headline: Meter, style: ProviderStyle) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 7) {
+                header(style)
+                HStack(spacing: 10) {
+                    UsageRing(meter: headline, style: style, size: 56)
+                    limits(3, style: style)
+                }
+            }
+            .frame(maxHeight: .infinity, alignment: .top)
+            footer(headline).padding(.top, 4)
+        }
+    }
+
+    /// `count` limits as bars under the name, and the reset line at the bottom.
+    private func bars(_ count: Int, headline: Meter, style: ProviderStyle, footer: Bool = true) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 5) {
+                header(style)
+                limits(count, style: style)
+            }
+            .frame(maxHeight: .infinity, alignment: .top)
+            if footer { self.footer(headline).padding(.top, 4) }
+        }
+    }
+
+    private func limits(_ count: Int, style: ProviderStyle) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            ForEach((snapshot?.meters ?? []).prefix(count)) { meter in miniMeter(meter, style: style) }
+        }
+    }
+
+    /// The logo and name, and the plan when there's room for it. `value`, when given, is the
+    /// headline number, for a card too small for anything else.
+    private func header(_ style: ProviderStyle, value: String? = nil) -> some View {
+        HStack(spacing: 6) {
+            ProviderLogo(providerID: provider.id, name: provider.name, size: 13)
+                .foregroundStyle(style.end)
+            let name = Text(provider.name).font(.system(size: 12, weight: .semibold)).lineLimit(1)
+            if let plan = snapshot?.plan, !plan.isEmpty {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 6) {
+                        name
+                        PlanPill(plan: plan, style: style)
+                    }
+                    name
+                }
+            } else {
+                name
+            }
+            Spacer(minLength: 0)
+            if let value {
+                Text(value).font(.system(size: 12, weight: .bold, design: .rounded)).monospacedDigit()
+            }
+            status
+        }
+    }
+
     @ViewBuilder private var status: some View {
         if refreshing {
             ProgressView().controlSize(.mini)
@@ -208,8 +286,16 @@ private struct ProviderTile: View {
         }
     }
 
-    /// When the headline limit resets, and whether it will last until then, on one line.
+    /// When the headline limit resets, and whether it will last until then, on one line. Narrow, the
+    /// pace is a dot, with its words in the tooltip.
     private func footer(_ headline: Meter) -> some View {
+        ViewThatFits(in: .horizontal) {
+            footerLine(headline, paceWords: true)
+            footerLine(headline, paceWords: false)
+        }
+    }
+
+    private func footerLine(_ headline: Meter, paceWords: Bool) -> some View {
         let left = headline.resetsAt.flatMap { Formatters.compactDuration($0.timeIntervalSince(now)) }
         return HStack(spacing: 6) {
             if let left {
@@ -222,7 +308,7 @@ private struct ProviderTile: View {
                 .accessibilityLabel("Resets in \(left)")
             }
             Spacer(minLength: 0)
-            PaceBadge(meter: headline, now: now)
+            PaceBadge(meter: headline, now: now, showsWords: paceWords)
         }
         .font(.system(size: 10))
         .foregroundStyle(.white.opacity(0.55))
