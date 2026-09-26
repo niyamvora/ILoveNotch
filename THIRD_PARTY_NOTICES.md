@@ -222,6 +222,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+## Quick Share protocol definitions (Apache-2.0)
+
+https://github.com/google/nearby and https://github.com/google/ukey2
+Copyright 2020–2023 Google LLC
+
+The messages in `Sources/NotchTransfer/QuickShare` (`Frames.swift` and
+`Crypto.swift`) follow the field numbers and values of Nearby Connections'
+`offline_wire_formats.proto`, Quick Share's `wire_format.proto`, and UKEY2's
+`ukey.proto`, `securemessage.proto`, and `securegcm.proto`, so ILoveNotch can
+talk to Android phones. No Google code is included: ILoveNotch encodes these
+messages itself.
+
+```text
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
+
 <!-- Entry format:
 ## Name (License)
 https://github.com/owner/repo

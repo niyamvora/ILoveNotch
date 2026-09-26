@@ -17,6 +17,11 @@ candidate; the rest are manual passes still to run before a public release.
 - [x] Media parsing, the fallback without the helper, the spectrum analyzer, system activities,
   shelf persistence, EventKit mapping, notes, shortcuts, and timers
 - [x] Snapshots of every state and tab render
+- [x] Quick Share: protobuf encoding against protobuf's own examples, frames and records round-trip,
+  the UKEY2 key schedule and 4-digit code against an independent implementation, tampered, replayed,
+  and off-curve messages refused, hostile file names, and this Mac sending to itself over loopback
+  (1 file, 101 files, 200 MB byte-for-byte with flat memory, declines, cancels from either side, a
+  stalled handshake, split and oversized frames) (`NotchTransferTests`)
 
 ## Performance
 
@@ -62,6 +67,23 @@ still to be set.
 - [ ] Notes in an iCloud Drive folder: edits reach the iPhone's Files app, and a file named there keeps its name
 - [ ] Control-Option-N starts a note from another app and hands the keyboard back when the notch closes
 - [ ] Light and dark mode, Increase Contrast, Reduce Motion, Reduce Transparency, VoiceOver, keyboard-only use
+
+### Android (Quick Share), with a real phone on the same Wi-Fi
+
+Stream `log stream --level debug --predicate 'subsystem == "cafe.opennotch.app" && category == "transfer"'`
+while testing, and keep the log of anything that fails.
+
+- [ ] Phone to Mac, 1 photo: the codes match, it arrives, and it's on the shelf
+- [ ] Phone to Mac, a 1–2 GB video: speed limited by the Wi-Fi, the Mac's memory stays flat
+- [ ] Phone to Mac, 100 photos: all arrive, one progress bar
+- [ ] Phone to Mac, a link and some text: both on the clipboard, Open for the link
+- [ ] Mac to phone, 1 file and many files, from the list and from the QR code
+- [ ] Decline on each side: a clear message, no leftover files
+- [ ] Cancel partway on each side: partial files deleted
+- [ ] The phone set to Contacts or Your devices: the QR code still works
+- [ ] 2.4 GHz and 5 GHz Wi-Fi: note the speeds
+- [ ] Mac asleep, lid closed, locked: nothing announced, and visible again after waking
+- [ ] Local Network access denied: the shelf and Settings say so and open the right pane
 
 ## Operating systems
 

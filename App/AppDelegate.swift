@@ -6,6 +6,7 @@ import NotchSurface
 import SwiftUI
 
 #if !APP_STORE
+    import NotchTransfer
     import NotchUsage
 #endif
 
@@ -13,12 +14,14 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate {
     #if APP_STORE
         // The App Sandbox can't read other tools' sign-ins or add hooks to their settings, so the App
-        // Store edition has no AI Usage or Agents.
+        // Store edition has no AI Usage or Agents. Sharing with Android ships in the GitHub build first.
         private let preferences = NotchPreferences(unavailable: [.usage, .agents])
     #else
         private let preferences = NotchPreferences()
         private let usage = UsageFeature()
         private let agents = AgentsFeature()
+        /// Quick Share with Android phones, part of the shelf.
+        private let transfer = TransferFeature()
     #endif
     private let media = MediaFeature()
     private let shelf = ShelfFeature()
@@ -83,7 +86,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func tabView(for feature: FeatureID) -> AnyView {
         switch feature {
         case .media: return AnyView(media.view)
-        case .shelf: return AnyView(shelf.view)
+        case .shelf:
+            #if APP_STORE
+                return AnyView(shelf.view)
+            #else
+                return AnyView(transfer.shelfView(AnyView(shelf.view)))
+            #endif
         case .clipboard: return AnyView(clipboard.view)
         case .calendar: return AnyView(calendar.view)
         case .tasks: return AnyView(tasks.view)
@@ -109,7 +117,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func settingsView(for feature: FeatureID) -> AnyView? {
         switch feature {
         case .media: return AnyView(media.settingsView)
-        case .shelf: return AnyView(shelf.settingsView)
+        case .shelf:
+            #if APP_STORE
+                return AnyView(shelf.settingsView)
+            #else
+                return AnyView(
+                    Group {
+                        shelf.settingsView
+                        transfer.settingsView
+                    })
+            #endif
         case .clipboard: return AnyView(clipboard.settingsView)
         case .calendar: return AnyView(calendar.settingsView)
         case .tasks: return AnyView(tasks.settingsView)
@@ -141,6 +158,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         coordinator.onPresentationsChange = { [weak self] presentations in
             guard let self else { return }
             features.update(presentations: presentations, enabled: Set(preferences.tabs))
+            #if !APP_STORE
+                transfer.notchChanged(presentations, shelfEnabled: preferences.isEnabled(.shelf))
+            #endif
             if !presentations.contains(where: { $0.openTab != nil }) { escapeKey.shortcut = nil }
         }
         notchKey.onPress = { [weak self, weak coordinator] in
@@ -172,6 +192,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             usage.openSettings = { [weak self] in self?.settings.show(.usage) }
             agents.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
             agents.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .agents) }
+            shelf.sendToAndroid = { [transfer] in transfer.send($0) }
+            shelf.androidControl = AnyView(transfer.receiveControl)
+            transfer.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
+            transfer.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .shelf) }
+            transfer.onReceived = { [shelf] in shelf.add($0) }
+            // A phone asking to send opens the notch on the shelf, where its request is.
+            transfer.onRequest = { [weak coordinator] in coordinator?.open(.shelf) }
         #endif
         volumeKeys.onKey = { [volume] key, fine in
             switch key {
@@ -226,6 +253,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         // Stops every feature, including the media helper process and the camera.
         features.update(presentations: [], enabled: [])
+        #if !APP_STORE
+            transfer.stop()
+        #endif
         timer.allowSleep()
         volume.stop()
         battery.stop()

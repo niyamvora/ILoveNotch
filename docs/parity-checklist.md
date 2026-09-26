@@ -107,6 +107,19 @@ that delivers it.
 - [x] Skips what the copying app marks secret or temporary and copies from password managers; guides the user to "Paste from Other Apps" when macOS would ask each time
 - [x] Notch on every display: a display without a notch gets one drawn inside its menu bar, as tall as the bar and as wide as the Mac's own notch (or a MacBook's); Settings › General picks Notch or Pill per display
 
+## Android sharing ([plan](filesharing.md))
+
+- [x] Phone to Mac with Quick Share: the notch opens on the shelf with the phone, what it's sending, and the code both screens show; nothing is saved until Accept
+- [x] Received files stream to Downloads (or a chosen folder) in 512 KB chunks, take a clean, numbered name only once whole, join the shelf, and are marked as downloaded
+- [x] Text and links go to the clipboard, and web links get Open
+- [x] Mac to phone from the shelf: a send window lists phones nearby while it's open, with the code, the phone's answer, and progress
+- [x] A QR code in the send window, for phones that won't appear otherwise (Samsung's among them); the files go straight to the phone that scans it
+- [x] Cancel from either side, a decline, or a phone that doesn't answer in 60 seconds ends cleanly, with no partial files left
+- [x] Visible only when chosen: 10 minutes from the shelf, while the notch is open (and a minute after), or always; never while asleep or locked
+- [x] A clear message and a fix when macOS denies local network access
+- [ ] Verified with a real phone (S25 Ultra): each of the [manual checks](qa.md#hardware-checks)
+- [ ] The App Store edition (after the GitHub build ships it)
+
 ## Later
 
 - [ ] Brightness display (blocked: Apple silicon has no public API to read or set brightness)

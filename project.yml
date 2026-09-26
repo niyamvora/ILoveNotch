@@ -68,6 +68,8 @@ targets:
         product: NotchFeatures
       - package: OpenNotchKit
         product: NotchUsage
+      - package: OpenNotchKit
+        product: NotchTransfer
       - package: Sparkle
       # Embedded, never linked: the framework is loaded by the perl helper process, not by OpenNotch.
       - target: MediaRemoteAdapter
