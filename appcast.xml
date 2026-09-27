@@ -3,6 +3,41 @@
     <channel>
         <title>ILoveNotch</title>
         <item>
+            <title>1.1.0</title>
+            <pubDate>Sun, 27 Sep 2026 19:26:54 +0530</pubDate>
+            <sparkle:version>122</sparkle:version>
+            <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.6</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[ILoveNotch 1.1 shares with Android phones, opens in Liquid Glass, remembers what you copy, and puts a notch on every display.
+
+### New
+
+- **Quick Share with Android.** Send shelf files to an Android phone, and accept files and links from one right in the notch, over your Wi-Fi. Receiving stays off until you turn it on.
+- **Liquid Glass.** On macOS 26, the open notch can be glass instead of black: Settings › General › Theme.
+- **A notch on every display.** Displays without a notch get one drawn inside the menu bar, or a floating pill.
+- **Open it from any app.** Press ⌃⌥O; press it again or Escape to close.
+- **Clipboard history.** Search what you've copied (text, links, images, and files) with ⌃⌥V, and keep favorites. It's off until you turn it on, and it skips passwords and anything marked private.
+- **Agent status.** The notch tells you when Claude Code or Codex needs your approval or finishes, and the new Agents tab takes you back to its terminal.
+- **Join calls.** A Join button for Zoom, Google Meet, Teams, Webex, and FaceTime, with a countdown in the closed notch for the five minutes before a call starts.
+- **Keep Awake.** Keep your Mac from sleeping for a while, or until you turn it off, from the Timer tab.
+- **Show in Notch.** Put your own message in the notch from a Shortcuts action or an `ilovenotch://show` link.
+- **Tasks, Calendar, and Notes, rebuilt.** Add reminders and events in plain words ("Lunch tomorrow 1pm"), group tasks by date or list, see today's tasks next to your events, and edit or delete events in place. Notes are Markdown files named after their first line, and they can live anywhere, iCloud Drive included.
+
+### Improved
+
+- A timer, Keep Awake, or an upcoming call stays in the closed notch until it ends, with its icon and text side by side.
+- The open notch can shrink to 414 × 200, and every tab still fits.
+- Notes search tucks into its icon, and the color swatches unfold from the color dot.
+- AI Usage cards fit any notch size.
+
+### Fixed
+
+- Renaming a task now takes your typing.
+- A Quick Share transfer the other side cancels now says "Cancelled", not "Lost the connection".
+]]></description>
+            <enclosure url="https://github.com/niyamvora/ILoveNotch/releases/download/v1.1.0/ILoveNotch-1.1.0.dmg" length="6265134" type="application/octet-stream" sparkle:edSignature="L/7NfPBKPpOdlTO/VeR1WIIWgXSymnuUEiGX11Qu0u+8Q0h0lxRw9cVsMZjipZ3FLdloiwU67UNwFoF8Z30SBw=="/>
+        </item>
+        <item>
             <title>1.0.0</title>
             <pubDate>Fri, 25 Sep 2026 05:50:13 +0530</pubDate>
             <sparkle:version>88</sparkle:version>
