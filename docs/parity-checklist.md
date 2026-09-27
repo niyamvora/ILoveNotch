@@ -128,6 +128,17 @@ that delivers it.
 - [x] GitHub build only (the App Store edition keeps the waveform)
 - [ ] Checked by ear on a MacBook: each of the [hardware checks](qa.md#hardware-checks)
 
+## Network tab (NetSpeed, absorbed)
+
+- [x] The download speed as it happens, the upload's under it, over a graph of the last minute (NetSpeed's menu bar item and sparkline)
+- [x] Downloaded and uploaded over the last 24 hours, 7 days, 30 days, or 12 months, as bars by the hour, day, or month, with the range's totals; pointing at a bar shows its time and numbers (NetSpeed's dashboard)
+- [x] The closed notch shows the speed while a transfer runs (1 MB/s for 4 s, until under 250 KB/s for 5 s), and "Downloaded 1.2 GB" when one of 50 MB or more ends; always or never in Settings; hovering it opens the tab; it stays under other live activities
+- [x] Physical interfaces only (Wi-Fi, Ethernet, iPhone tethering), each counted on its own, so one that restarts or appears never counts as a spike
+- [x] One row per local hour in SQLite; what moves while locked or asleep is shared among those hours; NetSpeed's minute rows come in by the hour, once, into an empty history
+- [x] Readings every second only while a speed shows, every 3 s while the closed notch waits for a transfer, else hourly; stopped with the notch and when the tab is off
+- [x] Both editions (the counters and SQLite work in the App Sandbox)
+- [ ] Checked on a MacBook: each of the [hardware checks](qa.md#hardware-checks)
+
 ## Android sharing ([plan](filesharing.md))
 
 - [x] Phone to Mac with Quick Share: the notch opens on the shelf with the phone, what it's sending, and the code both screens show; nothing is saved until Accept

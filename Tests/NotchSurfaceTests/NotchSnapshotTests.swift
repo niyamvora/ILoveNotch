@@ -27,6 +27,10 @@ private let meeting = Activity(
 private let copied = Activity(
     feature: .clipboard, symbol: "doc.on.clipboard.fill", title: "Copied", duration: .seconds(2))
 private let waiting = Activity(feature: .agents, symbol: "hand.raised.fill", title: "2 waiting", duration: .zero)
+private let downloading = Activity(
+    feature: .network, symbol: "arrow.down.circle.fill", title: "24 MB/s", duration: .zero)
+private let downloaded = Activity(
+    feature: .network, symbol: "checkmark.circle.fill", title: "Downloaded 1.2 GB", duration: .seconds(3))
 
 private let snapshotCases: [(name: String, metrics: NotchMetrics, events: [NotchEvent])] = [
     ("compact", notched, [.show]),
@@ -37,6 +41,9 @@ private let snapshotCases: [(name: String, metrics: NotchMetrics, events: [Notch
     ("ongoing", notched, [.show, .setOngoing(meeting)]),
     ("ongoing-words", notched, [.show, .setOngoing(waiting)]),
     ("ongoing-hover", notched, [.show, .setOngoing(waiting), .pointerEntered]),
+    ("ongoing-speed", notched, [.show, .setOngoing(downloading)]),
+    ("downloaded", notched, [.show, .activity(downloaded)]),
+    ("pill-speed", notchless, [.show, .setOngoing(downloading)]),
     ("pill-activity", notchless, [.show, .activity(copied)]),
     ("pill-ongoing", notchless, [.show, .setOngoing(meeting)]),
     ("expanded-media", notched, [.show, .clicked]),

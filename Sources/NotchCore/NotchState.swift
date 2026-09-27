@@ -3,7 +3,7 @@ import Foundation
 
 /// A feature that can own the expanded notch.
 public enum FeatureID: String, CaseIterable, Hashable, Sendable {
-    case media, sound, shelf, clipboard, calendar, tasks, notes, shortcuts, timer, mirror, usage, agents
+    case media, sound, shelf, clipboard, calendar, tasks, notes, shortcuts, timer, network, mirror, usage, agents
 
     /// SF Symbol for tabs and settings.
     public var symbol: String {
@@ -17,6 +17,7 @@ public enum FeatureID: String, CaseIterable, Hashable, Sendable {
         case .notes: "note.text"
         case .shortcuts: "square.stack.3d.up"
         case .timer: "timer"
+        case .network: "arrow.up.arrow.down.circle"
         case .mirror: "web.camera"
         case .usage: "gauge.with.dots.needle.67percent"
         case .agents: "terminal"
@@ -34,6 +35,7 @@ public enum FeatureID: String, CaseIterable, Hashable, Sendable {
         case .notes: "Notes"
         case .shortcuts: "Shortcuts"
         case .timer: "Timer"
+        case .network: "Network"
         case .mirror: "Mirror"
         case .usage: "AI Usage"
         case .agents: "Agents"

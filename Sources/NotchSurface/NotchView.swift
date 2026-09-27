@@ -104,7 +104,9 @@ struct NotchView: View {
         // An ongoing activity's tab reaches out on the right while the rest stays over the camera.
         .offset(x: metrics.offset(for: engine.state))
         .animation(motion(for: presentation), value: presentation)
-        .animation(activityMotion, value: resting)
+        // Only an ongoing activity coming, going, or changing kind animates. A title updating in place,
+        // like a speed every second, redraws once instead of running a spring each time.
+        .animation(activityMotion, value: resting.map { [$0.feature?.rawValue, $0.symbol] })
         .animation(reduceMotion ? nil : .spring(response: 0.26, dampingFraction: 0.8), value: dropTargeted)
         // Closing ends editing, so the notch opens on a tab next time.
         .onChange(of: presentation.openTab == nil) { _, closed in
@@ -489,6 +491,7 @@ struct NotchView: View {
                 }
             }
             .font(.system(size: 12, weight: .medium))
+            .monospacedDigit()  // numbers that change in place keep their width
             .lineLimit(1)
         }
     }

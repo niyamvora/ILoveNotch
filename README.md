@@ -106,6 +106,10 @@ public and buildable whatever happens to the project.
   Control-Option-N shortcut; your shortcuts one click away; a timer and a
   stopwatch with laps; and Keep Awake, which stops your Mac sleeping for a
   while or until you turn it off, with the time left in the closed notch.
+- **Network.** Your download and upload speed as it happens, over a graph of
+  the last minute, and how much you've downloaded and uploaded by the hour,
+  day, or month. The closed notch shows the speed while a download runs, and
+  what it downloaded when it's done. [More below](#network).
 - **Mirror.** Your camera, off until you turn it on, and on only while its tab
   is open.
 - **AI Usage.** How much of each AI coding plan you've used, as a card per tool,
@@ -150,9 +154,13 @@ Measured over a real 20-hour workday on an Apple M5 Pro MacBook (24 GB, macOS
 
 1. **No polling timers.** State changes come from events (hover, clicks, system
    notifications). The only timers are one-shot deadlines, like the hover dwell,
-   cancelled the moment they stop mattering. Idle app = idle CPU. The one
-   exception is clipboard history, since macOS has no "clipboard changed"
-   event: off until you turn it on, it then reads a counter twice a second.
+   cancelled the moment they stop mattering. Idle app = idle CPU. The two
+   exceptions are clipboard history, since macOS has no "clipboard changed"
+   event: off until you turn it on, it then reads a counter twice a second;
+   and the Network tab, since bytes moving raise no event either: it reads the
+   network's byte counters every second only while a speed is on screen, every
+   3 seconds while the closed notch waits for a download, and otherwise once an
+   hour ([Network](#network)).
 2. **Accessory app.** No Dock icon (`LSUIElement`), one small menu bar item for
    Settings and Quit, and the notch never steals focus (`nonactivatingPanel`).
 3. **Lazy features.** Each feature module is `stopped`, `background` (cheap
@@ -178,7 +186,7 @@ hover, clicks, drags, sleep/lock, display changes
 | `App/` | App target generated from `project.yml`: wires features in, menu bar item, Settings |
 | `NotchCore` | State machine, `NotchEngine`, `FeatureHost` lifecycle, preferences, typed logging and signposts. No AppKit. |
 | `NotchSurface` | Fixed click-through `NSPanel` per display, animatable `NotchShape`, `PanelCoordinator` (displays, sleep, lock), notch geometry from **public** APIs (`safeAreaInsets`, `auxiliaryTop*Area`) |
-| `NotchFeatures` | Feature modules (Media, Shelf, Clipboard, Calendar, Tasks, Notes, Shortcuts, Timer, Mirror), each a `NotchFeature` with its views and settings, and the event-driven system monitors and hooks (volume, battery, accessories, volume keys, keyboard shortcuts, Show in Notch) |
+| `NotchFeatures` | Feature modules (Media, Shelf, Clipboard, Calendar, Tasks, Notes, Shortcuts, Timer, Network, Mirror), each a `NotchFeature` with its views and settings, and the event-driven system monitors and hooks (volume, battery, accessories, volume keys, keyboard shortcuts, Show in Notch) |
 | `NotchUsage` | The GitHub build's developer tabs: AI Usage (provider tiles, rings, pace, spend, and trends, over providers adapted from [OpenUsage](https://github.com/robinebers/openusage) (MIT) in `NotchUsage/OpenUsage`) and Agents (Claude Code and Codex hooks, in `NotchUsage/Agents`) |
 | `NotchTransfer` | The GitHub build's Android sharing: Quick Share on Apple's own frameworks (Bonjour, CryptoKit, Network.framework) in `NotchTransfer/QuickShare`, with the shelf's request card, the send window, and settings |
 | `NotchMixer` | The GitHub build's Sound tab: output and input devices and their volume, and per-app volume on Core Audio process taps (macOS 14.2+), with a private aggregate device for each app turned down while it plays |
@@ -270,6 +278,39 @@ waveform already asks for, and no audio driver. An app you turn down plays
 through ILoveNotch only while it plays, so its sound gains about 10 ms on the
 way to your speakers, and a muted app is silenced at its source with no audio
 work at all. With every app at 100% and the tab closed, nothing listens.
+
+## Network
+
+The Network tab is [NetSpeed](https://github.com/niyamvora/NetSpeed), a menu
+bar app, moved into the notch. On its left is your download speed as it
+happens, with the upload's under it, over a glowing graph of the last minute. On
+its right is what you've downloaded, uploaded, and both together in the last 24
+hours, 7 days, 30 days, or 12 months, over bars by the hour, day, or month; point
+at a bar for its own three numbers.
+
+The closed notch shows the speed beside the camera while a download or upload
+runs at 1 MB/s or more for a few seconds, and when a big one finishes it says
+how much it moved. Hover the speed to open the tab. **Show speed in the menu
+bar**, in Settings › Features › Network, picks Always (like NetSpeed's menu bar
+item), While Downloading, or Never. It stays under any other live activity, such
+as a meeting's countdown.
+
+It counts the bytes your Mac's own network interfaces report (Wi-Fi, Ethernet,
+and iPhone tethering, leaving out VPN tunnels, which would count them twice),
+the way NetSpeed did, and needs no permission. The history keeps one row per
+hour on this Mac, about 250 KB a year, and the first time the tab runs it brings
+in NetSpeed's history. What moves while the Mac is locked or its display sleeps
+still counts, shared among those hours.
+
+There's no event for bytes moving, so it reads the counters, 40 µs each time:
+every second while a speed is on screen, every 3 seconds while the closed notch
+waits for a transfer, and otherwise once an hour for the history. Measured with
+the kernel's own counters, waiting costs about 8 ms of CPU a minute (0.013% of
+one core), where NetSpeed averaged 146 ms a minute redrawing the menu bar every
+second; showing a download's speed on the closed notch costs about 0.3% of one
+core, and the open tab about 0.6%. The numbers change without rolling: rolled,
+they kept the open tab busy at 12–51% of a core. It adds about half a megabyte
+of memory.
 
 ## AI usage
 
