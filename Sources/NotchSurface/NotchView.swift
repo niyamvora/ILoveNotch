@@ -36,6 +36,8 @@ struct NotchView: View {
     let metrics: NotchMetrics
     let preferences: NotchPreferences
     let content: NotchContent
+    /// Editing the tab row, in place of the open tab (`TabEditor`).
+    @State var editing = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -45,6 +47,8 @@ struct NotchView: View {
     @State private var slideForward = true
     /// The open size when a resize drag began, while one is under way.
     @State private var resizeStart: CGSize?
+    /// Editing pinned the notch, so Done unpins it again.
+    @State private var pinnedToEdit = false
     @Namespace private var selection
 
     var body: some View {
@@ -102,6 +106,13 @@ struct NotchView: View {
         .animation(motion(for: presentation), value: presentation)
         .animation(activityMotion, value: resting)
         .animation(reduceMotion ? nil : .spring(response: 0.26, dampingFraction: 0.8), value: dropTargeted)
+        // Closing ends editing, so the notch opens on a tab next time.
+        .onChange(of: presentation.openTab == nil) { _, closed in
+            if closed {
+                editing = false
+                pinnedToEdit = false
+            }
+        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("ILoveNotch")
         .accessibilityAction(named: presentation.openTab == nil ? "Open" : "Close") {
@@ -242,22 +253,31 @@ struct NotchView: View {
     }
 
     private func expanded(tab: FeatureID, pinned: Bool) -> some View {
-        VStack(spacing: 8) {
-            HStack(spacing: Self.tabSpacing) {
-                tabBar(selected: tab)
-                Spacer(minLength: 0)
-                headerButton(pinned ? "pin.fill" : "pin", label: pinned ? "Unpin" : "Pin", lit: pinned) {
-                    engine.send(.togglePin)
+        Group {
+            if editing {
+                TabEditor(preferences: preferences, room: tabRoom, done: finishEditing)
+                    .transition(.opacity)
+            } else {
+                VStack(spacing: 8) {
+                    HStack(spacing: Self.tabSpacing) {
+                        tabBar(selected: tab)
+                        headerButton("square.grid.2x2", label: "Edit Tabs", dim: true, action: startEditing)
+                        Spacer(minLength: 0)
+                        headerButton(pinned ? "pin.fill" : "pin", label: pinned ? "Unpin" : "Pin", lit: pinned) {
+                            engine.send(.togglePin)
+                        }
+                        headerButton("gearshape", label: "Settings") { content.openSettings() }
+                    }
+                    content.tab(tab)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        // Overlay scroll bars would sit on top of charts and lists; faded edges show there's more.
+                        .scrollIndicators(.never)
+                        .id(tab)
+                        .transition(tabTransition)
+                        .animation(reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.74), value: tab)
                 }
-                headerButton("gearshape", label: "Settings") { content.openSettings() }
+                .transition(.opacity)
             }
-            content.tab(tab)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                // Overlay scroll bars would sit on top of charts and lists; faded edges show there's more.
-                .scrollIndicators(.never)
-                .id(tab)
-                .transition(tabTransition)
-                .animation(reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.74), value: tab)
         }
         .padding(contentPadding)
         .overlay(alignment: .bottomTrailing) {
@@ -280,23 +300,41 @@ struct NotchView: View {
         return EdgeInsets(top: (metrics.notch?.height ?? 0) + 10, leading: side, bottom: 22, trailing: side)
     }
 
-    private static let tabSpacing: CGFloat = 2
+    static let tabSpacing: CGFloat = 2
     private static let headerButtonWidth: CGFloat = 26
 
-    /// The widest tab that still fits every tab, the pin, and settings into the smallest open size,
-    /// up to 32 pt. Tabs keep that width at every size, and each tab added makes them a little
-    /// narrower instead of crowding the row.
-    private var tabWidth: CGFloat {
-        let room =
-            NotchPreferences.minimumExpandedSize.width - contentPadding.leading - contentPadding.trailing
-            - 2 * (Self.headerButtonWidth + Self.tabSpacing)
-        let count = CGFloat(max(engine.state.tabs.count, 1))
-        return min(32, ((room - Self.tabSpacing * (count - 1)) / count).rounded(.down))
+    /// What the tabs share of the header at the smallest open size: all but the margins and the
+    /// buttons beside them (Edit Tabs, the pin, and Settings).
+    private var tabRoom: CGFloat {
+        NotchPreferences.minimumExpandedSize.width - contentPadding.leading - contentPadding.trailing
+            - 3 * (Self.headerButtonWidth + Self.tabSpacing)
+    }
+
+    /// The widest tab that still fits `count` tabs into `room`, up to 32 pt. Tabs keep that width at
+    /// every size, and each tab added makes them a little narrower instead of crowding the row.
+    static func tabWidth(count: Int, room: CGFloat) -> CGFloat {
+        let count = CGFloat(max(count, 1))
+        return min(32, ((room - tabSpacing * (count - 1)) / count).rounded(.down))
+    }
+
+    /// Edit mode keeps the notch open, pinning it for the while, and shows the tab editor.
+    private func startEditing() {
+        if !engine.state.presentation.isPinned {
+            engine.send(.togglePin)
+            pinnedToEdit = true
+        }
+        withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.82)) { editing = true }
+    }
+
+    private func finishEditing() {
+        withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.82)) { editing = false }
+        if pinnedToEdit, engine.state.presentation.isPinned { engine.send(.togglePin) }
+        pinnedToEdit = false
     }
 
     private func tabBar(selected: FeatureID) -> some View {
         let tabs = engine.state.tabs
-        let tabWidth = tabWidth
+        let tabWidth = Self.tabWidth(count: tabs.count, room: tabRoom)
         return HStack(spacing: Self.tabSpacing) {
             ForEach(tabs, id: \.self) { tab in
                 Button {
@@ -340,6 +378,9 @@ struct NotchView: View {
                 }
         }
         .animation(reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.64), value: selected)
+        .contextMenu {
+            Button("Edit Tabs\u{2026}", action: startEditing)
+        }
     }
 
     /// Content slides in from the side the selection moved toward, with a little scale and fade.
@@ -358,9 +399,10 @@ struct NotchView: View {
         CGSize(width: (start.width + 2 * drag.width).rounded(), height: (start.height + drag.height).rounded())
     }
 
-    private func headerButton(_ symbol: String, label: String, lit: Bool = false, action: @escaping () -> Void)
-        -> some View
-    {
+    /// `dim` sets a button beside the tabs apart from them.
+    private func headerButton(
+        _ symbol: String, label: String, lit: Bool = false, dim: Bool = false, action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 12, weight: .medium))
@@ -368,7 +410,7 @@ struct NotchView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.white.opacity(lit ? 1 : 0.75))
+        .foregroundStyle(.white.opacity(lit ? 1 : dim ? 0.45 : 0.75))
         .help(label)
         .accessibilityLabel(label)
     }

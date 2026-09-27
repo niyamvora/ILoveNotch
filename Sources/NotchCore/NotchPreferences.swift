@@ -104,6 +104,11 @@ public final class NotchPreferences {
         didSet { defaults.set(disabledFeatures.map(\.rawValue).sorted(), forKey: Key.disabledFeatures) }
     }
 
+    /// Every feature this build offers, in the order the user arranged the tabs, hidden ones too.
+    public private(set) var tabOrder: [FeatureID] {
+        didSet { defaults.set(tabOrder.map(\.rawValue), forKey: Key.tabOrder) }
+    }
+
     /// Show a notch on every display, not just the built-in (or main) one.
     public var showOnAllDisplays: Bool {
         didSet { defaults.set(showOnAllDisplays, forKey: Key.showOnAllDisplays) }
@@ -209,7 +214,8 @@ public final class NotchPreferences {
 
     public init(defaults: UserDefaults = .standard, unavailable: Set<FeatureID> = []) {
         self.defaults = defaults
-        available = FeatureID.allCases.filter { !unavailable.contains($0) }
+        let available = FeatureID.allCases.filter { !unavailable.contains($0) }
+        self.available = available
         func features(_ key: String) -> Set<FeatureID> {
             Set((defaults.stringArray(forKey: key) ?? []).compactMap(FeatureID.init(rawValue:)))
         }
@@ -219,6 +225,11 @@ public final class NotchPreferences {
         disabledFeatures = disabled
         defaults.set(disabled.map(\.rawValue).sorted(), forKey: Key.disabledFeatures)
         defaults.set(FeatureID.allCases.map(\.rawValue), forKey: Key.seenFeatures)
+        // The stored order, then whatever it doesn't know yet (a feature added by an update) at the end.
+        var placed: Set<FeatureID> = []
+        let stored = (defaults.stringArray(forKey: Key.tabOrder) ?? []).compactMap(FeatureID.init(rawValue:))
+            .filter { available.contains($0) && placed.insert($0).inserted }
+        tabOrder = stored + available.filter { !placed.contains($0) }
         showOnAllDisplays = defaults.bool(forKey: Key.showOnAllDisplays)
         pillDisplays = Set(defaults.stringArray(forKey: Key.pillDisplays) ?? [])
         animationStyle = defaults.string(forKey: Key.animationStyle).flatMap(NotchAnimationStyle.init) ?? .spring
@@ -262,7 +273,7 @@ public final class NotchPreferences {
     }
 
     /// Enabled features in tab order.
-    public var tabs: [FeatureID] { available.filter { !disabledFeatures.contains($0) } }
+    public var tabs: [FeatureID] { tabOrder.filter { !disabledFeatures.contains($0) } }
 
     public func isEnabled(_ feature: FeatureID) -> Bool { !disabledFeatures.contains(feature) }
 
@@ -270,9 +281,28 @@ public final class NotchPreferences {
         if enabled { disabledFeatures.remove(feature) } else { disabledFeatures.insert(feature) }
     }
 
+    /// Puts `feature` at `index` among the tabs, showing it if it was hidden. Hidden features keep
+    /// their places around it, so showing one again brings it back where it was.
+    public func place(_ feature: FeatureID, at index: Int) {
+        guard tabOrder.contains(feature) else { return }
+        let others = tabs.filter { $0 != feature }
+        var order = tabOrder.filter { $0 != feature }
+        let index = min(max(index, 0), others.count)
+        if index < others.count, let next = order.firstIndex(of: others[index]) {
+            order.insert(feature, at: next)
+        } else if let last = others.last, let previous = order.firstIndex(of: last) {
+            order.insert(feature, at: previous + 1)
+        } else {
+            order.insert(feature, at: 0)
+        }
+        tabOrder = order
+        disabledFeatures.remove(feature)
+    }
+
     /// Restores every preference to its default.
     public func reset() {
         disabledFeatures = Self.offByDefault
+        tabOrder = available
         showOnAllDisplays = false
         pillDisplays = []
         animationStyle = .spring
@@ -288,6 +318,7 @@ public final class NotchPreferences {
 
     private enum Key {
         static let disabledFeatures = "disabledFeatures"
+        static let tabOrder = "tabOrder"
         static let seenFeatures = "seenFeatures"
         static let showOnAllDisplays = "showOnAllDisplays"
         static let pillDisplays = "pillDisplays"

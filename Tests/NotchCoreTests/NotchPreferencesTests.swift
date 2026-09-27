@@ -50,8 +50,30 @@ struct NotchPreferencesTests {
         #expect(disabled == [.notes, .mirror], "and the mirror starts off")
     }
 
+    @Test func tabsMoveAndKeepTheirPlaceWhileHidden() {
+        let preferences = NotchPreferences(defaults: defaults)
+        preferences.place(.timer, at: 0)
+        #expect(preferences.tabs.first == .timer)
+        preferences.setEnabled(.shelf, false)
+        preferences.place(.notes, at: 1)
+        #expect(preferences.tabs.prefix(3) == [.timer, .notes, .media])
+        #expect(preferences.tabOrder.prefix(5) == [.timer, .notes, .media, .sound, .shelf], "the hidden shelf stayed")
+        preferences.place(.shelf, at: preferences.tabs.count)
+        #expect(preferences.tabs.last == .shelf && preferences.isEnabled(.shelf), "placing a hidden tab shows it")
+        #expect(NotchPreferences(defaults: defaults).tabs == preferences.tabs, "and the order persists")
+    }
+
+    @Test func aFeatureAddedByAnUpdateJoinsTheEndOfACustomOrder() {
+        defaults.set(["timer", "media", "a-feature-from-the-future", "timer"], forKey: "tabOrder")
+        let order = NotchPreferences(defaults: defaults).tabOrder
+        #expect(order.prefix(2) == [.timer, .media])
+        #expect(Array(order.dropFirst(2)) == FeatureID.allCases.filter { $0 != .timer && $0 != .media })
+        #expect(!NotchPreferences(defaults: defaults, unavailable: [.usage]).tabOrder.contains(.usage))
+    }
+
     @Test func resetRestoresTheDefaults() {
         let preferences = NotchPreferences(defaults: defaults)
+        preferences.place(.timer, at: 0)
         preferences.setEnabled(.shelf, false)
         preferences.showOnAllDisplays = true
         preferences.resizeExpanded(to: CGSize(width: 600, height: 400))
@@ -60,6 +82,7 @@ struct NotchPreferencesTests {
         preferences.theme = .glass
         preferences.reset()
         #expect(preferences.tabs == defaultTabs)
+        #expect(preferences.tabOrder == FeatureID.allCases)
         #expect(preferences.expandedSize == NotchPreferences.defaultExpandedSize)
         #expect(!preferences.replacesVolumeDisplay)
         #expect(preferences.theme == .black)

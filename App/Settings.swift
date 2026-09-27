@@ -303,14 +303,15 @@ private struct ShortcutRecorder: View {
     }
 }
 
-/// One section per feature: whether it shows in the notch, then its own settings while it does.
+/// One section per feature, in the notch's tab order: whether it shows in the notch, then its own
+/// settings while it does.
 private struct FeatureSettings: View {
     let preferences: NotchPreferences
     let featureSettings: (FeatureID) -> AnyView?
 
     var body: some View {
         Form {
-            ForEach(preferences.available, id: \.self) { feature in
+            ForEach(preferences.tabOrder, id: \.self) { feature in
                 Section {
                     Toggle(
                         isOn: Binding(
