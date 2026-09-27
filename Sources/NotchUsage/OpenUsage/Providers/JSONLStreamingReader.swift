@@ -35,7 +35,7 @@ enum JSONLStreamingReader {
         func flushBatch() throws -> Bool {
             guard !batch.isEmpty else { return true }
             try Task.checkCancellation()
-            guard let parsed = parse(batch, &state) else { return false }
+            guard let parsed = autoreleasepool(invoking: { parse(batch, &state) }) else { return false }
             items.append(contentsOf: parsed)
             batch.removeAll(keepingCapacity: batch.count <= readChunkBytes)
             return true
@@ -64,7 +64,11 @@ enum JSONLStreamingReader {
 
         while true {
             try Task.checkCancellation()
-            guard let chunk = try handle.read(upToCount: readChunkBytes), !chunk.isEmpty else { break }
+            // A whole-file read is one job, so nothing drains autoreleased chunks (or the parser's
+            // JSONSerialization objects, above) until it ends: an 80 MB log held ~120 MB. Drain per chunk.
+            guard let chunk = try autoreleasepool(invoking: { try handle.read(upToCount: readChunkBytes) }),
+                  !chunk.isEmpty
+            else { break }
             readAnyBytes = true
 
             var offset = chunk.startIndex
