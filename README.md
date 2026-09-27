@@ -19,9 +19,9 @@ https://github.com/user-attachments/assets/9d0c486c-5169-4297-b8b9-8fedbb9eadda
 </p>
 
 An **original, open-source** macOS menu-notch utility — turns the notch on Apple
-Silicon MacBooks into an interactive tray for media, files, your calendar, tasks,
-notes, shortcuts, timers, your camera, and how much of your AI plans you've
-used. Built native (SwiftUI + AppKit) with a **hard focus on low RAM and
+Silicon MacBooks into an interactive tray for media and sound, files, your
+calendar, tasks, notes, shortcuts, timers, your network speed, your camera, and
+how much of your AI plans you've used. Built native (SwiftUI + AppKit) with a **hard focus on low RAM and
 near-zero idle CPU** ([measured](#efficiency)).
 
 <p align="center">
@@ -52,7 +52,7 @@ Applications, and open it. It updates itself from then on.
 
 - **Homebrew:** `brew install --cask niyamvora/tap/ilovenotch`
 - **Mac App Store:** in review. The App Store edition has everything except AI
-  Usage, which the App Sandbox rules out. Try it now through the
+  Usage, Agents, the Sound tab, and sharing with Android. Try it now through the
   [TestFlight beta](https://testflight.apple.com/join/6p3zqhCS).
 - **From source:** see [Build & run](#build--run).
 
@@ -61,8 +61,9 @@ Applications, and open it. It updates itself from then on.
 NotchNook's license server went offline in September 2026, so paid licenses
 stopped activating, and lo.cafe
 [told customers to use an alternative](https://x.com/locafe_24h/status/2095262917486665735).
-ILoveNotch covers the everyday things: now playing, a file shelf, and your
-calendar, plus Reminders, notes, Shortcuts, and timers. There's no license,
+ILoveNotch covers the everyday things: now playing and every app's volume, a
+file shelf, and your calendar, plus Reminders, notes, Shortcuts, timers, and
+your network speed. There's no license,
 account, or server that can go away, and it's MIT licensed, so the code stays
 public and buildable whatever happens to the project.
 
@@ -109,9 +110,10 @@ public and buildable whatever happens to the project.
   stopwatch with laps; and Keep Awake, which stops your Mac sleeping for a
   while or until you turn it off, with the time left in the closed notch.
 - **Network.** Your download and upload speed as it happens, over a graph of
-  the last minute, and how much you've downloaded and uploaded by the hour,
-  day, or month. The closed notch shows the speed while a download runs, and
-  what it downloaded when it's done. [More below](#network).
+  the last minute, and how much you've downloaded, uploaded, and both together,
+  by the hour, day, or month. The menu bar beside the notch shows the speed
+  while a download runs, and what it downloaded when it's done.
+  [More below](#network).
 - **Mirror.** Your camera, off until you turn it on, and on only while its tab
   is open.
 - **AI Usage.** How much of each AI coding plan you've used, as a card per tool,
@@ -187,13 +189,13 @@ hover, clicks, drags, sleep/lock, display changes
 |--------|------|
 | `App/` | App target generated from `project.yml`: wires features in, menu bar item, Settings |
 | `NotchCore` | State machine, `NotchEngine`, `FeatureHost` lifecycle, preferences, typed logging and signposts. No AppKit. |
-| `NotchSurface` | Fixed click-through `NSPanel` per display, animatable `NotchShape`, `PanelCoordinator` (displays, sleep, lock), notch geometry from **public** APIs (`safeAreaInsets`, `auxiliaryTop*Area`) |
+| `NotchSurface` | Fixed click-through `NSPanel` per display, animatable `NotchShape`, `PanelCoordinator` (displays, sleep, lock), notch geometry from **public** APIs (`safeAreaInsets`, `auxiliaryTop*Area`), and the tab row's editor (`TabEditor`) and app drawer (`AppDrawer`) |
 | `NotchFeatures` | Feature modules (Media, Shelf, Clipboard, Calendar, Tasks, Notes, Shortcuts, Timer, Network, Mirror), each a `NotchFeature` with its views and settings, and the event-driven system monitors and hooks (volume, battery, accessories, volume keys, keyboard shortcuts, Show in Notch) |
 | `NotchUsage` | The GitHub build's developer tabs: AI Usage (provider tiles, rings, pace, spend, and trends, over providers adapted from [OpenUsage](https://github.com/robinebers/openusage) (MIT) in `NotchUsage/OpenUsage`) and Agents (Claude Code and Codex hooks, in `NotchUsage/Agents`) |
 | `NotchTransfer` | The GitHub build's Android sharing: Quick Share on Apple's own frameworks (Bonjour, CryptoKit, Network.framework) in `NotchTransfer/QuickShare`, with the shelf's request card, the send window, and settings |
 | `NotchMixer` | The GitHub build's Sound tab: output and input devices and their volume, and per-app volume on Core Audio process taps (macOS 14.2+), with a private aggregate device for each app turned down while it plays |
 | `ThirdParty/` | [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter) (BSD-3-Clause) as a git submodule |
-| `Tests/` | Unit tests (reducer transitions and fuzzing, engine, feature host, preferences, geometry, features), offscreen snapshot tests, XCTest performance tests, and OpenUsage's provider tests on its fixtures (`OpenUsageTests`) |
+| `Tests/` | Unit tests (reducer transitions and fuzzing, engine, feature host, preferences, geometry, features, the mixer, network counters and history), offscreen snapshot tests, XCTest performance tests, and OpenUsage's provider tests on its fixtures (`OpenUsageTests`) |
 
 The full design is in the [implementation plan](docs/plan/implementation-plan.md)
 and the [architecture diagram](docs/plan/architecture.html).
