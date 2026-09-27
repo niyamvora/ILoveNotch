@@ -184,6 +184,45 @@ private struct ClipboardSettings: View {
     }
 }
 
+extension NetworkFeature {
+    public var settingsView: some View { NetworkSettings(network: self) }
+}
+
+private struct NetworkSettings: View {
+    @Bindable var network: NetworkFeature
+    @State private var confirmsClear = false
+
+    var body: some View {
+        Group {
+            Picker(selection: $network.closedNotch) {
+                ForEach(NetworkFeature.ClosedNotch.allCases) { Text($0.title).tag($0) }
+            } label: {
+                Text("Show speed in the menu bar")
+                Text(
+                    "Beside the closed notch. While Downloading shows it once a download or upload runs at 1 MB/s or "
+                        + "more for a few seconds, says how much it moved when it's done, and hides again; it checks "
+                        + "every 3 seconds. Always reads the speed every second. Never shows nothing there, and reads "
+                        + "the speed only while the tab is open.")
+            }
+            LabeledContent {
+                Button("Clear History\u{2026}", role: .destructive) { confirmsClear = true }
+                    .disabled(network.lifetime.total == 0)
+            } label: {
+                Text("History")
+                Text(
+                    "\(NetworkFeature.bytes(network.lifetime.down)) down and \(NetworkFeature.bytes(network.lifetime.up)) "
+                        + "up, kept by the hour on this Mac. NetSpeed's history comes along the first time.")
+            }
+            .confirmationDialog("Clear the network history?", isPresented: $confirmsClear) {
+                Button("Clear History", role: .destructive, action: network.clearHistory)
+            } message: {
+                Text("Every hour recorded so far is deleted. This can't be undone.")
+            }
+        }
+        .onAppear(perform: network.refreshTotals)
+    }
+}
+
 extension ShelfFeature {
     public var settingsView: some View {
         LabeledContent(items.count == 1 ? "1 item on the shelf" : "\(items.count) items on the shelf") {

@@ -61,6 +61,10 @@ still to be set.
   unmute while playing; 100% hands the app back; switch to AirPods (and back) from the list mid-song; a Bluetooth
   speaker appears when it connects; the microphone fader moves the input level and mutes it in a call; relaunch keeps
   the levels; with system audio recording denied, apps stay at their own volume and the tab says why
+- [ ] Network: a large download shows its speed on the closed notch within a few seconds and "Downloaded …" when it
+  ends, while a web page or a video doesn't; the speed stays under a meeting countdown and Keep Awake; NetSpeed's
+  history appears the first time; the numbers match Activity Monitor's Network tab; Wi-Fi off and on, an iPhone
+  hotspot, and a VPN don't make a spike; lock the Mac through a download and the hours it ran fill in
 - [ ] Replace the volume display: grant and revoke Accessibility while running
 - [ ] Media: Apple Music, Spotify, a browser, and QuickTime; kill the helper (`pkill -f mediaremote-adapter`) and check Media falls back
 - [ ] Shelf: deleted, moved, and corrupt files

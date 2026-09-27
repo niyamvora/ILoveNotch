@@ -134,10 +134,9 @@ struct NotchMetrics: Equatable {
     /// countdown makes room for its longest reading.
     static func labelWidth(for activity: Activity, now: Date = .now) -> CGFloat {
         var text = activity.title
-        var font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium)
         if let countdown = activity.countdown {
             text = countdown.timeIntervalSince(now) >= 3600 ? "0:00:00" : "00:00"
-            font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
         }
         let symbol = NSImage(systemSymbolName: activity.symbol, accessibilityDescription: nil)?
             .withSymbolConfiguration(.init(pointSize: 12, weight: .semibold))?.size.width

@@ -35,6 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let notes = NotesFeature()
     private let shortcuts = ShortcutsFeature()
     private let timer = TimerFeature()
+    private let network = NetworkFeature()
     private let mirror = MirrorFeature()
     private lazy var features = FeatureHost(featureList)
     // System live activities, which belong to no tab.
@@ -81,9 +82,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var featureList: [any NotchFeature] {
         #if APP_STORE
-            [media, shelf, clipboard, calendar, tasks, notes, shortcuts, timer, mirror]
+            [media, shelf, clipboard, calendar, tasks, notes, shortcuts, timer, network, mirror]
         #else
-            [media, shelf, clipboard, calendar, tasks, notes, shortcuts, timer, mirror, usage, agents]
+            [media, shelf, clipboard, calendar, tasks, notes, shortcuts, timer, network, mirror, usage, agents]
         #endif
     }
 
@@ -108,6 +109,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .notes: return AnyView(notes.view)
         case .shortcuts: return AnyView(shortcuts.view)
         case .timer: return AnyView(timer.view)
+        case .network: return AnyView(network.view)
         case .mirror: return AnyView(mirror.view)
         case .usage:
             #if APP_STORE
@@ -148,6 +150,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .tasks: return AnyView(tasks.settingsView)
         case .shortcuts: return AnyView(shortcuts.settingsView)
         case .notes: return AnyView(notes.settingsView)
+        case .network: return AnyView(network.settingsView)
         case .timer, .mirror: return nil
         case .usage:
             #if APP_STORE
@@ -196,6 +199,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         calendar.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .calendar) }
         timer.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         timer.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .timer) }
+        network.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
+        network.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .network) }
         shortcuts.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         tasks.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         notes.onSendToTasks = { [tasks] in tasks.add($0) }
@@ -305,6 +310,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func updateSystemActivities() {
         // Keep awake lives in the Timer tab: turning the tab off must not leave the Mac awake unseen.
         if !preferences.isEnabled(.timer) { timer.allowSleep() }
+        // What moves while the Network tab is off isn't counted when it comes back.
+        network.isEnabled = preferences.isEnabled(.network)
         #if !APP_STORE
             // Apps keep the volumes set in the Sound tab only while it's on.
             mixer.isEnabled = preferences.isEnabled(.sound)

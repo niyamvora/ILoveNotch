@@ -17,6 +17,14 @@ ILoveNotch is local-first.
 - Replacing the macOS volume display is off until you turn it on. It asks for
   Accessibility access to catch the volume keys; ILoveNotch takes only the three
   volume keys and passes every other event through untouched.
+- The Network tab sends nothing. It reads how many bytes your Mac's network
+  interfaces have moved, never what the bytes were, where they went, or which
+  app moved them, and keeps the totals by the hour in
+  `~/Library/Application Support/OpenNotch/network.sqlite` on this Mac only.
+  The first time it runs, it reads NetSpeed's history from
+  `~/Library/Application Support/NetSpeed` if it's there. **Clear History** in
+  Settings › Features › Network deletes it, and turning the tab off stops
+  counting.
 - Messages sent with the Show in Notch action or an `ilovenotch://` link are
   only displayed: they're never stored, and nothing in them is opened.
 - Clipboard history is off until you turn it on in the Clipboard tab. Then it

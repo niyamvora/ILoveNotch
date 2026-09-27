@@ -95,6 +95,40 @@ struct FeatureSnapshotTests {
         timer.allowSleep()
     }
 
+    /// A month of made-up traffic, busiest in the evenings, then a download ramping up over the last
+    /// minute; each range of the chart, and the tab with nothing recorded yet.
+    @Test func networkLiveAndItsHistory() throws {
+        let folder = FileManager.default.temporaryDirectory.appending(path: "NetworkSnapshot-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        var counters = ["en0": Traffic()]
+        let network = NetworkFeature(
+            defaults: UserDefaults(suiteName: "NS-\(UUID())")!, storeURL: folder.appending(path: "network.sqlite"),
+            netSpeedURL: nil, readCounters: { counters })
+        network.phase = .foreground
+        try render(network.view, name: "network-empty")
+        network.phase = .stopped
+        let now = Date.now
+        for hour in stride(from: 30 * 24, through: 1, by: -1) {
+            let evening = max(0, sin(Double(hour % 24) / 24 * .pi * 2 - 1.2))
+            let noise = abs(sin(Double(hour) * 12.9898)) * 0.7
+            counters["en0"]?.down += Int64(400_000_000 * (evening + noise) + 20_000_000)
+            counters["en0"]?.up += Int64(60_000_000 * (evening + noise * 0.5) + 5_000_000)
+            network.receive(counters, at: now - TimeInterval(hour * 3600) - 61)
+        }
+        for second in stride(from: 60, through: 0, by: -1) {
+            let ramp = min(1, Double(60 - second) / 25)
+            counters["en0"]?.down += Int64(24_000_000 * ramp * (0.85 + 0.15 * sin(Double(second))))
+            counters["en0"]?.up += Int64(900_000 + 500_000 * abs(sin(Double(second) / 3)))
+            network.receive(counters, at: now - TimeInterval(second))
+        }
+        network.phase = .foreground
+        for range in HistoryRange.allCases {
+            network.range = range
+            try render(network.view, name: range == .day ? "network" : "network-\(range.rawValue)", settles: true)
+        }
+        network.phase = .stopped
+    }
+
     @Test func notesWithAFewNotes() throws {
         let notes = NotesFeature(
             directory: FileManager.default.temporaryDirectory.appending(path: "N-\(UUID())"),
@@ -173,17 +207,22 @@ struct FeatureSnapshotTests {
     }
 
     /// Without a size, at the default size and again at the smallest, where every tab is tightest.
-    private func render(_ view: some View, name: String, size: CGSize? = nil) throws {
+    /// `settles` draws it once what rises into place on appearing has (without animation, so at once).
+    private func render(_ view: some View, name: String, size: CGSize? = nil, settles: Bool = false) throws {
         guard let size else {
-            try render(view, name: name, size: self.size)
-            return try render(view, name: name + "-smallest", size: Self.smallest)
+            try render(view, name: name, size: self.size, settles: settles)
+            return try render(view, name: name + "-smallest", size: Self.smallest, settles: settles)
         }
-        let host = NSHostingView(rootView: inNotch(view, size: size))
+        let host = NSHostingView(rootView: inNotch(view, size: size).transaction { if settles { $0.animation = nil } })
         let window = NSWindow(
             contentRect: CGRect(x: 0, y: 0, width: size.width + 32, height: size.height + 32),
             styleMask: .borderless, backing: .buffered, defer: false)
         window.contentView = host
         host.layoutSubtreeIfNeeded()
+        if settles {
+            RunLoop.main.run(until: .now + 0.1)
+            host.layoutSubtreeIfNeeded()
+        }
         let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
         host.cacheDisplay(in: host.bounds, to: bitmap)
         #expect(bitmap.pixelsWide > 0)
