@@ -24,11 +24,15 @@ deliberate, manual step.
 
 ## Cutting a release
 
-From a clean, up-to-date `main`:
+First, in a pull request, write the release notes for users in `docs/release-notes/<version>.md`,
+and set `MARKETING_VERSION` in `project.yml` to the new version. Then, from a clean, up-to-date `main`:
 
 ```bash
 make release VERSION=0.3.0          # or 0.3.0-beta.1 for a beta
 ```
+
+The notes appear in Sparkle's update prompt (Markdown, which Sparkle 2.9 and later renders) and at
+the top of the GitHub release, above the generated list of pull requests.
 
 It runs lint and tests, archives a Release build (universal, with no source checkout recorded, so
 it updates through Sparkle), exports it signed with Developer ID and the hardened runtime,
