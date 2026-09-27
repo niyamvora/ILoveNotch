@@ -44,3 +44,4 @@ release.env
 *.visual-check.json
 
 .DS_Store
+.gstack/
