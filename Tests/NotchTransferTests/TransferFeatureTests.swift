@@ -75,7 +75,7 @@ struct VisibilityTests {
 struct TransferSnapshotTests {
     /// The content area of an expanded notch, and of the smallest one.
     private static let notch = CGSize(width: 428, height: 200)
-    private static let smallest = CGSize(width: 350, height: 132)
+    private static let smallest = CGSize(width: 350, height: 102)
 
     private let transfer = TransferFeature(defaults: UserDefaults(suiteName: "TransferSnapshot-\(UUID())")!)
     private let link = FrameLink(NWConnection(host: "127.0.0.1", port: 9, using: .tcp))
@@ -94,7 +94,6 @@ struct TransferSnapshotTests {
     @Test func aPhoneAskingToSend() throws {
         transfer.show(incoming: Incoming(id: UUID(), link: link, offer: offer()))
         try render(transfer.shelfView(AnyView(Color.clear)), name: "android-request")
-        try render(transfer.shelfView(AnyView(Color.clear)), name: "android-request-smallest", size: Self.smallest)
         transfer.show(incoming: Incoming(id: UUID(), link: link, offer: offer(files: 1)))
         try render(transfer.shelfView(AnyView(Color.clear)), name: "android-request-one-file")
     }
@@ -124,10 +123,8 @@ struct TransferSnapshotTests {
         }
         shelf.add(files)
         try render(transfer.shelfView(AnyView(shelf.view)), name: "android-shelf")
-        try render(transfer.shelfView(AnyView(shelf.view)), name: "android-shelf-smallest", size: Self.smallest)
         transfer.show(incoming: nil, visibleUntil: .now + 540)
         try render(transfer.shelfView(AnyView(shelf.view)), name: "android-shelf-visible")
-        try render(transfer.shelfView(AnyView(shelf.view)), name: "android-shelf-visible-smallest", size: Self.smallest)
     }
 
     @Test func theSendWindow() throws {
@@ -161,8 +158,13 @@ struct TransferSnapshotTests {
         try write(form, name: "android-settings", size: CGSize(width: 460, height: 330), scheme: .light)
     }
 
-    /// The tab as the notch shows it: white on black, dark mode, in the content area.
-    private func render(_ view: some View, name: String, size: CGSize = Self.notch) throws {
+    /// The tab as the notch shows it: white on black, dark mode, in the content area. Without a size,
+    /// at the default size and again at the smallest.
+    private func render(_ view: some View, name: String, size: CGSize? = nil) throws {
+        guard let size else {
+            try render(view, name: name, size: Self.notch)
+            return try render(view, name: name + "-smallest", size: Self.smallest)
+        }
         let framed = view.frame(width: size.width, height: size.height).padding(16).background(.black)
             .foregroundStyle(.white)
         try write(framed, name: name, size: CGSize(width: size.width + 32, height: size.height + 32), scheme: .dark)

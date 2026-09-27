@@ -185,14 +185,15 @@ public final class NotchPreferences {
     }
 
     public nonisolated static let defaultExpandedSize = CGSize(width: 460, height: 290)
-    /// Narrowest that still fits every tab and the controls beside them.
-    public nonisolated static let minimumExpandedSize = CGSize(width: 414, height: 230)
+    /// Narrowest that still fits every tab and the controls beside them, and the shortest that still
+    /// fits each tab's content.
+    public nonisolated static let minimumExpandedSize = CGSize(width: 414, height: 200)
     public nonisolated static let maximumExpandedSize = CGSize(width: 720, height: 480)
-    /// What VoiceOver's adjust steps through on the resize corner, smallest first: the minimum size, as
+    /// What VoiceOver's adjust steps through on the resize corner, smallest first: two sizes as
     /// narrow as the next step but shorter, then the default size scaled down and up, so the height
     /// follows the width.
     public nonisolated static let expandedSizeSteps =
-        [minimumExpandedSize]
+        [minimumExpandedSize, CGSize(width: 414, height: 230)]
         + ([0.9, 1, 1.12, 1.25, 1.4, 1.56] as [CGFloat]).map { scale in
             let size = defaultExpandedSize
             return CGSize(width: (size.width * scale).rounded(), height: (size.height * scale).rounded())

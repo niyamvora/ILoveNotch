@@ -55,8 +55,18 @@ public struct FeatureUnavailableView: View {
     }
 
     public var body: some View {
+        // The smallest notch drops the symbol, so the message and its fix never clip.
+        ViewThatFits(in: .vertical) {
+            content(symbol: true)
+            content(symbol: false)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func content(symbol shown: Bool) -> some View {
         VStack(spacing: 6) {
-            Image(systemName: symbol).font(.system(size: 22, weight: .semibold)).opacity(0.8)
+            if shown { Image(systemName: symbol).font(.system(size: 22, weight: .semibold)).opacity(0.8) }
             Text(title).font(.headline)
             Text(message)
                 .font(.caption)
@@ -72,8 +82,6 @@ public struct FeatureUnavailableView: View {
                     .background(.white.opacity(0.15), in: Capsule())
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityElement(children: .combine)
     }
 }
 

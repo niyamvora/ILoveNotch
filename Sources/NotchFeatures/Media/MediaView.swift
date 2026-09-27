@@ -25,29 +25,35 @@ struct MediaView: View {
         }
     }
 
-    /// Shorter notches drop the waveform first, then shrink the artwork, so the player never clips.
+    /// Shorter notches drop the waveform first, then shrink the artwork, then move the controls up
+    /// beside the track, so the player never clips.
     private func player(_ now: NowPlaying) -> some View {
         ViewThatFits(in: .vertical) {
             player(now, artwork: 72, waveform: true)
             player(now, artwork: 72, waveform: false)
             player(now, artwork: 52, waveform: false)
+            player(now, artwork: 52, waveform: false, inline: true)
         }
         .background { glow }
     }
 
-    private func player(_ now: NowPlaying, artwork size: CGFloat, waveform: Bool) -> some View {
+    /// `inline` puts the controls beside the track, in place of the app it plays in.
+    private func player(_ now: NowPlaying, artwork size: CGFloat, waveform: Bool, inline: Bool = false)
+        -> some View
+    {
         let animating = now.isPlaying && !reduceMotion
         return VStack(spacing: 8) {
             HStack(spacing: 14) {
                 artwork(size)
-                details(now)
+                details(now, source: !inline)
+                if inline { controls(playing: now.isPlaying) }
             }
             // One timeline drives the wave, the waveform, and the times, and stops when paused.
             TimelineView(.animation(minimumInterval: 1 / 30, paused: !animating)) { context in
                 let time = context.date.timeIntervalSinceReferenceDate
                 VStack(spacing: 8) {
                     seekBar(now, at: context.date, phase: time * 2.4)
-                    controls(playing: now.isPlaying)
+                    if !inline { controls(playing: now.isPlaying) }
                     if waveform {
                         let heard = media.audio.isHearing ? media.audio.bands : []
                         Spacer(minLength: 0)
@@ -92,7 +98,7 @@ struct MediaView: View {
         .accessibilityLabel("Open the player")
     }
 
-    private func details(_ now: NowPlaying) -> some View {
+    private func details(_ now: NowPlaying, source: Bool) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(now.title)
                 .font(.system(size: 16, weight: .semibold))
@@ -107,7 +113,7 @@ struct MediaView: View {
                     .id(subtitle)
                     .transition(.push(from: .bottom))
             }
-            sourceApp(now)
+            if source { sourceApp(now) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .clipped()
@@ -217,13 +223,23 @@ struct MediaView: View {
         }
     }
 
+    /// The smallest notch drops the note, so the message never clips.
     private var idle: some View {
+        ViewThatFits(in: .vertical) {
+            idle(note: true)
+            idle(note: false)
+        }
+    }
+
+    private func idle(note: Bool) -> some View {
         VStack(spacing: 8) {
             Spacer(minLength: 0)
-            Image(systemName: "music.note")
-                .font(.system(size: 20, weight: .semibold))
-                .frame(width: 46, height: 46)
-                .background(.white.opacity(0.08), in: Circle())
+            if note {
+                Image(systemName: "music.note")
+                    .font(.system(size: 20, weight: .semibold))
+                    .frame(width: 46, height: 46)
+                    .background(.white.opacity(0.08), in: Circle())
+            }
             Text("Nothing playing").font(.headline)
             Text(
                 media.source == .adapter

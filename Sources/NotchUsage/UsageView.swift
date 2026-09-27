@@ -551,13 +551,26 @@ private struct TrendChart: View {
 private struct UsageOnboarding: View {
     let usage: UsageFeature
 
+    /// Shorter notches drop the symbol and trade the grid for the one-row tray the cards have, so
+    /// nothing clips.
     var body: some View {
+        ViewThatFits(in: .vertical) {
+            content(compact: false)
+            content(compact: true)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .task { if !usage.hasDetected { await usage.detect() } }
+    }
+
+    private func content(compact: Bool) -> some View {
         let accents = ["claude", "copilot", "cursor"].map { ProviderStyle.of($0).start }
-        VStack(spacing: 8) {
-            Image(systemName: "gauge.with.dots.needle.67percent")
-                .font(.system(size: 24, weight: .semibold))
-                .foregroundStyle(LinearGradient(colors: accents, startPoint: .leading, endPoint: .trailing))
-                .accessibilityHidden(true)
+        return VStack(spacing: 8) {
+            if !compact {
+                Image(systemName: "gauge.with.dots.needle.67percent")
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(LinearGradient(colors: accents, startPoint: .leading, endPoint: .trailing))
+                    .accessibilityHidden(true)
+            }
             VStack(spacing: 3) {
                 Text("Your AI plans at a glance").font(.headline)
                 Text(
@@ -568,17 +581,15 @@ private struct UsageOnboarding: View {
                 .foregroundStyle(.white.opacity(0.6))
                 .multilineTextAlignment(.center)
             }
-            ProviderTray(usage: usage, labeled: true)
+            ProviderTray(usage: usage, labeled: !compact)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .task { if !usage.hasDetected { await usage.detect() } }
     }
 }
 
 /// Every provider that isn't on yet: the ones signed in on this Mac first and in color, then the
 /// rest, dimmed. A tap adds one as a card; a provider that needs an API key it doesn't have opens
 /// Settings for it instead. Under the cards it's one row that scrolls sideways; `labeled`, for the
-/// empty tab, it's a grid with each name under its logo, all of them in view.
+/// empty tab when the notch has room, it's a grid with each name under its logo, all of them in view.
 private struct ProviderTray: View {
     let usage: UsageFeature
     var labeled = false

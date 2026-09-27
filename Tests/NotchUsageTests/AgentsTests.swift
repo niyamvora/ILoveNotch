@@ -219,9 +219,14 @@ struct AgentsFeatureTests {
         agents.phase = .stopped
     }
 
-    /// The tab as the notch shows it; with SNAPSHOT_DIR set, also a PNG there.
+    /// The tab as the notch shows it, at the default size and the smallest; with SNAPSHOT_DIR set,
+    /// also PNGs there.
     private func render(_ view: some View, name: String) throws {
-        let size = CGSize(width: 396, height: 192)
+        try render(view, name: name, size: CGSize(width: 396, height: 192))
+        try render(view, name: name + "-smallest", size: CGSize(width: 350, height: 102))
+    }
+
+    private func render(_ view: some View, name: String, size: CGSize) throws {
         let framed = view.frame(width: size.width, height: size.height).padding(16).background(.black)
             .foregroundStyle(.white).environment(\.colorScheme, .dark)
         let host = NSHostingView(rootView: framed)

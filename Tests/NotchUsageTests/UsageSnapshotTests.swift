@@ -13,7 +13,7 @@ struct UsageSnapshotTests {
     private let cache = FileManager.default.temporaryDirectory.appending(path: "usage-snap-\(UUID().uuidString).json")
     /// The content area of the default open notch, the smallest, and the largest.
     private static let size = CGSize(width: 396, height: 192)
-    private static let smallest = CGSize(width: 350, height: 132)
+    private static let smallest = CGSize(width: 350, height: 102)
     private static let largest = CGSize(width: 656, height: 382)
 
     private static let now = Date()
@@ -82,9 +82,9 @@ struct UsageSnapshotTests {
         #expect(CardGrid.plan(count: 4, in: CGSize(width: 656, height: 326)).frames.allSatisfy { $0.minY == 0 })
 
         // The smallest notch: three cards in a row, as tall as the room, nothing cut off.
-        let smallest = CardGrid.plan(count: 3, in: CGSize(width: 350, height: 76))
-        #expect(!smallest.scrolls && smallest.frames.allSatisfy { $0.maxY <= 76 } && smallest.card.height == 76)
-        let crowded = CardGrid.plan(count: 11, in: CGSize(width: 350, height: 76))
+        let smallest = CardGrid.plan(count: 3, in: CGSize(width: 350, height: 46))
+        #expect(!smallest.scrolls && smallest.frames.allSatisfy { $0.maxY <= 46 } && smallest.card.height == 46)
+        let crowded = CardGrid.plan(count: 11, in: CGSize(width: 350, height: 46))
         #expect(crowded.scrolls && crowded.card.height == CardGrid.minimum.height, "too many to fit scroll")
         #expect(crowded.card.width >= CardGrid.minimum.width)
     }
@@ -154,7 +154,12 @@ struct UsageSnapshotTests {
         #expect(usage.detected == ["claude", "codex", "copilot"])
     }
 
-    private func render(_ view: some View, name: String, size: CGSize = Self.size) async throws {
+    /// Without a size, at the default size and again at the smallest.
+    private func render(_ view: some View, name: String, size: CGSize? = nil) async throws {
+        guard let size else {
+            try await render(view, name: name, size: Self.size)
+            return try await render(view, name: name + "-smallest", size: Self.smallest)
+        }
         let framed = view.frame(width: size.width, height: size.height).padding(16).background(.black)
             .foregroundStyle(.white).environment(\.colorScheme, .dark)
         let host = NSHostingView(rootView: framed)

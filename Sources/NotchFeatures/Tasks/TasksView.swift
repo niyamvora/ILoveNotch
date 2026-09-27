@@ -19,8 +19,9 @@ struct TasksView: View {
                 request: tasks.requestAccess)
         } else {
             VStack(spacing: 5) {
-                if let task = tasks.alerting { alertBanner(task) }
-                header
+                // A due task's banner stands in for the summary, which keeps the list in view in the
+                // smallest notch.
+                if let task = tasks.alerting { alertBanner(task) } else { header }
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 1) {
                         if tasks.tasks.isEmpty {
