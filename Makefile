@@ -15,7 +15,7 @@ SIGNING = $(if $(SIGNING_IDENTITY),CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY='$(
 # More build settings for xcodebuild, such as CI's ONLY_ACTIVE_ARCH=YES to compile one architecture.
 XCODEBUILD_ARGS ?=
 
-.PHONY: setup project build build-app-store run install update release app-store test lint format licenses secrets check clean
+.PHONY: setup project build build-app-store run install update ship release app-store test lint format licenses secrets check clean
 
 setup: ## Install developer tools (Brewfile) and fetch submodules
 	brew bundle
@@ -51,6 +51,15 @@ install: ## Build a Release app into /Applications and (re)launch it
 
 update: ## Pull main when safe, rebuild, reinstall, relaunch (the app's "Update ILoveNotch")
 	scripts/update.sh
+
+# Only what CI tested: dev as its pull request's head, every required check green (gh exits nonzero
+# while one is pending or failing), and a fast-forward, which main's rules already insist on.
+ship: ## Fast-forward main to dev once dev's pull request into main is green (CONTRIBUTING.md)
+	@git fetch --quiet origin
+	@test "$$(gh pr view dev --json headRefOid --jq .headRefOid)" = "$$(git rev-parse dev)" \
+		|| { echo "dev isn't what its pull request tested: push dev and let CI finish."; exit 1; }
+	gh pr checks dev --required
+	git push origin dev:main
 
 release: ## Sign, notarize, and draft a GitHub release: make release VERSION=0.3.0 (docs/releasing.md)
 	scripts/release.sh $(VERSION)

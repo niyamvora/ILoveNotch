@@ -1,7 +1,9 @@
 name: Sync dev
 
-# main takes dev's commits by rebase, which gives them new hashes, and GitHub then deletes the
-# merged branch. This puts dev back on main, so the next pull request from it starts clean.
+# For a pull request from dev merged with the Rebase and merge button, which copies dev's commits
+# onto main with new hashes, after which GitHub deletes the merged branch: this puts dev back on
+# main so the next pull request from it starts clean. `make ship` fast-forwards instead, which keeps
+# the hashes and leaves nothing to do here (CONTRIBUTING.md).
 on:
   pull_request:
     branches: [main]
