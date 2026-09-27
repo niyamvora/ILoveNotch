@@ -79,7 +79,7 @@ struct NotchPreferencesTests {
         preferences.resizeExpanded(to: CGSize(width: 600, height: 380))
         #expect(NotchPreferences(defaults: defaults).expandedSize == CGSize(width: 600, height: 380))
         preferences.resizeExpanded(to: CGSize(width: 5000, height: 10))
-        #expect(preferences.expandedSize == CGSize(width: 720, height: 230))
+        #expect(preferences.expandedSize == CGSize(width: 720, height: 200))
         defaults.set([10.0, 9999.0], forKey: "expandedSize")  // a hand-edited value is clamped too
         #expect(NotchPreferences(defaults: defaults).expandedSize == CGSize(width: 414, height: 480))
     }
@@ -129,12 +129,13 @@ struct NotchPreferencesTests {
             preferences.resizeExpanded(to: next)
             smaller.append(preferences.expandedSize)
         }
-        #expect(smaller.map(\.width) == [644, 575, 515, 460, 414, 414], "− steps back down")
-        #expect(smaller.suffix(2).map(\.height) == [261, 230], "and ends on a shorter size at the same width")
+        #expect(smaller.map(\.width) == [644, 575, 515, 460, 414, 414, 414], "− steps back down")
+        #expect(smaller.suffix(3).map(\.height) == [261, 230, 200], "and ends on shorter sizes at the same width")
+        #expect(smaller.last == NotchPreferences.minimumExpandedSize)
 
         let steps = NotchPreferences.expandedSizeSteps
         let aspect = NotchPreferences.defaultExpandedSize.width / NotchPreferences.defaultExpandedSize.height
-        for step in steps.dropFirst() {
+        for step in steps.dropFirst(2) {
             #expect(abs(step.width / step.height - aspect) < 0.01, "the height follows the width")
         }
         #expect(steps.allSatisfy { NotchPreferences.clamped($0) == $0 }, "every step is within the limits")

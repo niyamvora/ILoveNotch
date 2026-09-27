@@ -45,15 +45,18 @@ struct CalendarView: View {
                 } else {
                     agenda
                 }
-                TextField("New event: try \u{201C}Lunch tomorrow 1pm for 1h\u{201D}", text: $draft)
-                    .textFieldStyle(.plain)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 7))
-                    .onSubmit {
-                        // Text without a time stays in the field so it can be finished.
-                        if calendar.addEvent(draft) { draft = "" }
-                    }
+                // Steps aside while an event is edited, which gives the editor room in the smallest notch.
+                if editing == nil {
+                    TextField("New event: try \u{201C}Lunch tomorrow 1pm for 1h\u{201D}", text: $draft)
+                        .textFieldStyle(.plain)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 7))
+                        .onSubmit {
+                            // Text without a time stays in the field so it can be finished.
+                            if calendar.addEvent(draft) { draft = "" }
+                        }
+                }
             }
         }
     }
@@ -285,7 +288,8 @@ private struct EventEditor: View {
         !title.trimmingCharacters(in: .whitespaces).isEmpty && (event.isAllDay || end > start)
     }
 
-    /// Two lines, so it fits even the smallest notch: the title with Cancel and Save, then the times.
+    /// Two lines, so it fits even the smallest notch (with the new-event field out of the way): the
+    /// title with Cancel and Save, then the times.
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {

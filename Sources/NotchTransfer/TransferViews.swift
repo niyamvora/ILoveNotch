@@ -36,33 +36,41 @@ private struct TransferShelf: View {
 
 // MARK: - In the notch
 
-/// A phone asking to send, then its progress, or the text it sent.
+/// A phone asking to send, then its progress, or the text it sent. The smallest notch gets a
+/// denser card, with its buttons moved up beside the details.
 private struct IncomingCard: View {
     let transfer: TransferFeature
     let incoming: Incoming
 
     var body: some View {
-        VStack(spacing: 12) {
-            if let text = incoming.text {
-                received(text)
-            } else if let offer = incoming.offer {
-                if let progress = incoming.progress {
-                    receiving(offer, progress: progress)
-                } else {
-                    request(offer)
-                }
-            }
+        ViewThatFits(in: .vertical) {
+            card(compact: false)
+            card(compact: true)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity)
-        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .frame(maxHeight: .infinity)
         .buttonStyle(.plain)
         .accessibilityElement(children: .contain)
     }
 
-    private func request(_ offer: InboundSession.Offer) -> some View {
+    private func card(compact: Bool) -> some View {
         VStack(spacing: 12) {
+            if let text = incoming.text {
+                received(text, compact: compact)
+            } else if let offer = incoming.offer {
+                if let progress = incoming.progress {
+                    receiving(offer, progress: progress)
+                } else {
+                    request(offer, compact: compact)
+                }
+            }
+        }
+        .padding(compact ? 10 : 14)
+        .frame(maxWidth: .infinity)
+        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private func request(_ offer: InboundSession.Offer, compact: Bool) -> some View {
+        VStack(spacing: compact ? 8 : 12) {
             HStack(spacing: 12) {
                 DeviceBadge(symbol: offer.kind.symbol)
                 VStack(alignment: .leading, spacing: 2) {
@@ -80,13 +88,12 @@ private struct IncomingCard: View {
                 .accessibilityLabel("Code \(offer.pin.map(String.init).joined(separator: " "))")
                 .help("The same code shows on the phone")
             }
-            if let detail = offer.detail {
-                // Middle-truncated, so the last name and the size stay in view.
-                Text(detail).font(.caption).foregroundStyle(.white.opacity(0.5)).lineLimit(1).truncationMode(.middle)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            // Middle-truncated, so the last name and the size stay in view.
+            let detail = Text(offer.detail ?? "").font(.caption).foregroundStyle(.white.opacity(0.5)).lineLimit(1)
+                .truncationMode(.middle).frame(maxWidth: .infinity, alignment: .leading)
+            if !compact, offer.detail != nil { detail }
             HStack(spacing: 8) {
-                Spacer()
+                if compact { detail } else { Spacer() }
                 CapsuleButton("Decline", prominent: false, action: transfer.declineIncoming)
                 CapsuleButton("Accept", prominent: true, action: transfer.acceptIncoming)
             }
@@ -110,8 +117,8 @@ private struct IncomingCard: View {
         }
     }
 
-    private func received(_ text: ReceivedText) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+    private func received(_ text: ReceivedText, compact: Bool) -> some View {
+        VStack(alignment: .leading, spacing: compact ? 8 : 10) {
             HStack(spacing: 12) {
                 DeviceBadge(symbol: text.isLink ? "link" : "text.alignleft")
                 VStack(alignment: .leading, spacing: 2) {
@@ -121,10 +128,12 @@ private struct IncomingCard: View {
                 }
                 Spacer(minLength: 0)
             }
-            Text(text.text).font(.callout).lineLimit(3).truncationMode(.middle).textSelection(.enabled)
-                .foregroundStyle(.white.opacity(0.85))
+            let sent = Text(text.text).font(.callout).lineLimit(compact ? 1 : 3).truncationMode(.middle)
+                .textSelection(.enabled).foregroundStyle(.white.opacity(0.85))
+                .frame(maxWidth: .infinity, alignment: .leading)
+            if !compact { sent }
             HStack(spacing: 8) {
-                Spacer()
+                if compact { sent } else { Spacer() }
                 CapsuleButton("Done", prominent: !text.isLink, action: transfer.dismissText)
                 if text.isLink { CapsuleButton("Open", prominent: true, action: transfer.openLink) }
             }

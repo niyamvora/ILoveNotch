@@ -12,7 +12,7 @@ struct FeatureSnapshotTests {
     /// The content area of an expanded notch.
     private let size = CGSize(width: 428, height: 200)
     /// The content area of the smallest open notch.
-    private static let smallest = CGSize(width: 350, height: 132)
+    private static let smallest = CGSize(width: 350, height: 102)
 
     @Test func mediaWithATrack() throws {
         let media = MediaFeature(bundle: Bundle(for: SnapshotMarker.self))
@@ -105,7 +105,6 @@ struct FeatureSnapshotTests {
             notes.update(notes.add(), text: text)
         }
         try render(notes.view, name: "notes")
-        try render(notes.view, name: "notes-smallest", size: Self.smallest)
         notes.search = "milk"  // search stays open while it has text
         try render(notes.view, name: "notes-searching")
         notes.search = ""
@@ -173,8 +172,12 @@ struct FeatureSnapshotTests {
         try render(ShortcutsFeature().view, name: "shortcuts-loading")
     }
 
+    /// Without a size, at the default size and again at the smallest, where every tab is tightest.
     private func render(_ view: some View, name: String, size: CGSize? = nil) throws {
-        let size = size ?? self.size
+        guard let size else {
+            try render(view, name: name, size: self.size)
+            return try render(view, name: name + "-smallest", size: Self.smallest)
+        }
         let host = NSHostingView(rootView: inNotch(view, size: size))
         let window = NSWindow(
             contentRect: CGRect(x: 0, y: 0, width: size.width + 32, height: size.height + 32),
