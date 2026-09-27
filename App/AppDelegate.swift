@@ -6,6 +6,7 @@ import NotchSurface
 import SwiftUI
 
 #if !APP_STORE
+    import NotchMixer
     import NotchTransfer
     import NotchUsage
 #endif
@@ -14,14 +15,17 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate {
     #if APP_STORE
         // The App Sandbox can't read other tools' sign-ins or add hooks to their settings, so the App
-        // Store edition has no AI Usage or Agents. Sharing with Android ships in the GitHub build first.
-        private let preferences = NotchPreferences(unavailable: [.usage, .agents])
+        // Store edition has no AI Usage or Agents. Sharing with Android, and the Sound tab's per-app
+        // volume (process taps, and a private call to tell whose helper plays), ship in the GitHub build.
+        private let preferences = NotchPreferences(unavailable: [.usage, .agents, .sound])
     #else
         private let preferences = NotchPreferences()
         private let usage = UsageFeature()
         private let agents = AgentsFeature()
         /// Quick Share with Android phones, part of the shelf.
         private let transfer = TransferFeature()
+        /// The Sound tab: devices, and every app's volume.
+        private let mixer = Mixer()
     #endif
     private let media = MediaFeature()
     private let shelf = ShelfFeature()
@@ -86,6 +90,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func tabView(for feature: FeatureID) -> AnyView {
         switch feature {
         case .media: return AnyView(media.view)
+        case .sound:
+            #if APP_STORE
+                return AnyView(EmptyView())
+            #else
+                return AnyView(SoundView(mixer: mixer))
+            #endif
         case .shelf:
             #if APP_STORE
                 return AnyView(shelf.view)
@@ -117,6 +127,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func settingsView(for feature: FeatureID) -> AnyView? {
         switch feature {
         case .media: return AnyView(media.settingsView)
+        case .sound:
+            #if APP_STORE
+                return nil
+            #else
+                return AnyView(mixer.settingsView)
+            #endif
         case .shelf:
             #if APP_STORE
                 return AnyView(shelf.settingsView)
@@ -199,6 +215,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             transfer.onReceived = { [shelf] in shelf.add($0) }
             // A phone asking to send opens the notch on the shelf, where its request is.
             transfer.onRequest = { [weak coordinator] in coordinator?.open(.shelf) }
+            // Hovering the volume in the closed notch opens the Sound tab, where everything else is.
+            volume.onActivity = { [weak coordinator, preferences] activity in
+                var activity = activity
+                if preferences.isEnabled(.sound) { activity.feature = .sound }
+                coordinator?.broadcast(.activity(activity))
+            }
         #endif
         volumeKeys.onKey = { [volume] key, fine in
             switch key {
@@ -255,6 +277,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         features.update(presentations: [], enabled: [])
         #if !APP_STORE
             transfer.stop()
+            mixer.isEnabled = false  // every app back to its own volume
         #endif
         timer.allowSleep()
         volume.stop()
@@ -282,6 +305,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func updateSystemActivities() {
         // Keep awake lives in the Timer tab: turning the tab off must not leave the Mac awake unseen.
         if !preferences.isEnabled(.timer) { timer.allowSleep() }
+        #if !APP_STORE
+            // Apps keep the volumes set in the Sound tab only while it's on.
+            mixer.isEnabled = preferences.isEnabled(.sound)
+        #endif
         preferences.showsVolume ? volume.start() : volume.stop()
         preferences.showsBattery ? battery.start() : battery.stop()
         preferences.showsAccessoryBattery ? accessories.start() : accessories.stop()

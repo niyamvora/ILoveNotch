@@ -31,6 +31,13 @@ ILoveNotch is local-first.
   time. It listens only while the Media tab is open and something plays, turns
   the sound into loudness per frequency band as it plays, and never records,
   stores, or sends audio. Turn it off in Settings › Features › Media.
+- An app you turn down in the Sound tab (GitHub build) plays through
+  ILoveNotch at its new volume while it plays, on the same permission; one you
+  mute is silenced at its source. Its sound goes straight back out to your
+  speakers or headphones and is never recorded, stored, or sent. Apps you leave
+  at 100% aren't touched. **Reset All** in Settings › Features › Sound hands
+  every app back its own volume. Switching devices and setting the output's or
+  microphone's volume there hear nothing at all.
 
 ## AI Usage
 

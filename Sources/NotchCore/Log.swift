@@ -16,6 +16,8 @@ public enum Log {
     public static let features = Logger(subsystem: subsystem, category: "features")
     /// Panel and display work.
     public static let surface = Logger(subsystem: subsystem, category: "surface")
+    /// Per-app volume: which apps play, and their taps.
+    public static let mixer = Logger(subsystem: subsystem, category: "mixer")
     /// Intervals around event handling and feature phase changes.
     public static let signposter = OSSignposter(subsystem: subsystem, category: .pointsOfInterest)
 }
