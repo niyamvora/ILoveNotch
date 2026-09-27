@@ -143,15 +143,23 @@ final class FrameLink: Sendable {
         queue.asyncAfter(deadline: .now() + seconds) { [input] in input.yield(event) }
     }
 
-    /// Hangs up once everything already sent has gone out, or after a few seconds if it can't.
+    /// Hangs up once the other side has too, or after a few seconds if it doesn't. Hanging up with
+    /// its bytes still unread resets the connection, and the reset can throw away the frames just
+    /// sent: a sender still mid-file then heard a cancel as a lost connection.
     func close() {
         input.finish()
         queue.async { [connection, queue] in
             guard case .ready = connection.state else { return connection.cancel() }
-            connection.send(
-                content: nil, contentContext: .finalMessage, isComplete: true,
-                completion: .contentProcessed { _ in connection.cancel() })
+            connection.send(content: nil, contentContext: .finalMessage, isComplete: true, completion: .idempotent)
+            Self.drain(connection)
             queue.asyncAfter(deadline: .now() + 5) { connection.cancel() }
+        }
+    }
+
+    /// Reads and drops whatever the other side still sends, until it hangs up.
+    private static func drain(_ connection: NWConnection) {
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 1 << 20) { _, _, isComplete, error in
+            if isComplete || error != nil { connection.cancel() } else { drain(connection) }
         }
     }
 
