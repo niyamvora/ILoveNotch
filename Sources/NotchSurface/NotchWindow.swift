@@ -18,7 +18,8 @@ final class NotchWindow: NSPanel {
             defer: false)
         isFloatingPanel = true
         level = .statusBar
-        // Without .fullScreenAuxiliary, macOS keeps the notch off full-screen spaces for free.
+        // On every Space, full-screen ones too, with or without .fullScreenAuxiliary: PanelCoordinator
+        // hides the notch on a display a full-screen app fills.
         collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
         isMovable = false
         isReleasedWhenClosed = false

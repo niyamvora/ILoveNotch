@@ -156,12 +156,47 @@ public final class PanelCoordinator {
             return controller
         }
         Log.surface.info("Showing \(self.controllers.count) notch(es)")
+        hideUnderFullScreen()
         onPresentationsChange?(presentations)
     }
 
     private func suspend(_ reason: SuspendReason, _ suspended: Bool) {
         if suspended { suspensions.insert(reason) } else { suspensions.remove(reason) }
         broadcast(suspended ? .suspend(reason) : .resume(reason))
+    }
+
+    /// A Space changed, maybe into or out of full screen. The window list trails a Space's slide by
+    /// up to a second and a half, so it's read now and again once the slide has settled.
+    private func spaceChanged() {
+        hideUnderFullScreen()
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(1.5))
+            self?.hideUnderFullScreen()
+        }
+    }
+
+    /// Hides the notch on each display a full-screen app fills, and brings it back once none does. A
+    /// notched display keeps its notch: full screen there stops below the camera.
+    private func hideUnderFullScreen() {
+        let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
+        let windows = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] ?? []
+        for controller in controllers {
+            let filled = Self.isFilled(CGDisplayBounds(controller.displayID), by: windows)
+            controller.engine.send(filled ? .suspend(.fullScreen) : .resume(.fullScreen))
+        }
+    }
+
+    /// Whether an app's window covers all of `display`, as a full-screen app does. Apps' windows sit
+    /// in layer 0, under the menu bar, the Dock, and the notch. Bounds are the window server's,
+    /// measured from the top left, like CGDisplayBounds.
+    nonisolated static func isFilled(_ display: CGRect, by windows: [[String: Any]]) -> Bool {
+        windows.contains { window in
+            guard window[kCGWindowLayer as String] as? Int == 0,
+                let bounds = window[kCGWindowBounds as String] as? NSDictionary,
+                let frame = CGRect(dictionaryRepresentation: bounds as CFDictionary)
+            else { return false }
+            return frame.contains(display)
+        }
     }
 
     private func watchSystem() {
@@ -177,6 +212,7 @@ public final class PanelCoordinator {
             (workspace, NSWorkspace.sessionDidBecomeActiveNotification, { $0.suspend(.screenLocked, false) }),
             (distributed, Notification.Name("com.apple.screenIsLocked"), { $0.suspend(.screenLocked, true) }),
             (distributed, Notification.Name("com.apple.screenIsUnlocked"), { $0.suspend(.screenLocked, false) }),
+            (workspace, NSWorkspace.activeSpaceDidChangeNotification, { $0.spaceChanged() }),
         ]
         for (center, name, handle) in events {
             let token = center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in

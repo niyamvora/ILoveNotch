@@ -79,6 +79,8 @@ public enum SuspendReason: Hashable, Sendable {
     case systemSleep
     case displaySleep
     case screenLocked
+    /// A full-screen app fills the display, as it does on one without a notch.
+    case fullScreen
 }
 
 /// Everything the notch can be doing. One value replaces the prototype's `isOpen` flag,
@@ -98,7 +100,7 @@ public enum NotchPresentationState: Hashable, Sendable {
     case focused(tab: FeatureID, pinned: Bool)
     /// Showing a live activity on the compact notch.
     case transient(Activity)
-    /// Out of the way: sleep, display sleep, or screen lock.
+    /// Out of the way: sleep, display sleep, screen lock, or a full-screen app.
     case suspended
 
     /// The tab on screen when the notch is open.
