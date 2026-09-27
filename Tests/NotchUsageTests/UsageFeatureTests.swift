@@ -163,11 +163,11 @@ struct UsageFeatureTests {
     }
 }
 
-/// Waits until `condition` holds, checking every 10 ms, for at most five seconds: long enough for a
+/// Waits until `condition` holds, checking every 10 ms, for at most 30 seconds: long enough for a
 /// busy CI runner, where tests share the main actor.
 @MainActor
 func eventually(_ condition: @MainActor () -> Bool) async -> Bool {
-    let deadline = ContinuousClock.now + .seconds(5)
+    let deadline = ContinuousClock.now + .seconds(30)
     while !condition() {
         guard ContinuousClock.now < deadline else { return false }
         try? await Task.sleep(for: .milliseconds(10))
