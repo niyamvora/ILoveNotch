@@ -98,14 +98,17 @@ fi
 mkdir -p "$out/updates"
 cp "$dmg" "$out/updates/"
 [[ -f appcast.xml ]] && cp appcast.xml "$out/updates/"  # keeps the earlier releases' entries
-"$sparkle/generate_appcast" --download-url-prefix "https://github.com/niyamvora/ILoveNotch/releases/download/$tag/" \
-    "$out/updates"
+notes="docs/release-notes/$version.md"  # optional: the update prompt and the GitHub release show it
+[[ -f $notes ]] && cp "$notes" "$out/updates/ILoveNotch-$version.md"
+"$sparkle/generate_appcast" --embed-release-notes \
+    --download-url-prefix "https://github.com/niyamvora/ILoveNotch/releases/download/$tag/" "$out/updates"
 cp "$out/updates/appcast.xml" appcast.xml
 
 echo "== Drafting the GitHub release"
 (cd "$out" && shasum -a 256 "ILoveNotch-$version.dmg" >SHA256SUMS)
 flags=(--draft --title "ILoveNotch $version" --generate-notes --target main)
 [[ $version == *-* ]] && flags+=(--prerelease)
+[[ -f $notes ]] && flags+=(--notes-file "$notes")  # above the generated list of pull requests
 gh release create "$tag" "$dmg" "$out/SHA256SUMS" "${flags[@]}"
 
 cat <<DONE
