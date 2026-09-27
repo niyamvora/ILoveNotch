@@ -5,16 +5,17 @@ import SwiftUI
 /// A tab on the move in the editor.
 struct TabDrag: Equatable {
     var feature: FeatureID
-    /// It was picked up in the row; otherwise it came from the tray of hidden tabs.
+    /// It was picked up in the row; otherwise it came from the tray of apps off the row.
     var fromRow: Bool
     /// Its index in the row if it were dropped now; nil while it's off the row.
     var slot: Int?
 }
 
 /// The open notch's tab row in edit mode, like iOS's jiggling Home Screen: the tabs wiggle and drag
-/// into a new order, or down into the tray of hidden tabs below, where a hidden tab clicks or drags
-/// back into the row. Every change applies at once, so the row is always what the notch will show,
-/// and a tab flies between the row and the tray. Done ends editing.
+/// into a new order, or down into the tray below, which holds the apps kept in the drawer (and those
+/// turned off, dimmed); one clicks or drags back into the row. Every change applies at once, so the
+/// row is always what the notch will show, and a tab flies between the row and the tray. Done ends
+/// editing.
 struct TabEditor: View {
     let preferences: NotchPreferences
     /// The width the tabs share, as outside edit mode, so they keep their size.
@@ -55,9 +56,9 @@ struct TabEditor: View {
     // MARK: The row
 
     private var row: some View {
-        let places = Self.places(preferences.tabs, during: drag)
+        let places = Self.places(preferences.rowTabs, during: drag)
         let width = NotchView.tabWidth(count: places.count, room: room)
-        let removable = preferences.tabs.count > 1  // the notch keeps at least one tab
+        let removable = preferences.rowTabs.count > 1  // the row keeps at least one tab
         return HStack(spacing: NotchView.tabSpacing) {
             ForEach(places, id: \.self) { place in
                 switch place {
@@ -82,8 +83,10 @@ struct TabEditor: View {
             .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
             .overlay(alignment: .topLeading) {
                 if removable, !lifted {
-                    badge("minus", tint: Color(white: 0.32), label: "Hide \(feature.title)") { hide(feature) }
-                        .offset(x: -5, y: -5)
+                    badge("minus", tint: Color(white: 0.32), label: "Keep \(feature.title) in the drawer") {
+                        hide(feature)
+                    }
+                    .offset(x: -5, y: -5)
                 }
             }
             .modifier(Wiggle(still: reduceMotion || drag != nil, pace: feature))
@@ -94,10 +97,10 @@ struct TabEditor: View {
             .help(feature.title)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(feature.title)
-            .accessibilityHint("Drag to move it, or down to hide it.")
+            .accessibilityHint("Drag to move it, or down to keep it in the drawer.")
             .accessibilityAction(named: "Move Left") { move(feature, by: -1) }
             .accessibilityAction(named: "Move Right") { move(feature, by: 1) }
-            .accessibilityAction(named: "Hide") { hide(feature) }
+            .accessibilityAction(named: "Keep in the Drawer") { hide(feature) }
     }
 
     private var doneButton: some View {
@@ -117,14 +120,15 @@ struct TabEditor: View {
     // MARK: The tray
 
     private var tray: some View {
-        let hidden = preferences.tabOrder.filter { !preferences.isEnabled($0) }
+        let row = preferences.rowTabs
+        let hidden = preferences.tabOrder.filter { !row.contains($0) }
         let hiding = drag?.fromRow == true && trayFrame.contains(pointer)
         let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                Text(hidden.isEmpty ? "Every tab is in the notch" : "More tabs")
+                Text(hidden.isEmpty ? "Every app is in the row" : "In the drawer")
                 Spacer(minLength: 0)
-                Text(hiding ? "Drop to hide" : "Drag to reorder, or down here to hide")
+                Text(hiding ? "Drop to keep it in the drawer" : "Drag to reorder, or down into the drawer")
                     .foregroundStyle(.white.opacity(hiding ? 0.9 : 0.4))
             }
             .font(.system(size: 10, weight: .medium))
@@ -153,16 +157,13 @@ struct TabEditor: View {
         .animation(.easeOut(duration: 0.15), value: hiding)
     }
 
+    /// An app off the row; one that's off shows dimmed, and adding it turns it on.
     private func tile(_ feature: FeatureID) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 11, style: .continuous)
+        let off = !preferences.isEnabled(feature)
         return VStack(spacing: 4) {
-            Image(systemName: feature.symbol)
-                .font(.system(size: 17, weight: .medium))
-                .frame(width: 46, height: 38)
-                .background(.white.opacity(0.1), in: shape)
-                .overlay(shape.strokeBorder(.white.opacity(0.12), lineWidth: 0.5))
+            AppIcon(feature: feature)
                 .overlay(alignment: .topTrailing) {
-                    badge("plus", tint: .green, label: "Show \(feature.title)") { show(feature) }
+                    badge("plus", tint: .green, label: "Add \(feature.title) to the row") { show(feature) }
                         .offset(x: 5, y: -5)
                 }
                 .matchedGeometryEffect(id: feature, in: flight)
@@ -172,14 +173,14 @@ struct TabEditor: View {
                 .lineLimit(1)
         }
         .frame(width: 60)
-        .opacity(drag?.feature == feature ? 0.25 : 1)
+        .opacity(drag?.feature == feature ? 0.25 : off ? 0.45 : 1)
         .contentShape(Rectangle())
         .onTapGesture { show(feature) }
         .gesture(dragging(feature, fromRow: false))
-        .help("Add \(feature.title) to the notch")
+        .help(off ? "Turn \(feature.title) on and add it to the row" : "Add \(feature.title) to the row")
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(feature.title)
-        .accessibilityHint("Adds it to the notch.")
+        .accessibilityLabel(off ? "\(feature.title), off" : feature.title)
+        .accessibilityHint("Adds it to the tab row.")
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { show(feature) }
     }
@@ -224,8 +225,8 @@ struct TabEditor: View {
         DragGesture(minimumDistance: 3, coordinateSpace: .named(Self.space))
             .onChanged { value in
                 pointer = value.location
-                // A hidden tab over the row opens a gap, so the row has one more place.
-                let count = preferences.tabs.count + (fromRow ? 0 : 1)
+                // An app from the tray over the row opens a gap, so the row has one more place.
+                let count = preferences.rowTabs.count + (fromRow ? 0 : 1)
                 let overRow = headerFrame.insetBy(dx: 0, dy: -14).contains(value.location)
                 let slot =
                     overRow
@@ -244,24 +245,25 @@ struct TabEditor: View {
         withAnimation(motion) {
             if let slot = drag.slot {
                 preferences.place(drag.feature, at: slot)
-            } else if drag.fromRow, trayFrame.contains(location), preferences.tabs.count > 1 {
-                preferences.setEnabled(drag.feature, false)
+            } else if drag.fromRow, trayFrame.contains(location), preferences.rowTabs.count > 1 {
+                preferences.moveToDrawer(drag.feature)
             }
             self.drag = nil
         }
     }
 
+    /// Off the row, still on, into the drawer.
     private func hide(_ feature: FeatureID) {
-        guard preferences.tabs.count > 1 else { return }
-        withAnimation(motion) { preferences.setEnabled(feature, false) }
+        guard preferences.rowTabs.count > 1 else { return }
+        withAnimation(motion) { preferences.moveToDrawer(feature) }
     }
 
     private func show(_ feature: FeatureID) {
-        withAnimation(motion) { preferences.place(feature, at: preferences.tabs.count) }
+        withAnimation(motion) { preferences.place(feature, at: preferences.rowTabs.count) }
     }
 
     private func move(_ feature: FeatureID, by offset: Int) {
-        guard let index = preferences.tabs.firstIndex(of: feature) else { return }
+        guard let index = preferences.rowTabs.firstIndex(of: feature) else { return }
         withAnimation(motion) { preferences.place(feature, at: index + offset) }
     }
 

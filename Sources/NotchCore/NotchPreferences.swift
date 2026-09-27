@@ -109,6 +109,11 @@ public final class NotchPreferences {
         didSet { defaults.set(tabOrder.map(\.rawValue), forKey: Key.tabOrder) }
     }
 
+    /// Features kept in the app drawer only: on, a click away in its grid, but out of the tab row.
+    public private(set) var drawerOnly: Set<FeatureID> {
+        didSet { defaults.set(drawerOnly.map(\.rawValue).sorted(), forKey: Key.drawerOnly) }
+    }
+
     /// Show a notch on every display, not just the built-in (or main) one.
     public var showOnAllDisplays: Bool {
         didSet { defaults.set(showOnAllDisplays, forKey: Key.showOnAllDisplays) }
@@ -230,6 +235,7 @@ public final class NotchPreferences {
         let stored = (defaults.stringArray(forKey: Key.tabOrder) ?? []).compactMap(FeatureID.init(rawValue:))
             .filter { available.contains($0) && placed.insert($0).inserted }
         tabOrder = stored + available.filter { !placed.contains($0) }
+        drawerOnly = features(Key.drawerOnly)
         showOnAllDisplays = defaults.bool(forKey: Key.showOnAllDisplays)
         pillDisplays = Set(defaults.stringArray(forKey: Key.pillDisplays) ?? [])
         animationStyle = defaults.string(forKey: Key.animationStyle).flatMap(NotchAnimationStyle.init) ?? .spring
@@ -272,8 +278,16 @@ public final class NotchPreferences {
             height: min(max(size.height, minimumExpandedSize.height), maximumExpandedSize.height))
     }
 
-    /// Enabled features in tab order.
+    /// Enabled features in tab order: everything the notch can open, from the row or the drawer.
     public var tabs: [FeatureID] { tabOrder.filter { !disabledFeatures.contains($0) } }
+
+    /// The tab row: enabled features not kept in the drawer only.
+    public var rowTabs: [FeatureID] { tabs.filter { !drawerOnly.contains($0) } }
+
+    /// Takes a feature off the tab row and keeps it, still on, in the drawer.
+    public func moveToDrawer(_ feature: FeatureID) {
+        drawerOnly.insert(feature)
+    }
 
     public func isEnabled(_ feature: FeatureID) -> Bool { !disabledFeatures.contains(feature) }
 
@@ -281,11 +295,11 @@ public final class NotchPreferences {
         if enabled { disabledFeatures.remove(feature) } else { disabledFeatures.insert(feature) }
     }
 
-    /// Puts `feature` at `index` among the tabs, showing it if it was hidden. Hidden features keep
-    /// their places around it, so showing one again brings it back where it was.
+    /// Puts `feature` at `index` in the tab row, turning it on and out of the drawer if need be.
+    /// Features off the row keep their places around it, so one brought back returns where it was.
     public func place(_ feature: FeatureID, at index: Int) {
         guard tabOrder.contains(feature) else { return }
-        let others = tabs.filter { $0 != feature }
+        let others = rowTabs.filter { $0 != feature }
         var order = tabOrder.filter { $0 != feature }
         let index = min(max(index, 0), others.count)
         if index < others.count, let next = order.firstIndex(of: others[index]) {
@@ -297,12 +311,14 @@ public final class NotchPreferences {
         }
         tabOrder = order
         disabledFeatures.remove(feature)
+        drawerOnly.remove(feature)
     }
 
     /// Restores every preference to its default.
     public func reset() {
         disabledFeatures = Self.offByDefault
         tabOrder = available
+        drawerOnly = []
         showOnAllDisplays = false
         pillDisplays = []
         animationStyle = .spring
@@ -319,6 +335,7 @@ public final class NotchPreferences {
     private enum Key {
         static let disabledFeatures = "disabledFeatures"
         static let tabOrder = "tabOrder"
+        static let drawerOnly = "drawerOnly"
         static let seenFeatures = "seenFeatures"
         static let showOnAllDisplays = "showOnAllDisplays"
         static let pillDisplays = "pillDisplays"

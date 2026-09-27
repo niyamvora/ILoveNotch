@@ -110,11 +110,13 @@ that delivers it.
 
 ## Tabs in your order
 
-- [x] A grid button after the tabs (or right-click on them) edits the tab row inside the notch: the tabs wiggle and drag into a new order, and a tray below holds the hidden tabs
-- [x] Drag a tab down into the tray, or click its minus, to hide it; click or drag a hidden tab back into the row, where a gap opens for it; the notch keeps at least one tab
-- [x] Every change applies at once and persists; a hidden tab keeps its place, a feature added by an update joins the end, and Settings › Features lists the tabs in the same order
-- [x] The notch stays open while editing; Done (or closing the notch) ends it
-- [x] VoiceOver: Move Left, Move Right, and Hide on each tab, and a hidden tab's own action adds it
+- [x] A grid button after the tabs opens the app drawer: every app as a grid, like Launchpad, the open one lit and those turned off dimmed; a click opens one (turning it on if it was off) and the grid button goes back to the drawer; a small notch gets smaller tiles, so every app fits
+- [x] An app opened from the drawer shows at the end of the tab row while it's open
+- [x] The drawer's Edit tile (or a right-click on the tabs) edits the tab row inside the notch: the tabs wiggle and drag into a new order, and a tray below holds the apps kept in the drawer
+- [x] Drag a tab down into the tray, or click its minus, to keep it in the drawer, still on; click or drag one back into the row, where a gap opens for it; a drawer tile's right-click does the same; the row keeps at least one tab
+- [x] Every change applies at once and persists; an app in the drawer keeps its place, a feature added by an update joins the end, and Settings › Features lists the tabs in the same order
+- [x] The notch stays open while editing; Done goes back to the drawer, and closing the notch ends both
+- [x] VoiceOver: Move Left, Move Right, and Keep in the Drawer on each tab, and a tray app's own action adds it
 
 ## Sound tab
 

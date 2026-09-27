@@ -63,6 +63,19 @@ struct NotchPreferencesTests {
         #expect(NotchPreferences(defaults: defaults).tabs == preferences.tabs, "and the order persists")
     }
 
+    @Test func anAppKeptInTheDrawerStaysOnButLeavesTheRow() {
+        let preferences = NotchPreferences(defaults: defaults)
+        preferences.moveToDrawer(.notes)
+        #expect(preferences.isEnabled(.notes), "still on, so the notch can open it")
+        #expect(preferences.tabs.contains(.notes) && !preferences.rowTabs.contains(.notes))
+        #expect(!NotchPreferences(defaults: defaults).rowTabs.contains(.notes), "and it stays in the drawer")
+        preferences.place(.notes, at: 0)
+        #expect(preferences.rowTabs.first == .notes, "placing it puts it back on the row")
+        preferences.moveToDrawer(.shelf)
+        preferences.reset()
+        #expect(preferences.rowTabs == defaultTabs)
+    }
+
     @Test func aFeatureAddedByAnUpdateJoinsTheEndOfACustomOrder() {
         defaults.set(["timer", "media", "a-feature-from-the-future", "timer"], forKey: "tabOrder")
         let order = NotchPreferences(defaults: defaults).tabOrder

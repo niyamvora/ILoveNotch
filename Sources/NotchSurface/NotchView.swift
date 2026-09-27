@@ -38,6 +38,8 @@ struct NotchView: View {
     let content: NotchContent
     /// Editing the tab row, in place of the open tab (`TabEditor`).
     @State var editing = false
+    /// Every app as a grid, over the open tab (`AppDrawer`).
+    @State var drawer = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -49,6 +51,8 @@ struct NotchView: View {
     @State private var resizeStart: CGSize?
     /// Editing pinned the notch, so Done unpins it again.
     @State private var pinnedToEdit = false
+    /// The open tab came from the drawer, so its content zooms in rather than sliding across.
+    @State private var fromDrawer = false
     @Namespace private var selection
 
     var body: some View {
@@ -108,10 +112,11 @@ struct NotchView: View {
         // like a speed every second, redraws once instead of running a spring each time.
         .animation(activityMotion, value: resting.map { [$0.feature?.rawValue, $0.symbol] })
         .animation(reduceMotion ? nil : .spring(response: 0.26, dampingFraction: 0.8), value: dropTargeted)
-        // Closing ends editing, so the notch opens on a tab next time.
+        // Closing ends editing and the drawer, so the notch opens on a tab next time.
         .onChange(of: presentation.openTab == nil) { _, closed in
             if closed {
                 editing = false
+                drawer = false
                 pinnedToEdit = false
             }
         }
@@ -263,20 +268,29 @@ struct NotchView: View {
                 VStack(spacing: 8) {
                     HStack(spacing: Self.tabSpacing) {
                         tabBar(selected: tab)
-                        headerButton("square.grid.2x2", label: "Edit Tabs", dim: true, action: startEditing)
+                        headerButton(
+                            drawer ? "square.grid.2x2.fill" : "square.grid.2x2",
+                            label: drawer ? "Back to \(tab.title)" : "All Apps", lit: drawer, dim: !drawer
+                        ) { showDrawer(!drawer) }
                         Spacer(minLength: 0)
                         headerButton(pinned ? "pin.fill" : "pin", label: pinned ? "Unpin" : "Pin", lit: pinned) {
                             engine.send(.togglePin)
                         }
                         headerButton("gearshape", label: "Settings") { content.openSettings() }
                     }
-                    content.tab(tab)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                        // Overlay scroll bars would sit on top of charts and lists; faded edges show there's more.
-                        .scrollIndicators(.never)
-                        .id(tab)
-                        .transition(tabTransition)
-                        .animation(reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.74), value: tab)
+                    if drawer {
+                        AppDrawer(preferences: preferences, current: tab, open: openFromDrawer, edit: startEditing)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                            .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 1.04)))
+                    } else {
+                        content.tab(tab)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                            // Overlay scroll bars would sit on top of charts and lists; faded edges show there's more.
+                            .scrollIndicators(.never)
+                            .id(tab)
+                            .transition(tabTransition)
+                            .animation(reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.74), value: tab)
+                    }
                 }
                 .transition(.opacity)
             }
@@ -306,7 +320,7 @@ struct NotchView: View {
     private static let headerButtonWidth: CGFloat = 26
 
     /// What the tabs share of the header at the smallest open size: all but the margins and the
-    /// buttons beside them (Edit Tabs, the pin, and Settings).
+    /// buttons beside them (All Apps, the pin, and Settings).
     private var tabRoom: CGFloat {
         NotchPreferences.minimumExpandedSize.width - contentPadding.leading - contentPadding.trailing
             - 3 * (Self.headerButtonWidth + Self.tabSpacing)
@@ -317,6 +331,28 @@ struct NotchView: View {
     static func tabWidth(count: Int, room: CGFloat) -> CGFloat {
         let count = CGFloat(max(count, 1))
         return min(32, ((room - tabSpacing * (count - 1)) / count).rounded(.down))
+    }
+
+    /// Opens the app drawer over the open tab, or closes it back to that tab.
+    private func showDrawer(_ show: Bool) {
+        fromDrawer = true
+        withAnimation(reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.84)) { drawer = show }
+    }
+
+    /// Opens an app from the drawer, zooming in from the grid. One that was off is turned on first and
+    /// stays in the drawer, out of the row; the grid button brings the drawer back.
+    private func openFromDrawer(_ feature: FeatureID) {
+        if !preferences.isEnabled(feature) {
+            preferences.setEnabled(feature, true)
+            preferences.moveToDrawer(feature)
+            // Every notch hears of it in a moment; this one needs it now to open the app.
+            engine.send(.setTabs(preferences.tabs))
+        }
+        fromDrawer = true
+        withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.84)) {
+            drawer = false
+            engine.send(.selectTab(feature))
+        }
     }
 
     /// Edit mode keeps the notch open, pinning it for the while, and shows the tab editor.
@@ -334,20 +370,25 @@ struct NotchView: View {
         pinnedToEdit = false
     }
 
+    /// The tab row, plus an app opened from the drawer at its end while it's open, the way the Dock
+    /// shows a running app. With the drawer open, no tab is lit.
     private func tabBar(selected: FeatureID) -> some View {
-        let tabs = engine.state.tabs
+        let row = preferences.rowTabs
+        let tabs = row.contains(selected) ? row : row + [selected]
         let tabWidth = Self.tabWidth(count: tabs.count, room: tabRoom)
         return HStack(spacing: Self.tabSpacing) {
             ForEach(tabs, id: \.self) { tab in
                 Button {
                     // Content slides the same way the selection travels.
                     slideForward = (tabs.firstIndex(of: tab) ?? 0) >= (tabs.firstIndex(of: selected) ?? 0)
+                    fromDrawer = drawer
+                    if drawer { showDrawer(false) }
                     engine.send(.selectTab(tab))
                 } label: {
                     Image(systemName: tab.symbol)
                         .font(.system(size: 14, weight: .medium))
                         .frame(width: tabWidth, height: 26)
-                        .scaleEffect(tab == selected ? 1.08 : 1)
+                        .scaleEffect(tab == selected && !drawer ? 1.08 : 1)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -361,7 +402,7 @@ struct NotchView: View {
             // One capsule travels between tabs: a bouncy spring carries it, and a quick
             // stretch-and-settle makes the move read as jelly instead of a jump.
             Capsule()
-                .fill(.white.opacity(0.16))
+                .fill(.white.opacity(drawer ? 0 : 0.16))
                 .matchedGeometryEffect(id: selected, in: selection, isSource: false)
                 .keyframeAnimator(initialValue: CGSize(width: 1, height: 1), trigger: selected) { capsule, scale in
                     capsule.scaleEffect(scale)
@@ -385,9 +426,13 @@ struct NotchView: View {
         }
     }
 
-    /// Content slides in from the side the selection moved toward, with a little scale and fade.
+    /// Content slides in from the side the selection moved toward, with a little scale and fade; an
+    /// app opened from the drawer zooms up from its grid instead.
     private var tabTransition: AnyTransition {
         guard !reduceMotion else { return .opacity }
+        if fromDrawer {
+            return .asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.9)), removal: .opacity)
+        }
         let incoming: Edge = slideForward ? .trailing : .leading
         let outgoing: Edge = slideForward ? .leading : .trailing
         return .asymmetric(

@@ -108,13 +108,28 @@ struct NotchSnapshotTests {
         try draw("editing-all", metrics: notched, events: events, preferences: preferences, editing: true)
     }
 
+    /// The app drawer: every app, the open one lit, one off dimmed, and the Edit tile; at the default
+    /// size, the smallest, and on a display without a notch. Then an app kept in the drawer, open, at
+    /// the end of the row.
+    @Test func theAppDrawerRenders() throws {
+        let preferences = Self.preferences()
+        preferences.setEnabled(.agents, false)
+        preferences.moveToDrawer(.usage)
+        let events: [NotchEvent] = [.show, .clicked]
+        try draw("drawer", metrics: notched, events: events, preferences: preferences, drawer: true)
+        try draw("drawer-pill", metrics: notchless, events: events, preferences: preferences, drawer: true)
+        preferences.resizeExpanded(to: NotchPreferences.minimumExpandedSize)
+        try draw("drawer-smallest", metrics: notched, events: events, preferences: preferences, drawer: true)
+        try draw("drawer-app-open", metrics: notched, events: events + [.selectTab(.usage)], preferences: preferences)
+    }
+
     private static func preferences() -> NotchPreferences {
         NotchPreferences(defaults: UserDefaults(suiteName: "Snapshots.\(UUID().uuidString)")!)
     }
 
     private func draw(
         _ name: String, metrics: NotchMetrics, events: [NotchEvent], preferences: NotchPreferences,
-        editing: Bool = false
+        editing: Bool = false, drawer: Bool = false
     ) throws {
         let engine = NotchEngine()
         events.forEach(engine.send)
@@ -126,11 +141,14 @@ struct NotchSnapshotTests {
             openSettings: {})
         let panel = metrics.panelFrame.size
         let view = NotchView(
-            engine: engine, metrics: metrics, preferences: preferences, content: content, editing: editing
+            engine: engine, metrics: metrics, preferences: preferences, content: content, editing: editing,
+            drawer: drawer
         )
         .frame(width: panel.width, height: panel.height)
         .background(Color(white: 0.82))  // stands in for the desktop behind the transparent panel
-        let image = try #require(Self.render(view, size: panel, name: name))
+        // The drawer's tiles pop in on appearing; without animation, a moment later they're in place.
+        .transaction { if drawer { $0.animation = nil } }
+        let image = try #require(Self.render(view, size: panel, name: name, settle: drawer))
         #expect(image.pixelsWide > 0 && image.pixelsHigh > 0)
     }
 
@@ -158,12 +176,17 @@ struct NotchSnapshotTests {
     /// Draws the view through the same AppKit hosting path the app uses (ImageRenderer can't draw
     /// AppKit-backed pieces such as the drop target and paints yellow placeholders over them). With
     /// SNAPSHOT_DIR set, also writes `<name>.png` there.
-    static func render(_ view: some View, size: CGSize, name: String) -> NSBitmapImageRep? {
+    /// `settle` lets what the view does on appearing happen before the picture is taken.
+    static func render(_ view: some View, size: CGSize, name: String, settle: Bool = false) -> NSBitmapImageRep? {
         let host = NotchHostingView(rootView: view)
         let window = NSWindow(
             contentRect: CGRect(origin: .zero, size: size), styleMask: .borderless, backing: .buffered, defer: false)
         window.contentView = host
         host.layoutSubtreeIfNeeded()
+        if settle {
+            RunLoop.main.run(until: .now + 0.1)
+            host.layoutSubtreeIfNeeded()
+        }
         guard let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { return nil }
         host.cacheDisplay(in: host.bounds, to: bitmap)
         if let directory = ProcessInfo.processInfo.environment["SNAPSHOT_DIR"] {
