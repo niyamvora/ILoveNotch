@@ -12,6 +12,8 @@ COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null)$(shell git diff --quie
 SIGNING_IDENTITY ?= $(shell security find-identity -v -p codesigning 2>/dev/null | awk -F'"' '/Apple Development/ {print $$2; exit}')
 # Manual style on every target, including SwiftPM's resource bundles, so none of them asks for a team.
 SIGNING = $(if $(SIGNING_IDENTITY),CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY='$(SIGNING_IDENTITY)')
+# More build settings for xcodebuild, such as CI's ONLY_ACTIVE_ARCH=YES to compile one architecture.
+XCODEBUILD_ARGS ?=
 
 .PHONY: setup project build build-app-store run install update release app-store test lint format licenses secrets check clean
 
@@ -26,11 +28,12 @@ project: ## Generate OpenNotch.xcodeproj from project.yml
 build: project ## Build the app; CONFIGURATION=Debug|Release
 	xcodebuild -project OpenNotch.xcodeproj -scheme OpenNotch -configuration $(CONFIGURATION) \
 		-destination 'platform=macOS,arch=$(ARCH)' -derivedDataPath $(DERIVED_DATA) \
-		OPENNOTCH_COMMIT='$(COMMIT)' $(SIGNING) -quiet build
+		OPENNOTCH_COMMIT='$(COMMIT)' $(SIGNING) $(XCODEBUILD_ARGS) -quiet build
 
 build-app-store: project ## Build the sandboxed App Store edition into its own folder
 	xcodebuild -project OpenNotch.xcodeproj -scheme "OpenNotch App Store" -configuration $(CONFIGURATION) \
-		-destination 'platform=macOS,arch=$(ARCH)' -derivedDataPath .build/xcode-appstore $(SIGNING) -quiet build
+		-destination 'platform=macOS,arch=$(ARCH)' -derivedDataPath .build/xcode-appstore $(SIGNING) \
+		$(XCODEBUILD_ARGS) -quiet build
 
 run: build ## Build and relaunch the app
 	-osascript -e 'quit app "ILoveNotch"'

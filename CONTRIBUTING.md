@@ -27,6 +27,14 @@ rules matter more than usual.
 Build and test commands live in the [README](README.md#build--run). Run
 `make check` before pushing; CI runs the same targets.
 
+Work on `dev`, or a branch off it, and open a pull request from `dev` into
+`main` when it's ready. CI runs on pull requests into `main` rather than on
+every push: a draft waits until it's marked ready for review, and a change to
+docs alone passes without building. Run it by hand from the Actions tab. After
+a merge, the Sync dev workflow puts `dev` back on `main`, since the rebase gives
+`main`'s copies new hashes; on a clean `dev`, `git fetch && git reset --hard
+origin/dev` catches up.
+
 ## Commits
 
 Use [Conventional Commits](https://www.conventionalcommits.org/):
