@@ -51,7 +51,8 @@ feat/xyz ──merge──▶ dev ──pull request, CI──▶ main
 5. **Once it's green, `make ship`.** It fast-forwards `main` to `dev`, only if
    `dev` is what the pull request tested and every required check passed, and
    GitHub marks the pull request merged. The commits keep their hashes, so
-   `dev`, `main`, and every open branch stay in step.
+   `dev`, `main`, and every open branch stay in step. GitHub still deletes the
+   merged `dev` branch, and the Sync dev workflow puts it back within a minute.
 
 Don't merge that pull request with its **Rebase and merge** button: the button
 copies the commits onto `main` with new hashes. The Sync dev workflow then puts
