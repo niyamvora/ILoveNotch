@@ -108,6 +108,18 @@ that delivers it.
 - [x] Notch on every display: a display without a notch gets one drawn inside its menu bar, as tall as the bar and as wide as the Mac's own notch (or a MacBook's); Settings › General picks Notch or Pill per display
 - [x] Glass look: Settings › General › Theme opens the notch in glass on macOS 26, a live blur of what's behind it with Liquid Glass edges, the same on every tab whether or not the notch has the keyboard, and clickable everywhere; closed it stays black in the camera housing, and Reduce Transparency, Increase Contrast, and macOS 14 and 15 keep it black
 
+## Sound tab
+
+- [x] A Sound tab of its own, beside Media: the Mac's outputs, or with a switch its inputs (speakers, wired headphones, AirPods and other Bluetooth devices while connected, AirPlay, displays), each with its icon; a click makes one the Mac's output or input
+- [x] Faders for the output's volume (with its AirPods or headphones when that's what plays) and the microphone's, in orange; a click on the icon mutes either
+- [x] A fader per app playing sound, tinted from its icon, in the order they started; drag to set its volume and click its icon to mute; each app keeps its volume until it's back at 100% or reset (Settings › Features › Sound › Reset All)
+- [x] Helpers count as their app: Chrome's, Spotify's, and the WebKit process behind Safari (or any app that plays web audio)
+- [x] Hovering the volume keys' level in the closed notch opens the Sound tab
+- [x] Nothing listens while the tab is closed and every app is at 100%; an app turned down plays through a tap only while it plays, and a muted one is silenced at its source with no audio work at all
+- [x] Without the system audio recording permission apps keep their own volume, and the tab links to Privacy Settings
+- [x] GitHub build only (the App Store edition keeps the waveform)
+- [ ] Checked by ear on a MacBook: each of the [hardware checks](qa.md#hardware-checks)
+
 ## Android sharing ([plan](filesharing.md))
 
 - [x] Phone to Mac with Quick Share: the notch opens on the shelf with the phone, what it's sending, and the code both screens show; nothing is saved until Accept

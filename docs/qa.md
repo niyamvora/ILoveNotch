@@ -57,6 +57,10 @@ still to be set.
 - [ ] Charger in and out: the battery activity
 - [ ] Camera mirror: allow, deny, and revoke while running; the camera light turns off when the tab closes
 - [ ] Waveform: allow and deny system audio capture; switching output devices while playing
+- [ ] Sound tab: Spotify, a Chrome tab, and a Safari tab each turn down by ear with no echo or click; mute and
+  unmute while playing; 100% hands the app back; switch to AirPods (and back) from the list mid-song; a Bluetooth
+  speaker appears when it connects; the microphone fader moves the input level and mutes it in a call; relaunch keeps
+  the levels; with system audio recording denied, apps stay at their own volume and the tab says why
 - [ ] Replace the volume display: grant and revoke Accessibility while running
 - [ ] Media: Apple Music, Spotify, a browser, and QuickTime; kill the helper (`pkill -f mediaremote-adapter`) and check Media falls back
 - [ ] Shelf: deleted, moved, and corrupt files

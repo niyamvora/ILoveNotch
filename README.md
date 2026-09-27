@@ -78,6 +78,10 @@ public and buildable whatever happens to the project.
   floating pill if you'd rather.
 - **Media.** What's playing in any app, with artwork, controls, a seek bar, and
   a waveform that moves with the music.
+- **Sound.** Every app playing sound on a fader of its own, with its icon, to
+  turn it down or mute it; your output's and microphone's volume; and a switch
+  between your speakers, headphones, AirPods and other Bluetooth devices,
+  AirPlay, and displays. [More below](#sound).
 - **Shelf.** Drop files on the notch to keep them at hand; drag them back out,
   preview them with Quick Look, or send them with AirDrop. Android phones
   share with it too, over Quick Share on your Wi-Fi: send shelf files to a
@@ -175,6 +179,7 @@ hover, clicks, drags, sleep/lock, display changes
 | `NotchFeatures` | Feature modules (Media, Shelf, Clipboard, Calendar, Tasks, Notes, Shortcuts, Timer, Mirror), each a `NotchFeature` with its views and settings, and the event-driven system monitors and hooks (volume, battery, accessories, volume keys, keyboard shortcuts, Show in Notch) |
 | `NotchUsage` | The GitHub build's developer tabs: AI Usage (provider tiles, rings, pace, spend, and trends, over providers adapted from [OpenUsage](https://github.com/robinebers/openusage) (MIT) in `NotchUsage/OpenUsage`) and Agents (Claude Code and Codex hooks, in `NotchUsage/Agents`) |
 | `NotchTransfer` | The GitHub build's Android sharing: Quick Share on Apple's own frameworks (Bonjour, CryptoKit, Network.framework) in `NotchTransfer/QuickShare`, with the shelf's request card, the send window, and settings |
+| `NotchMixer` | The GitHub build's Sound tab: output and input devices and their volume, and per-app volume on Core Audio process taps (macOS 14.2+), with a private aggregate device for each app turned down while it plays |
 | `ThirdParty/` | [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter) (BSD-3-Clause) as a git submodule |
 | `Tests/` | Unit tests (reducer transitions and fuzzing, engine, feature host, preferences, geometry, features), offscreen snapshot tests, XCTest performance tests, and OpenUsage's provider tests on its fixtures (`OpenUsageTests`) |
 
@@ -242,6 +247,27 @@ The waveform under the player moves with the music. It listens to your Mac's
 audio output only while Media is open and playing, so macOS asks once for
 permission to capture system audio. Nothing is recorded; see
 [PRIVACY.md](PRIVACY.md). Turn it off in **Settings › Features › Media**.
+
+## Sound
+
+The Sound tab (GitHub build) is a small mixing desk. On its left are the Mac's
+outputs, or with the switch above them its inputs: speakers, wired headphones,
+AirPods and other Bluetooth devices while they're connected, AirPlay, and
+displays. Click one to send sound there or record from it, as in Control Center.
+On its right are faders: your output's volume, your microphone's in orange,
+then one for each app playing sound, with its icon and a dot while it plays.
+Drag a fader to turn that app down, click its icon to mute it, and bring it back
+to 100% to leave it alone. Chrome and Safari count as one app however many
+helper processes they play from. Each app keeps its volume until you change it,
+including after a relaunch; **Reset All** in Settings › Features › Sound undoes
+them all. The volume keys' level in the closed notch opens the tab when you
+hover it.
+
+Per-app volume uses macOS 14.2's Core Audio process taps, the permission the
+waveform already asks for, and no audio driver. An app you turn down plays
+through ILoveNotch only while it plays, so its sound gains about 10 ms on the
+way to your speakers, and a muted app is silenced at its source with no audio
+work at all. With every app at 100% and the tab closed, nothing listens.
 
 ## AI usage
 
