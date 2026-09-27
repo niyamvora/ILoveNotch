@@ -76,21 +76,39 @@ struct NotchSnapshotTests {
         try draw(name + "-activity", metrics: metrics, events: [.show, .activity(song)], preferences: preferences)
     }
 
-    /// The densest layout: every tab, the pin, and Settings in the header, and the resize corner, at
-    /// the smallest open size.
+    /// The densest layout: every tab, Edit Tabs, the pin, and Settings in the header, and the resize
+    /// corner, at the smallest open size.
     @Test func everyTabFitsTheSmallestSize() throws {
         let preferences = Self.preferences()
+        for feature in FeatureID.allCases { preferences.setEnabled(feature, true) }
         preferences.resizeExpanded(to: NotchPreferences.minimumExpandedSize)
         try draw("expanded-smallest", metrics: notched, events: [.show, .clicked], preferences: preferences)
+    }
+
+    /// Editing the tabs, with a few in the tray, at the default size and the smallest, and with every
+    /// tab in the row.
+    @Test func theTabEditorRenders() throws {
+        let preferences = Self.preferences()
+        preferences.setEnabled(.usage, false)
+        preferences.setEnabled(.agents, false)
+        preferences.place(.timer, at: 1)
+        let events: [NotchEvent] = [.show, .clicked]
+        try draw("editing", metrics: notched, events: events, preferences: preferences, editing: true)
+        try draw("editing-pill", metrics: notchless, events: events, preferences: preferences, editing: true)
+        preferences.resizeExpanded(to: NotchPreferences.minimumExpandedSize)
+        try draw("editing-smallest", metrics: notched, events: events, preferences: preferences, editing: true)
+        for feature in FeatureID.allCases { preferences.setEnabled(feature, true) }
+        try draw("editing-all", metrics: notched, events: events, preferences: preferences, editing: true)
     }
 
     private static func preferences() -> NotchPreferences {
         NotchPreferences(defaults: UserDefaults(suiteName: "Snapshots.\(UUID().uuidString)")!)
     }
 
-    private func draw(_ name: String, metrics: NotchMetrics, events: [NotchEvent], preferences: NotchPreferences)
-        throws
-    {
+    private func draw(
+        _ name: String, metrics: NotchMetrics, events: [NotchEvent], preferences: NotchPreferences,
+        editing: Bool = false
+    ) throws {
         let engine = NotchEngine()
         events.forEach(engine.send)
         let content = NotchContent(
@@ -100,11 +118,34 @@ struct NotchSnapshotTests {
             dropFiles: { _ in false },
             openSettings: {})
         let panel = metrics.panelFrame.size
-        let view = NotchView(engine: engine, metrics: metrics, preferences: preferences, content: content)
-            .frame(width: panel.width, height: panel.height)
-            .background(Color(white: 0.82))  // stands in for the desktop behind the transparent panel
+        let view = NotchView(
+            engine: engine, metrics: metrics, preferences: preferences, content: content, editing: editing
+        )
+        .frame(width: panel.width, height: panel.height)
+        .background(Color(white: 0.82))  // stands in for the desktop behind the transparent panel
         let image = try #require(Self.render(view, size: panel, name: name))
         #expect(image.pixelsWide > 0 && image.pixelsHigh > 0)
+    }
+
+    @Test func aDraggedTabShowsWhereItWouldLand() {
+        let tabs: [FeatureID] = [.media, .shelf, .notes]
+        typealias Place = TabEditor.Place
+        let moving = TabDrag(feature: .notes, fromRow: true, slot: 0)
+        #expect(TabEditor.places(tabs, during: moving) == [Place.tab(.notes), .tab(.media), .tab(.shelf)])
+        let joining = TabDrag(feature: .timer, fromRow: false, slot: 1)
+        #expect(TabEditor.places(tabs, during: joining) == [Place.tab(.media), .gap, .tab(.shelf), .tab(.notes)])
+        let leaving = TabDrag(feature: .shelf, fromRow: true, slot: nil)
+        #expect(TabEditor.places(tabs, during: leaving) == [Place.tab(.media), .tab(.notes)], "headed for the tray")
+        #expect(TabEditor.places(tabs, during: nil) == tabs.map(Place.tab))
+    }
+
+    @Test func thePointerPicksThePlaceUnderIt() {
+        // Four places, 30 pt wide with 2 pt between, starting at x = 100.
+        #expect(TabEditor.slot(at: 90, from: 100, width: 30, count: 4) == 0, "before the row: first")
+        #expect(TabEditor.slot(at: 115, from: 100, width: 30, count: 4) == 0)
+        #expect(TabEditor.slot(at: 133, from: 100, width: 30, count: 4) == 1)
+        #expect(TabEditor.slot(at: 500, from: 100, width: 30, count: 4) == 3, "past the row: last")
+        #expect(TabEditor.slot(at: 115, from: 100, width: 30, count: 0) == 0)
     }
 
     /// Draws the view through the same AppKit hosting path the app uses (ImageRenderer can't draw

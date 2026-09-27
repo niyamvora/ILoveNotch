@@ -108,6 +108,14 @@ that delivers it.
 - [x] Notch on every display: a display without a notch gets one drawn inside its menu bar, as tall as the bar and as wide as the Mac's own notch (or a MacBook's); Settings › General picks Notch or Pill per display
 - [x] Glass look: Settings › General › Theme opens the notch in glass on macOS 26, a live blur of what's behind it with Liquid Glass edges, the same on every tab whether or not the notch has the keyboard, and clickable everywhere; closed it stays black in the camera housing, and Reduce Transparency, Increase Contrast, and macOS 14 and 15 keep it black
 
+## Tabs in your order
+
+- [x] A grid button after the tabs (or right-click on them) edits the tab row inside the notch: the tabs wiggle and drag into a new order, and a tray below holds the hidden tabs
+- [x] Drag a tab down into the tray, or click its minus, to hide it; click or drag a hidden tab back into the row, where a gap opens for it; the notch keeps at least one tab
+- [x] Every change applies at once and persists; a hidden tab keeps its place, a feature added by an update joins the end, and Settings › Features lists the tabs in the same order
+- [x] The notch stays open while editing; Done (or closing the notch) ends it
+- [x] VoiceOver: Move Left, Move Right, and Hide on each tab, and a hidden tab's own action adds it
+
 ## Sound tab
 
 - [x] A Sound tab of its own, beside Media: the Mac's outputs, or with a switch its inputs (speakers, wired headphones, AirPods and other Bluetooth devices while connected, AirPlay, displays), each with its icon; a click makes one the Mac's output or input

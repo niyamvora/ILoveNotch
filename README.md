@@ -73,7 +73,9 @@ public and buildable whatever happens to the project.
   behind the camera housing until it has something to tell you, like a meeting
   about to start. Pick how it opens and closes (spring, jelly, pop, smooth,
   snappy, or instant), drag its bottom-right corner to resize it, and pin it
-  open. On macOS 26, open it in Liquid Glass instead of black. Works on every
+  open. The grid button after the tabs (or a right-click on them) lets you drag
+  the tabs into your own order, and hide the ones you don't use in a tray below,
+  right in the notch. On macOS 26, open it in Liquid Glass instead of black. Works on every
   display: where there's no notch, it draws one inside the menu bar, or a
   floating pill if you'd rather.
 - **Media.** What's playing in any app, with artwork, controls, a seek bar, and
