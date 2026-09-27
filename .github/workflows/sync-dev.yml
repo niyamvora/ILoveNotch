@@ -1,0 +1,33 @@
+name: Sync dev
+
+# main takes dev's commits by rebase, which gives them new hashes, and GitHub then deletes the
+# merged branch. This puts dev back on main, so the next pull request from it starts clean.
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.event.pull_request.merged && github.event.pull_request.head.ref == 'dev'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+
+      - name: Put dev on main
+        env:
+          MERGED: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # New work pushed to dev after the merge stays where it is.
+          current=$(git ls-remote --heads origin dev | cut -f1)
+          if [ -n "$current" ] && [ "$current" != "$MERGED" ]; then
+            echo "dev moved on since the merge; leaving it"
+            exit 0
+          fi
+          git push --force origin HEAD:refs/heads/dev
