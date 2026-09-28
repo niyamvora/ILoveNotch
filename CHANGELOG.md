@@ -11,6 +11,8 @@ as they land, written for the people who use the app
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-28
+
 ILoveNotch 1.2 turns each app's volume up or down, shows your network speed, puts the tabs in your order, and lays Settings out like System Settings.
 
 ### Added
@@ -77,6 +79,7 @@ The first release of ILoveNotch: your MacBook's notch, finally useful.
 - **System activities.** Volume, charging and battery, and Bluetooth accessory batteries show briefly in the notch.
 - Signed and notarized by Apple, with updates through Sparkle, and on Homebrew: `brew install --cask niyamvora/tap/ilovenotch`.
 
-[Unreleased]: https://github.com/niyamvora/ILoveNotch/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/niyamvora/ILoveNotch/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/niyamvora/ILoveNotch/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/niyamvora/ILoveNotch/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/niyamvora/ILoveNotch/releases/tag/v1.0.0
