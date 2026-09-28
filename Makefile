@@ -15,7 +15,7 @@ SIGNING = $(if $(SIGNING_IDENTITY),CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY='$(
 # More build settings for xcodebuild, such as CI's ONLY_ACTIVE_ARCH=YES to compile one architecture.
 XCODEBUILD_ARGS ?=
 
-.PHONY: setup project build build-app-store run install update ship release app-store test lint format licenses secrets check clean
+.PHONY: setup project build build-app-store run install update ship release app-store test lint format licenses secrets changelog check clean
 
 setup: ## Install developer tools (Brewfile) and fetch submodules
 	brew bundle
@@ -82,7 +82,11 @@ licenses: ## SPDX headers and third-party notices
 secrets: ## No keys, certificates, profiles, or credentials files in git
 	scripts/check-secrets.sh
 
-check: secrets lint test build licenses ## Everything CI runs
+# The first MARKETING_VERSION in project.yml is the app's; the vendored helper's comes later.
+changelog: ## CHANGELOG.md has release notes for the version in project.yml
+	@scripts/release-notes.sh "$$(awk '/^ +MARKETING_VERSION:/ {print $$2; exit}' project.yml)" >/dev/null
+
+check: secrets lint changelog test build licenses ## Everything CI runs
 
 clean:
 	rm -rf .build OpenNotch.xcodeproj

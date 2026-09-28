@@ -65,6 +65,9 @@ jobs:
       - name: Formatting
         run: make lint
 
+      - name: Release notes for this version
+        run: make changelog
+
       - name: Unit and performance tests
         run: make test
 

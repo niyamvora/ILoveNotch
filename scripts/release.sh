@@ -35,6 +35,15 @@ sparkle=.build/sparkle/bin
 rm -rf "$out"
 mkdir -p "$out"
 
+# The version's section of CHANGELOG.md is its release notes, in the update prompt and on the GitHub
+# release (a beta gets a section of its own). The app must already carry the version, in project.yml.
+notes="$out/notes.md"
+scripts/release-notes.sh "$version" >"$notes"
+grep -Eq "^ +MARKETING_VERSION: $marketing( |$)" project.yml || {
+    echo "Set MARKETING_VERSION in project.yml to $marketing first" >&2
+    exit 1
+}
+
 echo "== Checking $tag"
 make lint test
 
@@ -98,24 +107,28 @@ fi
 mkdir -p "$out/updates"
 cp "$dmg" "$out/updates/"
 [[ -f appcast.xml ]] && cp appcast.xml "$out/updates/"  # keeps the earlier releases' entries
-notes="docs/release-notes/$version.md"  # optional: the update prompt and the GitHub release show it
-[[ -f $notes ]] && cp "$notes" "$out/updates/ILoveNotch-$version.md"
+cp "$notes" "$out/updates/ILoveNotch-$version.md"      # embedded in the update prompt
 "$sparkle/generate_appcast" --embed-release-notes \
     --download-url-prefix "https://github.com/niyamvora/ILoveNotch/releases/download/$tag/" "$out/updates"
 cp "$out/updates/appcast.xml" appcast.xml
 
 echo "== Drafting the GitHub release"
-(cd "$out" && shasum -a 256 "ILoveNotch-$version.dmg" >SHA256SUMS)
-flags=(--draft --title "ILoveNotch $version" --generate-notes --target main)
+# Also as ILoveNotch.dmg, so https://github.com/niyamvora/ILoveNotch/releases/latest/download/ILoveNotch.dmg
+# always downloads the newest release.
+cp "$dmg" "$out/ILoveNotch.dmg"
+(cd "$out" && shasum -a 256 "ILoveNotch-$version.dmg" ILoveNotch.dmg >SHA256SUMS)
+# The notes go above the generated list of pull requests. The tag goes on the commit just built, even
+# if main moves before the draft is published.
+flags=(--draft --title "ILoveNotch $version" --notes-file "$notes" --generate-notes --target "$(git rev-parse HEAD)")
 [[ $version == *-* ]] && flags+=(--prerelease)
-[[ -f $notes ]] && flags+=(--notes-file "$notes")  # above the generated list of pull requests
-gh release create "$tag" "$dmg" "$out/SHA256SUMS" "${flags[@]}"
+gh release create "$tag" "$dmg" "$out/ILoveNotch.dmg" "$out/SHA256SUMS" "${flags[@]}"
 
 cat <<DONE
 
 Drafted $tag with the notarized DMG and its checksum. Next:
   1. Check the draft on GitHub and publish it.
-  2. Commit the appcast so installed copies find it:
-       git switch -c release/$tag && git add appcast.xml && git commit -m "chore(release): appcast for $tag"
-     then open a pull request and merge it.
+  2. Ship the appcast so installed copies find the update: commit it on dev,
+       git switch dev && git add appcast.xml && git commit -m "chore(release): appcast for $tag" && git push
+     then open dev's pull request into main and, once it's green, make ship.
+  3. Bump the Homebrew cask to $version with the DMG's checksum from SHA256SUMS.
 DONE

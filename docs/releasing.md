@@ -24,21 +24,33 @@ deliberate, manual step.
 
 ## Cutting a release
 
-First, in a pull request, write the release notes for users in `docs/release-notes/<version>.md`,
-and set `MARKETING_VERSION` in `project.yml` to the new version. Then, from a clean, up-to-date `main`:
+The release notes are the version's section of [CHANGELOG.md](../CHANGELOG.md). First, on `dev`,
+rename **Unreleased** to the new version with today's date (`## [0.3.0] - 2026-10-02`), open a new,
+empty **Unreleased** above it, update the compare links at the bottom, and set `MARKETING_VERSION` in
+`project.yml` to the new version. CI fails a pull request whose version has no section
+(`make changelog`). Ship that to `main` ([CONTRIBUTING.md](../CONTRIBUTING.md#branches)), then, from a
+clean, up-to-date `main`:
 
 ```bash
-make release VERSION=0.3.0          # or 0.3.0-beta.1 for a beta
+make release VERSION=0.3.0          # or 0.3.0-beta.1 for a beta, with a section of its own
 ```
 
 The notes appear in Sparkle's update prompt (Markdown, which Sparkle 2.9 and later renders) and at
 the top of the GitHub release, above the generated list of pull requests.
 
-It runs lint and tests, archives a Release build (universal, with no source checkout recorded, so
-it updates through Sparkle), exports it signed with Developer ID and the hardened runtime,
-notarizes and staples it, packages the DMG, adds the release to `appcast.xml` with its EdDSA
-signature, and drafts a GitHub release with the DMG and `SHA256SUMS`. A version with a suffix
-(`-beta.1`) becomes a pre-release.
+It checks the notes and the version, runs lint and tests, archives a Release build (universal, with
+no source checkout recorded, so it updates through Sparkle), exports it signed with Developer ID and
+the hardened runtime, notarizes and staples it, packages the DMG, adds the release to `appcast.xml`
+with its EdDSA signature, and drafts a GitHub release with the DMG and `SHA256SUMS`, tagged on the
+commit it built. A version with a suffix (`-beta.1`) becomes a pre-release.
+
+The DMG goes on the release twice: as `ILoveNotch-<version>.dmg`, which the appcast and the Homebrew
+cask point to, and as `ILoveNotch.dmg`, so
+<https://github.com/niyamvora/ILoveNotch/releases/latest/download/ILoveNotch.dmg> always downloads
+the newest release. The README and the website link there.
+
+`main` is often checked out by other work in progress, so run the release from a worktree of it:
+`git worktree add ../release main`, with `release.env` linked in (`ln -s "$PWD/release.env" ../release/`).
 
 Run it at the Mac, awake and unlocked:
 
@@ -55,16 +67,17 @@ Run it at the Mac, awake and unlocked:
     --download-url-prefix "https://github.com/niyamvora/ILoveNotch/releases/download/$tag/" \
     "build/release/$tag/updates"
   cp "build/release/$tag/updates/appcast.xml" appcast.xml
-  (cd "build/release/$tag" && shasum -a 256 ILoveNotch-*.dmg >SHA256SUMS)
-  gh release create "$tag" "build/release/$tag"/ILoveNotch-*.dmg "build/release/$tag/SHA256SUMS" \
-    --draft --title "ILoveNotch ${tag#v}" --generate-notes --target main
+  cd "build/release/$tag" && cp ILoveNotch-*.dmg ILoveNotch.dmg && shasum -a 256 ILoveNotch*.dmg >SHA256SUMS
+  gh release create "$tag" ILoveNotch*.dmg SHA256SUMS --draft --title "ILoveNotch ${tag#v}" \
+    --notes-file notes.md --generate-notes --target "$(git rev-parse HEAD)"
   ```
 
 Then:
 
-1. Open the draft on GitHub, check the notes, and publish it.
-2. Commit the updated `appcast.xml` through a pull request. Installed copies read it from `main`,
-   so an update is offered only once both the release and the appcast are public.
+1. Open the draft on GitHub, check the notes, and publish it. It becomes the latest release, which
+   the download links follow.
+2. Commit the updated `appcast.xml` on `dev` and ship it to `main`. Installed copies read it from
+   `main`, so an update is offered only once both the release and the appcast are public.
 3. Update the Homebrew cask in [niyamvora/homebrew-tap](https://github.com/niyamvora/homebrew-tap):
    `version` and the DMG's `sha256` (from `SHA256SUMS`) in `Casks/ilovenotch.rb`. The cask sets
    `auto_updates`, so installed copies still update through Sparkle.
