@@ -108,7 +108,7 @@ website can answer this; the API can't.
 ILoveNotch is a menu-bar-style utility with no Dock icon. To open it, move the pointer to the notch
 (or the pill at the top of the screen on Macs without a notch), or click the ILoveNotch item in the
 menu bar and choose Settings. Calendar and Reminders access is requested only when you click Allow
-Access in those tabs. The Mirror tab is off until turned on in Settings › Features, and uses the
+Access in those tabs. The Mirror tab is off until turned on in Settings › Mirror, and uses the
 camera only while it's open. Media shows what's playing in Music or Spotify; its waveform asks for
 system audio recording permission and analyzes the sound on the Mac without recording it. The App
 Sandbox doesn't let this edition control other players, so Media's playback buttons are disabled

@@ -70,7 +70,7 @@ Tests/NotchTransferTests/
 - `ShelfFeature` / `ShelfView`: a "Send to Android" button beside AirDrop, in the per-file menu and in the footer. Received files are added with `shelf.add(urls)`.
 - `AppDelegate`: create `TransferFeature`, connect its notch pop-ups, and start or stop announcing the Mac from Settings. The same pattern the volume and battery monitors use.
 - Notch pop-ups: the existing pop-up type already supports a 0…1 progress bar, so it can show "Receiving 3 files ▓▓▓░ 62%" without changes to the notch code.
-- Settings › Features › Shelf gets a **Share with Android** section:
+- Settings › Shelf gets an **Android** section:
   - **Receive from Android:** Off / While the notch is open / Always, plus a "visible for 10 minutes" mode.
   - **Device name**, defaulting to the Mac's name.
   - **Save received files to**, defaulting to `~/Downloads`.

@@ -128,6 +128,10 @@ public and buildable whatever happens to the project.
 - **Show in Notch.** A Shortcuts action and an `ilovenotch://` link put your own
   message in the notch, from any shortcut, automation, script, or app.
   [More below](#show-in-notch).
+- **Settings.** Laid out like System Settings: a sidebar with a page for each
+  part of the app and each tab, marked with colored icons, and each tab's
+  switch at the top of its page. The notch's gear button or the menu bar item
+  opens it.
 - **Updates.** A build from this checkout updates itself from the menu bar;
   signed releases update through Sparkle. A sandboxed Mac App Store edition
   builds from the same code.
@@ -230,13 +234,13 @@ log stream --level debug --predicate 'subsystem == "cafe.opennotch.app"'
 
 1. `make install` builds a Release app into `/Applications` and launches it.
    There's no Dock icon: look for the notch, and for the ILoveNotch item in the
-   menu bar (version, Update ILoveNotch, Settings…, Sponsor, Quit).
+   menu bar (Settings…, Update ILoveNotch, About, What's New, Sponsor, Quit).
 2. Quit other notch apps first; two apps can't share the notch.
 3. Hover the notch (or click it, or pull down with two fingers), then try each
    tab. Calendar and Tasks ask for access the first time you tap **Allow Access**.
    Resize the open notch by dragging its bottom-right corner, keep it open with
-   the pin beside Settings, and pick how it opens and closes in
-   **Settings › General**.
+   the pin beside Settings, and pick how it looks, opens, and closes in
+   **Settings › Appearance**.
 4. To get the latest, choose **Update ILoveNotch** from the menu bar item (or run
    `make update`). It pulls `main` when your checkout is clean, rebuilds, and
    relaunches; see [updates](docs/updates.md).
@@ -260,7 +264,7 @@ falls back to Music and Spotify's public notifications and says so.
 The waveform under the player moves with the music. It listens to your Mac's
 audio output only while Media is open and playing, so macOS asks once for
 permission to capture system audio. Nothing is recorded; see
-[PRIVACY.md](PRIVACY.md). Turn it off in **Settings › Features › Media**.
+[PRIVACY.md](PRIVACY.md). Turn it off in **Settings › Media**.
 
 ## Sound
 
@@ -273,7 +277,7 @@ then one for each app playing sound, with its icon and a dot while it plays.
 Drag a fader to turn that app down, click its icon to mute it, and bring it back
 to 100% to leave it alone. Chrome and Safari count as one app however many
 helper processes they play from. Each app keeps its volume until you change it,
-including after a relaunch; **Reset All** in Settings › Features › Sound undoes
+including after a relaunch; **Reset All** in Settings › Sound undoes
 them all. The volume keys' level in the closed notch opens the tab when you
 hover it.
 
@@ -295,7 +299,7 @@ at a bar for its own three numbers.
 The closed notch shows the speed beside the camera while a download or upload
 runs at 1 MB/s or more for a few seconds, and when a big one finishes it says
 how much it moved. Hover the speed to open the tab. **Show speed in the menu
-bar**, in Settings › Features › Network, picks Always (like NetSpeed's menu bar
+bar**, in Settings › Network, picks Always (like NetSpeed's menu bar
 item), While Downloading, or Never. It stays under any other live activity, such
 as a meeting's countdown.
 
@@ -349,7 +353,7 @@ one finishes while its app is in the background, the notch says so. **Go**
 brings its terminal forward.
 
 Nothing is connected until you connect it, in the tab or in **Settings ›
-Features › Agents**. Connecting adds hooks to the tool's own settings
+Agents**. Connecting adds hooks to the tool's own settings
 (`~/.claude/settings.json`, or `~/.codex/hooks.json`, which Codex asks you to
 trust the next time it starts), next to any hooks already there, and
 disconnecting takes out exactly those. The hooks run in the background, so an
@@ -393,7 +397,7 @@ the internet or a server.
   straight to it.
 
 Phones can't see your Mac until you say so. **Receive from Android** under the
-shelf makes it visible for 10 minutes, and **Settings › Features › Shelf** has
+shelf makes it visible for 10 minutes, and **Settings › Shelf** has
 **Off** (the default), **While the notch is open** (and for a minute after), or
 **Always**, along with the name phones see and where files go. While the Mac is
 asleep or locked, it's never visible. macOS asks once for Local Network access.
@@ -434,7 +438,7 @@ Tasks use Apple **Reminders** through EventKit, so they sync to your iPhone over
 iCloud with no server to run, and alerts set in the notch ring on every device.
 Notes are Markdown files named after their first line, in
 `~/Library/Application Support/OpenNotch/Notes` by default. To read them on an
-iPhone, pick a folder in iCloud Drive in Settings › Features › Notes: they show
+iPhone, pick a folder in iCloud Drive in Settings › Notes: they show
 up in the Files app and in Markdown apps such as Obsidian. A note's color and
 pin are kept in a small front matter block those apps understand, and a file you
 named yourself keeps its name when you edit it in the notch. The Share button

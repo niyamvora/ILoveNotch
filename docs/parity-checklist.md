@@ -75,7 +75,7 @@ that delivers it.
 - [x] Charging and battery activity: charger in or out, 20% and 10% left, and full
 - [x] Replace the macOS volume display (opt-in, needs Accessibility access)
 - [x] Bluetooth accessory battery when it connects (experimental: Apple keyboards, mice, and trackpads)
-- [x] Each system activity can be turned off in Settings › Features › System
+- [x] Each system activity can be turned off in Settings › Live Activities
 
 ## v0.5: AI usage (Phase 8)
 
@@ -105,8 +105,8 @@ that delivers it.
 - [x] Clipboard history, off until turned on: text, links, images, and files, newest first, searchable, with favorites that stay; click (or Return) copies one again
 - [x] ⌃⌥V opens the Clipboard tab from any app with the search field ready
 - [x] Skips what the copying app marks secret or temporary and copies from password managers; guides the user to "Paste from Other Apps" when macOS would ask each time
-- [x] Notch on every display: a display without a notch gets one drawn inside its menu bar, as tall as the bar and as wide as the Mac's own notch (or a MacBook's); Settings › General picks Notch or Pill per display
-- [x] Glass look: Settings › General › Theme opens the notch in glass on macOS 26, a live blur of what's behind it with Liquid Glass edges, the same on every tab whether or not the notch has the keyboard, and clickable everywhere; closed it stays black in the camera housing, and Reduce Transparency, Increase Contrast, and macOS 14 and 15 keep it black
+- [x] Notch on every display: a display without a notch gets one drawn inside its menu bar, as tall as the bar and as wide as the Mac's own notch (or a MacBook's); Settings › Displays picks Notch or Pill per display
+- [x] Glass look: Settings › Appearance › Theme opens the notch in glass on macOS 26, a live blur of what's behind it with Liquid Glass edges, the same on every tab whether or not the notch has the keyboard, and clickable everywhere; closed it stays black in the camera housing, and Reduce Transparency, Increase Contrast, and macOS 14 and 15 keep it black
 
 ## Tabs in your order
 
@@ -114,7 +114,7 @@ that delivers it.
 - [x] An app opened from the drawer shows at the end of the tab row while it's open
 - [x] The drawer's Edit tile (or a right-click on the tabs) edits the tab row inside the notch: the tabs wiggle and drag into a new order, and a tray below holds the apps kept in the drawer
 - [x] Drag a tab down into the tray, or click its minus, to keep it in the drawer, still on; click or drag one back into the row, where a gap opens for it; a drawer tile's right-click does the same; the row keeps at least one tab
-- [x] Every change applies at once and persists; an app in the drawer keeps its place, a feature added by an update joins the end, and Settings › Features lists the tabs in the same order
+- [x] Every change applies at once and persists; an app in the drawer keeps its place, a feature added by an update joins the end, and Settings' sidebar lists the tabs in the same order
 - [x] The notch stays open while editing; Done goes back to the drawer, and closing the notch ends both
 - [x] VoiceOver: Move Left, Move Right, and Keep in the Drawer on each tab, and a tray app's own action adds it
 
@@ -122,7 +122,7 @@ that delivers it.
 
 - [x] A Sound tab of its own, beside Media: the Mac's outputs, or with a switch its inputs (speakers, wired headphones, AirPods and other Bluetooth devices while connected, AirPlay, displays), each with its icon; a click makes one the Mac's output or input
 - [x] Faders for the output's volume (with its AirPods or headphones when that's what plays) and the microphone's, in orange; a click on the icon mutes either
-- [x] A fader per app playing sound, tinted from its icon, in the order they started; drag to set its volume and click its icon to mute; each app keeps its volume until it's back at 100% or reset (Settings › Features › Sound › Reset All)
+- [x] A fader per app playing sound, tinted from its icon, in the order they started; drag to set its volume and click its icon to mute; each app keeps its volume until it's back at 100% or reset (Settings › Sound › Reset All)
 - [x] Helpers count as their app: Chrome's, Spotify's, and the WebKit process behind Safari (or any app that plays web audio)
 - [x] Hovering the volume keys' level in the closed notch opens the Sound tab
 - [x] Nothing listens while the tab is closed and every app is at 100%; an app turned down plays through a tap only while it plays, and a muted one is silenced at its source with no audio work at all
@@ -153,6 +153,13 @@ that delivers it.
 - [x] A clear message and a fix when macOS denies local network access
 - [ ] Verified with a real phone (S25 Ultra): each of the [manual checks](qa.md#hardware-checks)
 - [ ] The App Store edition (after the GitHub build ships it)
+
+## Settings like System Settings
+
+- [x] A sidebar of pages, each marked by a white symbol on a colored tile: the app at the top (opening About), General, Appearance, Displays, and Live Activities, then a page per tab in the notch's order, with "Off" beside the tabs that are off
+- [x] Each page opens with its icon, its name, and a line on what it's for; a tab's page has the tab's switch there, then its settings while it's on
+- [x] The theme is picked from small previews of the open notch; Reset to Defaults asks first
+- [x] The menu bar item names the version and has Settings, updates, About, What's New, Sponsor, and Quit, each with a symbol
 
 ## Later
 

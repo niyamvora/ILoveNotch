@@ -23,8 +23,7 @@ ILoveNotch is local-first.
   `~/Library/Application Support/OpenNotch/network.sqlite` on this Mac only.
   The first time it runs, it reads NetSpeed's history from
   `~/Library/Application Support/NetSpeed` if it's there. **Clear History** in
-  Settings › Features › Network deletes it, and turning the tab off stops
-  counting.
+  Settings › Network deletes it, and turning the tab off stops counting.
 - Messages sent with the Show in Notch action or an `ilovenotch://` link are
   only displayed: they're never stored, and nothing in them is opened.
 - Clipboard history is off until you turn it on in the Clipboard tab. Then it
@@ -38,12 +37,12 @@ ILoveNotch is local-first.
   audio output, and macOS asks for "system audio recording" permission the first
   time. It listens only while the Media tab is open and something plays, turns
   the sound into loudness per frequency band as it plays, and never records,
-  stores, or sends audio. Turn it off in Settings › Features › Media.
+  stores, or sends audio. Turn it off in Settings › Media.
 - An app you turn down in the Sound tab (GitHub build) plays through
   ILoveNotch at its new volume while it plays, on the same permission; one you
   mute is silenced at its source. Its sound goes straight back out to your
   speakers or headphones and is never recorded, stored, or sent. Apps you leave
-  at 100% aren't touched. **Reset All** in Settings › Features › Sound hands
+  at 100% aren't touched. **Reset All** in Settings › Sound hands
   every app back its own volume. Switching devices and setting the output's or
   microphone's volume there hear nothing at all.
 
@@ -91,7 +90,7 @@ Mac App Store edition doesn't include the AI Usage tab.
 ## Agent status
 
 Agent status is off until you connect a tool in the Agents tab or in
-**Settings › Features › Agents**. Connecting adds hooks to that tool's own
+**Settings › Agents**. Connecting adds hooks to that tool's own
 settings file (`~/.claude/settings.json` for Claude Code, `~/.codex/hooks.json`
 for Codex) and first keeps a copy of the file as it was in
 `~/Library/Application Support/OpenNotch/Backups`. The hooks run a small script,
@@ -111,7 +110,7 @@ or a server, and every connection is end-to-end encrypted.
 - **Visible only when you choose.** Receiving is off until you turn it on: for
   10 minutes from the shelf, while the notch is open, or always. While it's on,
   your Mac announces itself to devices on the same network with the name you
-  set in **Settings › Features › Shelf** (your Mac's name unless you change it)
+  set in **Settings › Shelf** (your Mac's name unless you change it)
   and a random ID that changes each launch. Asleep or locked, it announces
   nothing.
 - **Nothing without your consent.** A phone that connects shows its name, what
