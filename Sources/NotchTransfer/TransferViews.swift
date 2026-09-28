@@ -12,7 +12,7 @@ extension TransferFeature {
     /// Receiving from Android, for the shelf's footer.
     public var receiveControl: some View { ReceiveControl(transfer: self) }
 
-    /// Settings › Features › Shelf: receiving from Android.
+    /// Settings › Shelf: receiving from Android.
     public var settingsView: some View { TransferSettings(transfer: self) }
 }
 

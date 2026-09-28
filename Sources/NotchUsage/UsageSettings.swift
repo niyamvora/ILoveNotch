@@ -2,7 +2,8 @@
 import SwiftUI
 
 extension UsageFeature {
-    /// The AI Usage settings tab: which providers are on, API keys, and background refresh.
+    /// AI Usage's settings, as sections of its Settings page: which providers are on, API keys, and
+    /// background refresh.
     public var settingsView: some View { UsageSettings(usage: self) }
 }
 
@@ -10,7 +11,7 @@ private struct UsageSettings: View {
     @Bindable var usage: UsageFeature
 
     var body: some View {
-        Form {
+        Group {
             Section {
                 ForEach(usage.providers) { provider in
                     // A closure, not a method reference: see the app's GeneralSettings.
@@ -36,6 +37,8 @@ private struct UsageSettings: View {
                 )
                 .foregroundStyle(.secondary)
             }
+            // On one section only: a modifier on the group would go on each section, and detect three times.
+            .task { await usage.detect() }
             Section {
                 ForEach(usage.providers.filter { usage.takesAPIKey($0.id) }) { provider in
                     APIKeyRow(usage: usage, provider: provider)
@@ -58,8 +61,6 @@ private struct UsageSettings: View {
                 .foregroundStyle(.secondary)
             }
         }
-        .formStyle(.grouped)
-        .task { await usage.detect() }
     }
 }
 

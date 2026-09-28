@@ -102,7 +102,7 @@ private func names(_ tools: Set<AgentTool>) -> String {
 }
 
 extension AgentsFeature {
-    /// Settings › Features › Agents: which tools report to the notch.
+    /// Settings › Agents: which tools report to the notch.
     public var settingsView: some View { AgentsSettings(agents: self) }
 }
 

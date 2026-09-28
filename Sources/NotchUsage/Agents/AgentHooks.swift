@@ -227,7 +227,7 @@ public struct AgentHooks: Sendable {
     static let scriptSource = #"""
         #!/bin/sh
         # ILoveNotch agent status, run by Claude Code's and Codex's hooks. ILoveNotch adds the hooks
-        # when you connect a tool in Settings > Features > Agents and removes them when you disconnect.
+        # when you connect a tool in Settings > Agents and removes them when you disconnect.
         # Usage: ilovenotch-agent-hook <claude|codex> <working|waiting|resumed|done|ended> < hook.json
         tool=$1
         event=$2

@@ -69,16 +69,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         notchKey: notchKey,
         clipboardKey: clipboardKey,
         previewAnimation: { [weak self] in self?.coordinator?.previewAnimation() },
-        featureSettings: { [unowned self] in self.settingsView(for: $0) },
-        usageSettings: usageSettings)
-
-    private var usageSettings: AnyView? {
-        #if APP_STORE
-            nil
-        #else
-            AnyView(usage.settingsView)
-        #endif
-    }
+        featureSettings: { [unowned self] in self.settingsView(for: $0) })
 
     private var featureList: [any NotchFeature] {
         #if APP_STORE
@@ -126,47 +117,49 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// Each tab's own settings, as the sections of its Settings page.
     private func settingsView(for feature: FeatureID) -> AnyView? {
         switch feature {
-        case .media: return AnyView(media.settingsView)
+        case .media: return section(media.settingsView)
         case .sound:
             #if APP_STORE
                 return nil
             #else
-                return AnyView(mixer.settingsView)
+                return section(mixer.settingsView)
             #endif
         case .shelf:
             #if APP_STORE
-                return AnyView(shelf.settingsView)
+                return section(shelf.settingsView)
             #else
                 return AnyView(
                     Group {
-                        shelf.settingsView
-                        transfer.settingsView
+                        Section { shelf.settingsView }
+                        Section("Android") { transfer.settingsView }
                     })
             #endif
-        case .clipboard: return AnyView(clipboard.settingsView)
-        case .calendar: return AnyView(calendar.settingsView)
-        case .tasks: return AnyView(tasks.settingsView)
-        case .shortcuts: return AnyView(shortcuts.settingsView)
-        case .notes: return AnyView(notes.settingsView)
-        case .network: return AnyView(network.settingsView)
+        case .clipboard: return section(clipboard.settingsView)
+        case .calendar: return section(calendar.settingsView)
+        case .tasks: return section(tasks.settingsView)
+        case .shortcuts: return section(shortcuts.settingsView)
+        case .notes: return section(notes.settingsView)
+        case .network: return section(network.settingsView)
         case .timer, .mirror: return nil
         case .usage:
             #if APP_STORE
                 return nil
             #else
-                // Its settings have their own tab.
-                return AnyView(Button("Providers, API Keys, and Refresh…") { [unowned self] in settings.show(.usage) })
+                return AnyView(usage.settingsView)  // sections of its own
             #endif
         case .agents:
             #if APP_STORE
                 return nil
             #else
-                return AnyView(agents.settingsView)
+                return section(agents.settingsView)
             #endif
         }
     }
+
+    private func section(_ rows: some View) -> AnyView { AnyView(Section { rows }) }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let content = NotchContent(
@@ -210,7 +203,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         accessories.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         #if !APP_STORE
             usage.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
-            usage.openSettings = { [weak self] in self?.settings.show(.usage) }
+            usage.openSettings = { [weak self] in self?.settings.show(.feature(.usage)) }
             agents.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
             agents.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .agents) }
             shelf.sendToAndroid = { [transfer] in transfer.send($0) }

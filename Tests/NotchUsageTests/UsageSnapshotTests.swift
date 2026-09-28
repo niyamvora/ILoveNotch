@@ -135,7 +135,8 @@ struct UsageSnapshotTests {
             FakeRuntime(id: $0.0, name: $0.1, used: 0)
         }
         let usage = UsageFeature(defaults: defaults, cacheURL: cache, runtimes: { runtimes })
-        try await render(usage.settingsView, name: "usage-settings", size: CGSize(width: 460, height: 480))
+        let page = Form { usage.settingsView }.formStyle(.grouped)  // sections, as on its Settings page
+        try await render(page, name: "usage-settings", size: CGSize(width: 460, height: 480))
     }
 
     @Test func beforeAnyProviderIsOnItOffersEveryOneSignedInFirst() async throws {
