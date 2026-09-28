@@ -42,13 +42,17 @@ final class Updater {
         }
     #endif
 
+    /// "0.2.0", as releases are named.
+    static var shortVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+    }
+
     /// "0.2.0 (c94187a)": the version and, for local builds, the commit it was built from ("+" when
     /// the checkout had uncommitted changes).
     static var version: String {
-        let info = Bundle.main.infoDictionary ?? [:]
-        let version = info["CFBundleShortVersionString"] as? String ?? "?"
-        guard let commit = info["OpenNotchCommit"] as? String, !commit.isEmpty else { return version }
-        return "\(version) (\(commit))"
+        guard let commit = Bundle.main.object(forInfoDictionaryKey: "OpenNotchCommit") as? String, !commit.isEmpty
+        else { return shortVersion }
+        return "\(shortVersion) (\(commit))"
     }
 
     static let log = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]

@@ -246,7 +246,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.updateSystemActivities()
             }
         }
-        statusItem = StatusItemController(updater: updater) { [weak self] in self?.settings.show() }
+        statusItem = StatusItemController(updater: updater) { [weak self] in self?.settings.show($0) }
     }
 
     /// Show in Notch links from scripts and other apps: ilovenotch://show?title=….
