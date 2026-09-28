@@ -53,7 +53,7 @@ extension FeatureID {
         case .notes: "notes"
         case .shortcuts: "stack-2"
         case .timer: "alarm"
-        case .network: "arrows-down-up"
+        case .network: "ufo"  // beaming your data up and down
         case .mirror: "device-computer-camera"
         case .usage: "gauge"
         case .agents: "terminal-2"

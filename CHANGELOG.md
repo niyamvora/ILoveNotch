@@ -17,7 +17,7 @@ as they land, written for the people who use the app
 
 ### Changed
 
-- **Tabs in Liquid Glass, with new icons.** The tab row, All Apps, and the pin with Settings sit on glass, the way macOS 26 draws a toolbar. The notch's icons are now from Tabler Icons, drawn on one grid with one stroke, so every tab looks the same size.
+- **Tabs in Liquid Glass, with new icons.** The tab row, All Apps, and the pin with Settings sit on glass, the way macOS 26 draws a toolbar. The notch's icons are now from Tabler Icons, drawn on one grid with one stroke, so every tab looks the same size, and the Network tab is a UFO, beaming your data up and down.
 
 ### Fixed
 
