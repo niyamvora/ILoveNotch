@@ -3,11 +3,17 @@ import AppKit
 import SwiftUI
 
 /// The clipboard tab: search, then click an item (or press Return for the first match) to put it
-/// back on the clipboard. Favorites come first and stay.
+/// back on the clipboard. Favorites come first and stay. Select mode ticks items to delete together,
+/// and Clear deletes all but favorites.
 struct ClipboardView: View {
     let clipboard: ClipboardFeature
     @State private var query = ""
     @FocusState private var searching: Bool
+    /// Clicking a row ticks it instead of copying it.
+    @State private var selecting = false
+    @State private var selected: Set<ClipItem.ID> = []
+    /// Clear asks once more, until the pointer leaves it.
+    @State private var confirmingClear = false
 
     var body: some View {
         if !clipboard.isRecording {
@@ -63,7 +69,85 @@ struct ClipboardView: View {
                 }
                 .fadingEdges()
             }
+            if !clipboard.items.isEmpty { footer(found) }
         }
+    }
+
+    /// How many are ticked or kept, and at the bottom right, Select and Clear, or while selecting,
+    /// Select All, Delete, and Done.
+    private func footer(_ found: [ClipItem]) -> some View {
+        let keptByClear = clipboard.items.count { !$0.favorite }
+        let allTicked = !found.isEmpty && found.allSatisfy { selected.contains($0.id) }
+        return HStack(spacing: 8) {
+            Group {
+                if selecting {
+                    Text("\(selected.count) selected")
+                } else {
+                    Text("^[\(clipboard.items.count) item](inflect: true)")
+                }
+            }
+            .font(.caption2)
+            .monospacedDigit()
+            .foregroundStyle(.white.opacity(0.5))
+            Spacer(minLength: 0)
+            HStack(spacing: 0) {
+                if selecting {
+                    footerButton(allTicked ? "Select None" : "Select All") {
+                        selected = allTicked ? [] : Set(found.map(\.id))
+                    }
+                    footerButton("Delete", tint: .red) {
+                        clipboard.remove(selected)
+                        selected = []
+                        if clipboard.items.isEmpty { selecting = false }
+                    }
+                    .disabled(selected.isEmpty)
+                    .opacity(selected.isEmpty ? 0.4 : 1)
+                    .help("Delete the selected items, favorites too")
+                    footerButton("Done") {
+                        selecting = false
+                        selected = []
+                    }
+                } else {
+                    footerButton("Select") {
+                        confirmingClear = false
+                        selecting = true
+                    }
+                    .help("Select items to delete")
+                    footerButton(
+                        confirmingClear ? "Clear ^[\(keptByClear) item](inflect: true)?" : "Clear",
+                        tint: confirmingClear ? .red : .white
+                    ) {
+                        if confirmingClear {
+                            clipboard.clear()
+                            confirmingClear = false
+                        } else {
+                            confirmingClear = true
+                        }
+                    }
+                    .disabled(keptByClear == 0)
+                    .opacity(keptByClear == 0 ? 0.4 : 1)
+                    .onHover { if !$0 { confirmingClear = false } }
+                    .help(keptByClear == 0 ? "Only favorites are left" : "Delete everything but favorites")
+                }
+            }
+            .background(GlassPlatter(shape: Capsule()))
+        }
+        .padding(.leading, 6)
+        .padding(.trailing, 8)  // clear of the resize grip in the notch's corner
+    }
+
+    private func footerButton(_ title: LocalizedStringKey, tint: Color = .white, action: @escaping () -> Void)
+        -> some View
+    {
+        Button(action: action) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 10)
+                .frame(height: 22)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(tint)
     }
 
     /// The search field takes the keyboard when the tab opened from its shortcut.
@@ -74,10 +158,22 @@ struct ClipboardView: View {
     }
 
     private func row(_ item: ClipItem) -> some View {
-        Button {
-            clipboard.pick(item)
+        let ticked = selected.contains(item.id)
+        return Button {
+            if !selecting {
+                clipboard.pick(item)
+            } else if ticked {
+                selected.remove(item.id)
+            } else {
+                selected.insert(item.id)
+            }
         } label: {
             HStack(spacing: 8) {
+                if selecting {
+                    Image(systemName: ticked ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 14))
+                        .foregroundStyle(ticked ? Color.accentColor : .white.opacity(0.4))
+                }
                 preview(item)
                     .frame(width: 26, height: 26)
                 VStack(alignment: .leading, spacing: 1) {
@@ -85,30 +181,39 @@ struct ClipboardView: View {
                     Text(detail(item)).font(.caption2).foregroundStyle(.white.opacity(0.5)).lineLimit(1)
                 }
                 Spacer(minLength: 0)
-                Button {
-                    clipboard.toggleFavorite(item)
-                } label: {
-                    Image(systemName: item.favorite ? "star.fill" : "star")
-                        .font(.caption)
-                        .foregroundStyle(item.favorite ? .yellow : .white.opacity(0.4))
+                if !selecting {
+                    Button {
+                        clipboard.toggleFavorite(item)
+                    } label: {
+                        Image(systemName: item.favorite ? "star.fill" : "star")
+                            .font(.caption)
+                            .foregroundStyle(item.favorite ? .yellow : .white.opacity(0.4))
+                    }
+                    .buttonStyle(.plain)
+                    .help(item.favorite ? "Remove from favorites" : "Keep as a favorite")
+                    .accessibilityLabel(item.favorite ? "Favorite" : "Not a favorite")
                 }
-                .buttonStyle(.plain)
-                .help(item.favorite ? "Remove from favorites" : "Keep as a favorite")
-                .accessibilityLabel(item.favorite ? "Favorite" : "Not a favorite")
             }
             .padding(.horizontal, 6)
             .padding(.vertical, 4)
+            .background(.white.opacity(ticked ? 0.08 : 0), in: RoundedRectangle(cornerRadius: 6))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help("Copy again")
+        .help(selecting ? (ticked ? "Deselect" : "Select") : "Copy again")
         .contextMenu {
             Button("Copy") { clipboard.pick(item) }
             Button(item.favorite ? "Remove from Favorites" : "Add to Favorites") { clipboard.toggleFavorite(item) }
             Divider()
-            Button("Delete") { clipboard.remove(item) }
+            Button("Delete") { delete(item) }
         }
-        .accessibilityAction(named: "Delete") { clipboard.remove(item) }
+        .accessibilityAddTraits(ticked ? .isSelected : [])
+        .accessibilityAction(named: "Delete") { delete(item) }
+    }
+
+    private func delete(_ item: ClipItem) {
+        clipboard.remove(item)
+        selected.remove(item.id)
     }
 
     @ViewBuilder private func preview(_ item: ClipItem) -> some View {

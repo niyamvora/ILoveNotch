@@ -201,9 +201,12 @@ public final class ClipboardFeature: NotchFeature {
         save()
     }
 
-    public func remove(_ item: ClipItem) {
-        items.removeAll { $0.id == item.id }
-        forgetImage(of: item)
+    public func remove(_ item: ClipItem) { remove([item.id]) }
+
+    /// Deletes the items picked in select mode, favorites too, and their images.
+    public func remove(_ ids: Set<ClipItem.ID>) {
+        for item in items where ids.contains(item.id) { forgetImage(of: item) }
+        items.removeAll { ids.contains($0.id) }
         save()
     }
 

@@ -85,6 +85,23 @@ public struct FeatureUnavailableView: View {
     }
 }
 
+/// Liquid Glass behind a group of controls, on macOS 26 and later. Before that, and with Reduce
+/// Transparency or Increase Contrast, a faint solid fill, where the controls need a steady backing.
+// ponytail: the same as NotchSurface's header platter; a shared copy would need SwiftUI in NotchCore.
+struct GlassPlatter<S: Shape>: View {
+    let shape: S
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    var body: some View {
+        if #available(macOS 26, *), !reduceTransparency, contrast != .increased {
+            Color.clear.glassEffect(.regular, in: shape)
+        } else {
+            shape.fill(.white.opacity(0.08))
+        }
+    }
+}
+
 /// A time readout whose digits roll into place like an odometer whenever they change: down for
 /// countdowns, up for counters. It rolls in from 0:00 when it appears. SwiftUI's numeric-text
 /// transition animates each changed digit natively; Reduce Motion turns it off.

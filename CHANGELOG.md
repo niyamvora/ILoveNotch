@@ -11,6 +11,10 @@ as they land, written for the people who use the app
 
 ## [Unreleased]
 
+### Added
+
+- **Select and clear in the Clipboard tab.** Select ticks items to delete together, favorites included, with Select All for what the search shows. Clear deletes everything but favorites, after asking once more.
+
 ### Changed
 
 - **Tabs in Liquid Glass.** The tab row, All Apps, and the pin with Settings sit on glass, the way macOS 26 draws a toolbar, and the open tab fills in. Fresh icons for Media, Clipboard, Notes, Shortcuts, Network, AI Usage, and Agents, and on macOS 26 the Calendar tab shows today's date.

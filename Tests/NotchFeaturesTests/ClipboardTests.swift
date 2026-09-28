@@ -126,6 +126,24 @@ struct ClipboardTests {
         #expect(clipboard.items.map(\.text) == ["keep me"])
     }
 
+    @Test func selectedItemsAreDeletedTogetherFavoritesToo() throws {
+        let clipboard = try clipboard()
+        clipboard.phase = .background
+        clipboard.startRecording()
+        for text in ["one", "two", "three"] {
+            copy(text)
+            clipboard.check()
+        }
+        let two = try #require(clipboard.items.first { $0.text == "two" })
+        clipboard.toggleFavorite(two)
+        let three = try #require(clipboard.items.first { $0.text == "three" })
+        clipboard.remove([two.id, three.id])
+        #expect(clipboard.items.map(\.text) == ["one"])
+        clipboard.phase = .stopped
+        clipboard.phase = .background
+        #expect(clipboard.items.map(\.text) == ["one"], "saved that way")
+    }
+
     @Test func theHistoryIsSavedAndLetGoWhenStopped() throws {
         let clipboard = try clipboard()
         clipboard.phase = .background
