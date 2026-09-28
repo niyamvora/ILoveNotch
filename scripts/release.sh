@@ -117,9 +117,20 @@ echo "== Drafting the GitHub release"
 # always downloads the newest release.
 cp "$dmg" "$out/ILoveNotch.dmg"
 (cd "$out" && shasum -a 256 "ILoveNotch-$version.dmg" ILoveNotch.dmg >SHA256SUMS)
+# The release page gets how to install after the notes, for anyone who lands there; the update prompt
+# doesn't need it. One line per paragraph: GitHub shows a line break as one.
+cat "$notes" - >"$out/release-page.md" <<INSTALL
+
+### Install
+
+Download **ILoveNotch-$version.dmg** below, open it, and drag ILoveNotch into Applications. It updates itself from then on; if you already have it, choose **Check for Updates…** from its menu bar item. Or with Homebrew: \`brew install --cask niyamvora/tap/ilovenotch\`.
+
+Needs macOS 14.6 or later. Signed and notarized by Apple. \`SHA256SUMS\` has the checksums.
+INSTALL
 # The notes go above the generated list of pull requests. The tag goes on the commit just built, even
 # if main moves before the draft is published.
-flags=(--draft --title "ILoveNotch $version" --notes-file "$notes" --generate-notes --target "$(git rev-parse HEAD)")
+flags=(--draft --title "ILoveNotch $version" --notes-file "$out/release-page.md" --generate-notes
+    --target "$(git rev-parse HEAD)")
 [[ $version == *-* ]] && flags+=(--prerelease)
 gh release create "$tag" "$dmg" "$out/ILoveNotch.dmg" "$out/SHA256SUMS" "${flags[@]}"
 
