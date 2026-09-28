@@ -46,9 +46,11 @@ near-zero idle CPU** ([measured](#efficiency)).
 
 ## Download
 
-**[Download ILoveNotch](https://github.com/niyamvora/ILoveNotch/releases/latest)**
+**[Download ILoveNotch](https://github.com/niyamvora/ILoveNotch/releases/latest/download/ILoveNotch.dmg)**
 (free, macOS 14.6 or later): open the download, drag ILoveNotch into
-Applications, and open it. It updates itself from then on.
+Applications, and open it. It updates itself from then on. See
+[what's new](https://github.com/niyamvora/ILoveNotch/releases/latest), and every
+version in the [changelog](CHANGELOG.md).
 
 - **Homebrew:** `brew install --cask niyamvora/tap/ilovenotch`
 - **Mac App Store:** in review. The App Store edition has everything except AI
