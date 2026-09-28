@@ -81,6 +81,8 @@ commit to one logical change that builds and passes tests on its own.
 ## Pull requests
 
 - Keep PRs small and focused; fill in the template.
+- A change people will notice adds a line under **Unreleased** in
+  [CHANGELOG.md](CHANGELOG.md), in the same commit.
 - CI must pass before merge.
 - Feature PRs report idle CPU and memory measured with Instruments. The budgets
   are in the [implementation plan](docs/plan/implementation-plan.md#8-performance-gates).
@@ -89,7 +91,22 @@ commit to one logical change that builds and passes tests on its own.
 
 ## Versioning and releases
 
-ILoveNotch follows [Semantic Versioning](https://semver.org/) with `vX.Y.Z` tags.
-Before 1.0, each minor version is a milestone (`v0.1` notch shell, `v0.2` media
-and shelf, `v0.3` productivity) and patches are fixes. Releases ship as signed,
-notarized DMGs on GitHub Releases.
+ILoveNotch follows [Semantic Versioning](https://semver.org/), with a `vX.Y.Z`
+tag on the exact commit each release was built from: a patch version for fixes,
+a minor one for new features, and a major one for a change that breaks
+something people rely on, such as dropping a macOS version. A pre-release
+carries a suffix, as in `v1.3.0-beta.1`. `MARKETING_VERSION` in `project.yml`
+names the latest release, so a build from source says where it stands.
+
+[CHANGELOG.md](CHANGELOG.md) records every notable change the
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) way: **Added**,
+**Changed**, **Fixed**, and **Removed**, in words for the people who use the
+app, not the code. Changes collect under **Unreleased**; a release renames that
+section to its version and date. Each version's section is its release notes,
+at the top of the GitHub release and in the app's update prompt, and CI fails a
+pull request whose version has none.
+
+Releases ship as signed, notarized DMGs on
+[GitHub Releases](https://github.com/niyamvora/ILoveNotch/releases), through
+Sparkle to installed copies, and through the Homebrew cask. The steps are in
+[docs/releasing.md](docs/releasing.md).
