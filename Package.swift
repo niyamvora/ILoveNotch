@@ -22,7 +22,10 @@ let package = Package(
         // State machine, feature lifecycle, diagnostics. No AppKit, so it tests anywhere.
         .target(name: "NotchCore", swiftSettings: strict),
         // Panel, SwiftUI surface, and notch geometry.
-        .target(name: "NotchSurface", dependencies: ["NotchCore"], swiftSettings: strict),
+        .target(
+            name: "NotchSurface", dependencies: ["NotchCore"],
+            // The notch's own icons from Tabler Icons (tabler.io; MIT, see THIRD_PARTY_NOTICES.md).
+            resources: [.copy("Resources/Icons")], swiftSettings: strict),
         // Feature modules: each one a NotchFeature plus its views.
         .target(name: "NotchFeatures", dependencies: ["NotchCore"], swiftSettings: strict),
         // The GitHub build's developer tabs: AI Usage, OpenUsage's providers (MIT, in OpenUsage/) with

@@ -77,8 +77,7 @@ struct TabEditor: View {
 
     private func rowTab(_ feature: FeatureID, width: CGFloat, removable: Bool) -> some View {
         let lifted = drag?.feature == feature
-        return Image(systemName: feature.symbol)
-            .font(.system(size: 14, weight: .medium))
+        return TablerIcon(name: feature.icon)
             .frame(width: width, height: 26)
             .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
             .overlay(alignment: .topLeading) {
@@ -206,8 +205,7 @@ struct TabEditor: View {
     /// The tab under the pointer, a little larger and lifted off the notch.
     @ViewBuilder private var lifted: some View {
         if let drag {
-            Image(systemName: drag.feature.symbol)
-                .font(.system(size: 16, weight: .semibold))
+            TablerIcon(name: drag.feature.icon, size: 18)
                 .frame(width: 42, height: 34)
                 .background(.white.opacity(0.24), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .overlay(

@@ -241,50 +241,54 @@ struct NotchShapeTests {
     }
 }
 
-/// Side by side in the tab row, the symbols have to look one size. Measured from the ink each one
-/// draws at the row's point size, since an image's frame says little about its glyph.
+/// The header's and the drawer's icons, beside the tabs'.
+private let buttonIcons = ["layout-grid", "layout-grid-filled", "pin", "pin-filled", "settings", "pencil"]
+
+/// The notch's Tabler icons: every one ships in the bundle, and side by side in the tab row they
+/// look one size. Measured from the ink each draws at the row's size, since every file's frame is
+/// the same 24-unit square whatever the glyph.
 @MainActor
-struct TabSymbolTests {
-    @Test(arguments: FeatureID.allCases)
-    func everyTabLooksTheSameSizeAndSitsCentered(feature: FeatureID) throws {
-        let ink = try #require(Self.ink(of: feature.symbol, size: NotchView.symbolSize), "\(feature.symbol) exists")
-        // At 14 pt SF Symbols draws a circle 14.2 across, a landscape 16.2 × 12, a page 13.2 × 12,
-        // which look alike. A stack (12.5 × 16.5) or bare arrows (16.5 × 12.5) look bigger, a
-        // portrait document (11 × 14) smaller.
-        let size = (ink.width * ink.height).squareRoot()
-        #expect((12.5...14.25).contains(size), "\(feature.symbol) looks \(size) pt")
-        #expect(abs(ink.drop) <= 0.25, "\(feature.symbol) sits \(ink.drop) pt off center")
+struct TablerIconTests {
+    @Test(arguments: FeatureID.allCases.map(\.icon) + buttonIcons)
+    func everyIconShips(name: String) {
+        #expect(TablerIcon.image(name) != nil, "\(name).svg is in NotchSurface's Icons")
     }
 
-    /// A symbol's ink drawn at 4×, in points: its size, and how far below the image's center it sits.
-    private static func ink(of name: String, size: CGFloat) -> (width: Double, height: Double, drop: Double)? {
-        let configuration = NSImage.SymbolConfiguration(pointSize: size, weight: .medium)
-        let scale = 4.0
-        guard
-            let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
-                .withSymbolConfiguration(configuration),
-            let cgImage = image.cgImage(
-                forProposedRect: nil, context: nil, hints: [.ctm: NSAffineTransform(transform: .init(scale: scale))])
-        else { return nil }
-        let (width, height) = (cgImage.width, cgImage.height)
-        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+    @Test(arguments: FeatureID.allCases)
+    func everyTabLooksTheSameSizeAndSitsCentered(feature: FeatureID) throws {
+        let image = try #require(TablerIcon.image(feature.icon))
+        let ink = try #require(Self.ink(of: image, size: NotchView.iconSize))
+        // At 16 pt Tabler's squares and pages draw about 12 across, its circles 13.5, which look alike.
+        // Its triangle play button (11 × 12) looks smaller, and the stopwatch's crown lifts it half a
+        // point.
+        let size = (ink.width * ink.height).squareRoot()
+        #expect((11.75...13.75).contains(size), "\(feature.icon) looks \(size) pt")
+        #expect(abs(ink.drop) <= 0.3, "\(feature.icon) sits \(ink.drop) pt off center")
+    }
+
+    /// An image's ink drawn at 4×, in points: its size, and how far below the image's center it sits.
+    private static func ink(of image: NSImage, size: CGFloat) -> (width: Double, height: Double, drop: Double)? {
+        let side = Int(size * 4)
+        var pixels = [UInt8](repeating: 0, count: side * side * 4)
         guard
             let context = CGContext(
-                data: &pixels, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+                data: &pixels, width: side, height: side, bitsPerComponent: 8, bytesPerRow: side * 4,
                 space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
         else { return nil }
-        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
-        var (minX, maxX, minY, maxY) = (width, 0, height, 0)
-        for y in 0..<height {
-            for x in 0..<width where pixels[(y * width + x) * 4 + 3] > 20 {
+        let previous = NSGraphicsContext.current
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: false)
+        image.draw(in: NSRect(x: 0, y: 0, width: side, height: side))
+        NSGraphicsContext.current = previous
+        var (minX, maxX, minY, maxY) = (side, 0, side, 0)
+        for y in 0..<side {
+            for x in 0..<side where pixels[(y * side + x) * 4 + 3] > 20 {
                 (minX, maxX, minY, maxY) = (min(minX, x), max(maxX, x), min(minY, y), max(maxY, y))
             }
         }
         guard minX <= maxX else { return nil }
         // Rows run top to bottom in memory, so a center past the middle row sits lower.
         return (
-            Double(maxX - minX + 1) / scale, Double(maxY - minY + 1) / scale,
-            (Double(minY + maxY) / 2 - Double(height) / 2) / scale
+            Double(maxX - minX + 1) / 4, Double(maxY - minY + 1) / 4, (Double(minY + maxY) / 2 - Double(side) / 2) / 4
         )
     }
 }

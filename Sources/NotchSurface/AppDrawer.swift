@@ -64,8 +64,7 @@ struct AppDrawer: View {
     private func editTile(compact: Bool) -> some View {
         DrawerTile(title: "Edit", compact: compact, dimmed: false) { hovering in
             let shape = RoundedRectangle(cornerRadius: compact ? 9 : 11, style: .continuous)
-            Image(systemName: "pencil")
-                .font(.system(size: compact ? 14 : 16, weight: .semibold))
+            TablerIcon(name: "pencil", size: compact ? 17 : 19)
                 .frame(width: compact ? 38 : 46, height: compact ? 30 : 38)
                 .background(.white.opacity(hovering ? 0.1 : 0), in: shape)
                 .overlay(shape.strokeBorder(.white.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [3, 2.5])))
@@ -87,8 +86,7 @@ struct AppIcon: View {
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: compact ? 9 : 11, style: .continuous)
-        Image(systemName: feature.symbol)
-            .font(.system(size: compact ? 15 : 17, weight: .medium))
+        TablerIcon(name: feature.icon, size: compact ? 17 : 19)
             .frame(width: compact ? 38 : 46, height: compact ? 30 : 38)
             .background(.white.opacity(lit ? 0.24 : hovering ? 0.16 : 0.1), in: shape)
             .overlay(shape.strokeBorder(.white.opacity(lit ? 0.55 : 0.12), lineWidth: lit ? 1 : 0.5))

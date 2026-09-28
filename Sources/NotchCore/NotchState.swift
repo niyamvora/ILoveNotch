@@ -5,11 +5,9 @@ import Foundation
 public enum FeatureID: String, CaseIterable, Hashable, Sendable {
     case media, sound, shelf, clipboard, calendar, tasks, notes, shortcuts, timer, network, mirror, usage, agents
 
-    /// SF Symbol for tabs and settings. Side by side in the tab row they have to look one size, so
-    /// each keeps to the outlines SF Symbols draws at a given point size, the way Apple picks a tab
-    /// bar's: a 14 pt circle, a 16 × 12 landscape, a 13 × 12 page, and centered, so none looks
-    /// bigger or sits higher than the rest (NotchMetricsTests checks). Every name here exists on
-    /// macOS 14.6, the oldest supported.
+    /// SF Symbol for the tab's page in Settings, beside System Settings' own symbols. The notch draws
+    /// Tabler icons instead (NotchSurface's `FeatureID.icon`). Every name here exists on macOS 14.6,
+    /// the oldest supported.
     public var symbol: String {
         switch self {
         case .media: "play.circle"

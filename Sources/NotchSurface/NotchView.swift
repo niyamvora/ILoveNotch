@@ -272,17 +272,17 @@ struct NotchView: View {
                     HStack(spacing: Self.tabSpacing) {
                         tabBar(selected: tab)
                         headerButton(
-                            drawer ? "square.grid.2x2.fill" : "square.grid.2x2",
+                            drawer ? "layout-grid-filled" : "layout-grid",
                             label: drawer ? "Back to \(tab.title)" : "All Apps", lit: drawer
                         ) { showDrawer(!drawer) }
                         .background(GlassPlatter(shape: Circle()))
                         .padding(.leading, Self.appsGap)
                         Spacer(minLength: 0)
                         HStack(spacing: 0) {
-                            headerButton(pinned ? "pin.fill" : "pin", label: pinned ? "Unpin" : "Pin", lit: pinned) {
+                            headerButton(pinned ? "pin-filled" : "pin", label: pinned ? "Unpin" : "Pin", lit: pinned) {
                                 engine.send(.togglePin)
                             }
-                            headerButton("gearshape", label: "Settings") { content.openSettings() }
+                            headerButton("settings", label: "Settings") { content.openSettings() }
                         }
                         .background(GlassPlatter(shape: Capsule()))
                     }
@@ -330,8 +330,9 @@ struct NotchView: View {
     private static let appsGap: CGFloat = 4
     /// Symbols that aren't the open tab or a lit button.
     private static let unlit = 0.7
-    /// Every symbol in the header, tabs and buttons alike, one size as in a macOS 26 toolbar.
-    static let symbolSize: CGFloat = 14
+    /// Every icon in the header, tabs and buttons alike, one size as in a macOS 26 toolbar: Tabler's
+    /// 24-unit grid at 16 pt draws its 2-unit stroke about as heavy as SF Symbols' medium weight.
+    static let iconSize: CGFloat = 16
 
     /// What the tabs share of the header at the smallest open size: all but the margins and the
     /// controls beside them (All Apps after its gap, then the pin and Settings side by side).
@@ -402,8 +403,7 @@ struct NotchView: View {
                 } label: {
                     // One size and one outline for every tab, as Apple's tab bars keep them: the open
                     // tab stands out by its pill and brightness, never by a bigger or filled glyph.
-                    Image(systemName: tab.symbol)
-                        .font(.system(size: Self.symbolSize, weight: .medium))
+                    TablerIcon(name: tab.icon)
                         .foregroundStyle(.white.opacity(lit ? 1 : Self.unlit))
                         .frame(width: tabWidth, height: 26)
                         .contentShape(Rectangle())
@@ -465,12 +465,12 @@ struct NotchView: View {
         CGSize(width: (start.width + 2 * drag.width).rounded(), height: (start.height + drag.height).rounded())
     }
 
+    /// `icon` is a Tabler icon's name; a button that's on (`lit`) shows its filled one.
     private func headerButton(
-        _ symbol: String, label: String, lit: Bool = false, action: @escaping () -> Void
+        _ icon: String, label: String, lit: Bool = false, action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: Self.symbolSize, weight: .medium))
+            TablerIcon(name: icon)
                 .frame(width: Self.headerButtonWidth, height: 26)
                 .contentShape(Rectangle())
         }
