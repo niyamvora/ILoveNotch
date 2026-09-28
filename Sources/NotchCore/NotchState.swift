@@ -5,23 +5,31 @@ import Foundation
 public enum FeatureID: String, CaseIterable, Hashable, Sendable {
     case media, sound, shelf, clipboard, calendar, tasks, notes, shortcuts, timer, network, mirror, usage, agents
 
-    /// SF Symbol for tabs and settings.
+    /// SF Symbol for tabs and settings: a plain glyph, no enclosing circle, the way macOS 26's Liquid
+    /// Glass tab bars draw them. The open tab shows its filled variant where there is one. Every name
+    /// here exists on macOS 14.6, the oldest supported.
     public var symbol: String {
         switch self {
-        case .media: "play.circle"
+        case .media: "play.square.stack"
         case .sound: "speaker.wave.2"
         case .shelf: "tray.full"
-        case .clipboard: "doc.on.clipboard"
-        case .calendar: "calendar"
+        case .clipboard: "list.clipboard"
+        case .calendar: Self.today
         case .tasks: "checklist"
-        case .notes: "note.text"
-        case .shortcuts: "square.stack.3d.up"
+        case .notes: "doc.text"
+        case .shortcuts: "square.2.layers.3d"
         case .timer: "timer"
-        case .network: "arrow.up.arrow.down.circle"
+        case .network: "arrow.up.arrow.down"
         case .mirror: "web.camera"
-        case .usage: "gauge.with.dots.needle.67percent"
-        case .agents: "terminal"
+        case .usage: "gauge.with.needle"
+        case .agents: "apple.terminal"
         }
+    }
+
+    /// Today's date on a calendar page, like the Calendar app's icon, where macOS has those symbols.
+    private static var today: String {
+        guard #available(macOS 26, *) else { return "calendar" }
+        return "\(Calendar.current.component(.day, from: .now)).calendar"
     }
 
     public var title: String {

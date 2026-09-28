@@ -89,6 +89,7 @@ struct NotchView: View {
             squashKeyframes(opening: presentation.openTab != nil)
         }
         .environment(\.colorScheme, .dark)  // the notch is always black
+        .gradientSymbols()
         .contentShape(outline)
         .onHover { engine.send($0 ? .pointerEntered : .pointerExited) }
         .onTapGesture { engine.send(.clicked) }
@@ -266,17 +267,24 @@ struct NotchView: View {
                     .transition(.opacity)
             } else {
                 VStack(spacing: 8) {
+                    // Liquid Glass controls, as a macOS 26 toolbar groups them: the tabs in one capsule,
+                    // All Apps in its own circle apart from them, and the pin with Settings.
                     HStack(spacing: Self.tabSpacing) {
                         tabBar(selected: tab)
                         headerButton(
                             drawer ? "square.grid.2x2.fill" : "square.grid.2x2",
-                            label: drawer ? "Back to \(tab.title)" : "All Apps", lit: drawer, dim: !drawer
+                            label: drawer ? "Back to \(tab.title)" : "All Apps", lit: drawer
                         ) { showDrawer(!drawer) }
+                        .background(GlassPlatter(shape: Circle()))
+                        .padding(.leading, Self.appsGap)
                         Spacer(minLength: 0)
-                        headerButton(pinned ? "pin.fill" : "pin", label: pinned ? "Unpin" : "Pin", lit: pinned) {
-                            engine.send(.togglePin)
+                        HStack(spacing: 0) {
+                            headerButton(pinned ? "pin.fill" : "pin", label: pinned ? "Unpin" : "Pin", lit: pinned) {
+                                engine.send(.togglePin)
+                            }
+                            headerButton("gearshape", label: "Settings") { content.openSettings() }
                         }
-                        headerButton("gearshape", label: "Settings") { content.openSettings() }
+                        .background(GlassPlatter(shape: Capsule()))
                     }
                     if drawer {
                         AppDrawer(preferences: preferences, current: tab, open: openFromDrawer, edit: startEditing)
@@ -318,12 +326,16 @@ struct NotchView: View {
 
     static let tabSpacing: CGFloat = 2
     private static let headerButtonWidth: CGFloat = 26
+    /// More room between the tabs' glass and All Apps' than the spacing, so the two read as apart.
+    private static let appsGap: CGFloat = 4
+    /// Symbols that aren't the open tab or a lit button.
+    private static let unlit = 0.7
 
     /// What the tabs share of the header at the smallest open size: all but the margins and the
-    /// buttons beside them (All Apps, the pin, and Settings).
+    /// controls beside them (All Apps after its gap, then the pin and Settings side by side).
     private var tabRoom: CGFloat {
         NotchPreferences.minimumExpandedSize.width - contentPadding.leading - contentPadding.trailing
-            - 3 * (Self.headerButtonWidth + Self.tabSpacing)
+            - Self.appsGap - 3 * Self.headerButtonWidth - 3 * Self.tabSpacing
     }
 
     /// The widest tab that still fits `count` tabs into `room`, up to 32 pt. Tabs keep that width at
@@ -378,6 +390,7 @@ struct NotchView: View {
         let tabWidth = Self.tabWidth(count: tabs.count, room: tabRoom)
         return HStack(spacing: Self.tabSpacing) {
             ForEach(tabs, id: \.self) { tab in
+                let lit = tab == selected && !drawer
                 Button {
                     // Content slides the same way the selection travels.
                     slideForward = (tabs.firstIndex(of: tab) ?? 0) >= (tabs.firstIndex(of: selected) ?? 0)
@@ -385,10 +398,13 @@ struct NotchView: View {
                     if drawer { showDrawer(false) }
                     engine.send(.selectTab(tab))
                 } label: {
+                    // The open tab fills in, as in a macOS 26 tab bar; the rest stay outlines, dimmer.
                     Image(systemName: tab.symbol)
+                        .symbolVariant(lit ? .fill : .none)
                         .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(.white.opacity(lit ? 1 : Self.unlit))
                         .frame(width: tabWidth, height: 26)
-                        .scaleEffect(tab == selected && !drawer ? 1.08 : 1)
+                        .scaleEffect(lit ? 1.08 : 1)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -399,10 +415,11 @@ struct NotchView: View {
             }
         }
         .background {
-            // One capsule travels between tabs: a bouncy spring carries it, and a quick
-            // stretch-and-settle makes the move read as jelly instead of a jump.
+            // One capsule travels between tabs, inside the row's glass: a bouncy spring carries it,
+            // and a quick stretch-and-settle makes the move read as jelly instead of a jump.
             Capsule()
                 .fill(.white.opacity(drawer ? 0 : 0.16))
+                .padding(2)
                 .matchedGeometryEffect(id: selected, in: selection, isSource: false)
                 .keyframeAnimator(initialValue: CGSize(width: 1, height: 1), trigger: selected) { capsule, scale in
                     capsule.scaleEffect(scale)
@@ -420,6 +437,7 @@ struct NotchView: View {
                     }
                 }
         }
+        .background(GlassPlatter(shape: Capsule()))
         .animation(reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.64), value: selected)
         .contextMenu {
             Button("Edit Tabs\u{2026}", action: startEditing)
@@ -446,9 +464,8 @@ struct NotchView: View {
         CGSize(width: (start.width + 2 * drag.width).rounded(), height: (start.height + drag.height).rounded())
     }
 
-    /// `dim` sets a button beside the tabs apart from them.
     private func headerButton(
-        _ symbol: String, label: String, lit: Bool = false, dim: Bool = false, action: @escaping () -> Void
+        _ symbol: String, label: String, lit: Bool = false, action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
@@ -457,7 +474,7 @@ struct NotchView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.white.opacity(lit ? 1 : dim ? 0.45 : 0.75))
+        .foregroundStyle(.white.opacity(lit ? 1 : Self.unlit))
         .help(label)
         .accessibilityLabel(label)
     }
@@ -590,6 +607,22 @@ private struct BehindWindowBlur: NSViewRepresentable {
     }
 }
 
+/// Liquid Glass behind a group of controls, on macOS 26 and later. Before that, and with Reduce
+/// Transparency or Increase Contrast, a faint solid fill, where the controls need a steady backing.
+private struct GlassPlatter<S: Shape>: View {
+    let shape: S
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    var body: some View {
+        if #available(macOS 26, *), !reduceTransparency, contrast != .increased {
+            Color.clear.glassEffect(.regular, in: shape)
+        } else {
+            shape.fill(.white.opacity(0.08))
+        }
+    }
+}
+
 /// Three diagonal strokes that run from the right edge to the bottom edge, like a window's resize
 /// corner. They brighten under the pointer and while dragging.
 private struct ResizeGrip: View {
@@ -613,6 +646,16 @@ private struct ResizeGrip: View {
 }
 
 extension View {
+    /// SF Symbols 7's gradient rendering, which shades each symbol from its one color like the rest
+    /// of macOS 26's Liquid Glass. Drawn once, it costs nothing after.
+    @ViewBuilder fileprivate func gradientSymbols() -> some View {
+        if #available(macOS 26, *) {
+            symbolColorRenderingMode(.gradient)
+        } else {
+            self
+        }
+    }
+
     /// The diagonal resize cursor, where macOS has one (15 and later).
     @ViewBuilder fileprivate func resizeCursor() -> some View {
         if #available(macOS 15, *) {

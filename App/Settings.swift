@@ -151,7 +151,7 @@ extension SettingsSelection.Page {
             case .notes: (feature.symbol, .yellow)
             case .shortcuts: (feature.symbol, .indigo)
             case .timer: (feature.symbol, .orange)
-            case .network: ("arrow.up.arrow.down", .blue)
+            case .network: (feature.symbol, .blue)
             case .mirror: (feature.symbol, .green)
             case .usage: (feature.symbol, .purple)
             case .agents: (feature.symbol, .gray)
