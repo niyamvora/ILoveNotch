@@ -5,21 +5,23 @@ import Foundation
 public enum FeatureID: String, CaseIterable, Hashable, Sendable {
     case media, sound, shelf, clipboard, calendar, tasks, notes, shortcuts, timer, network, mirror, usage, agents
 
-    /// SF Symbol for tabs and settings: a plain glyph, no enclosing circle, the way macOS 26's Liquid
-    /// Glass tab bars draw them. The open tab shows its filled variant where there is one. Every name
-    /// here exists on macOS 14.6, the oldest supported.
+    /// SF Symbol for tabs and settings. Side by side in the tab row they have to look one size, so
+    /// each keeps to the outlines SF Symbols draws at a given point size, the way Apple picks a tab
+    /// bar's: a 14 pt circle, a 16 × 12 landscape, a 13 × 12 page, and centered, so none looks
+    /// bigger or sits higher than the rest (NotchMetricsTests checks). Every name here exists on
+    /// macOS 14.6, the oldest supported.
     public var symbol: String {
         switch self {
-        case .media: "play.square.stack"
+        case .media: "play.circle"
         case .sound: "speaker.wave.2"
         case .shelf: "tray.full"
         case .clipboard: "list.clipboard"
         case .calendar: Self.today
         case .tasks: "checklist"
-        case .notes: "doc.text"
+        case .notes: "note.text"
         case .shortcuts: "square.2.layers.3d"
         case .timer: "timer"
-        case .network: "arrow.up.arrow.down"
+        case .network: "arrow.up.arrow.down.circle"
         case .mirror: "web.camera"
         case .usage: "gauge.with.needle"
         case .agents: "apple.terminal"

@@ -17,7 +17,7 @@ as they land, written for the people who use the app
 
 ### Changed
 
-- **Tabs in Liquid Glass.** The tab row, All Apps, and the pin with Settings sit on glass, the way macOS 26 draws a toolbar, and the open tab fills in. Fresh icons for Media, Clipboard, Notes, Shortcuts, Network, AI Usage, and Agents, and on macOS 26 the Calendar tab shows today's date.
+- **Tabs in Liquid Glass.** The tab row, All Apps, and the pin with Settings sit on glass, the way macOS 26 draws a toolbar, with every icon the same size. Fresh icons for Clipboard, Shortcuts, AI Usage, and Agents, and on macOS 26 the Calendar tab shows today's date.
 
 ### Fixed
 

@@ -330,6 +330,8 @@ struct NotchView: View {
     private static let appsGap: CGFloat = 4
     /// Symbols that aren't the open tab or a lit button.
     private static let unlit = 0.7
+    /// Every symbol in the header, tabs and buttons alike, one size as in a macOS 26 toolbar.
+    static let symbolSize: CGFloat = 14
 
     /// What the tabs share of the header at the smallest open size: all but the margins and the
     /// controls beside them (All Apps after its gap, then the pin and Settings side by side).
@@ -398,13 +400,12 @@ struct NotchView: View {
                     if drawer { showDrawer(false) }
                     engine.send(.selectTab(tab))
                 } label: {
-                    // The open tab fills in, as in a macOS 26 tab bar; the rest stay outlines, dimmer.
+                    // One size and one outline for every tab, as Apple's tab bars keep them: the open
+                    // tab stands out by its pill and brightness, never by a bigger or filled glyph.
                     Image(systemName: tab.symbol)
-                        .symbolVariant(lit ? .fill : .none)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: Self.symbolSize, weight: .medium))
                         .foregroundStyle(.white.opacity(lit ? 1 : Self.unlit))
                         .frame(width: tabWidth, height: 26)
-                        .scaleEffect(lit ? 1.08 : 1)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -469,7 +470,7 @@ struct NotchView: View {
     ) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(size: Self.symbolSize, weight: .medium))
                 .frame(width: Self.headerButtonWidth, height: 26)
                 .contentShape(Rectangle())
         }

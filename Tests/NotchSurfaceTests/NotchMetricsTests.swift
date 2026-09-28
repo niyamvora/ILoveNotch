@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import AppKit
 import CoreGraphics
 import NotchCore
 import SwiftUI
@@ -237,5 +238,53 @@ struct NotchShapeTests {
         let path = NotchShape(topRadius: 0, bottomRadius: 100, flushTop: false).path(in: rect)
         #expect(path.contains(CGPoint(x: 100, y: 20)))
         #expect(!path.contains(CGPoint(x: 1, y: 1)), "no square corners")
+    }
+}
+
+/// Side by side in the tab row, the symbols have to look one size. Measured from the ink each one
+/// draws at the row's point size, since an image's frame says little about its glyph.
+@MainActor
+struct TabSymbolTests {
+    @Test(arguments: FeatureID.allCases)
+    func everyTabLooksTheSameSizeAndSitsCentered(feature: FeatureID) throws {
+        let ink = try #require(Self.ink(of: feature.symbol, size: NotchView.symbolSize), "\(feature.symbol) exists")
+        // At 14 pt SF Symbols draws a circle 14.2 across, a landscape 16.2 × 12, a page 13.2 × 12,
+        // which look alike. A stack (12.5 × 16.5) or bare arrows (16.5 × 12.5) look bigger, a
+        // portrait document (11 × 14) smaller.
+        let size = (ink.width * ink.height).squareRoot()
+        #expect((12.5...14.25).contains(size), "\(feature.symbol) looks \(size) pt")
+        #expect(abs(ink.drop) <= 0.25, "\(feature.symbol) sits \(ink.drop) pt off center")
+    }
+
+    /// A symbol's ink drawn at 4×, in points: its size, and how far below the image's center it sits.
+    private static func ink(of name: String, size: CGFloat) -> (width: Double, height: Double, drop: Double)? {
+        let configuration = NSImage.SymbolConfiguration(pointSize: size, weight: .medium)
+        let scale = 4.0
+        guard
+            let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+                .withSymbolConfiguration(configuration),
+            let cgImage = image.cgImage(
+                forProposedRect: nil, context: nil, hints: [.ctm: NSAffineTransform(transform: .init(scale: scale))])
+        else { return nil }
+        let (width, height) = (cgImage.width, cgImage.height)
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        guard
+            let context = CGContext(
+                data: &pixels, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { return nil }
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+        var (minX, maxX, minY, maxY) = (width, 0, height, 0)
+        for y in 0..<height {
+            for x in 0..<width where pixels[(y * width + x) * 4 + 3] > 20 {
+                (minX, maxX, minY, maxY) = (min(minX, x), max(maxX, x), min(minY, y), max(maxY, y))
+            }
+        }
+        guard minX <= maxX else { return nil }
+        // Rows run top to bottom in memory, so a center past the middle row sits lower.
+        return (
+            Double(maxX - minX + 1) / scale, Double(maxY - minY + 1) / scale,
+            (Double(minY + maxY) / 2 - Double(height) / 2) / scale
+        )
     }
 }
