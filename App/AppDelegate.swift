@@ -187,6 +187,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         clipboard.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         clipboard.onPicked = { [weak coordinator] in coordinator?.dismissAll() }
         media.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
+        media.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .media) }
         shelf.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         calendar.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         calendar.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .calendar) }
@@ -306,8 +307,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // What moves while the Network tab is off isn't counted when it comes back.
         network.isEnabled = preferences.isEnabled(.network)
         #if !APP_STORE
-            // Apps keep the volumes set in the Sound tab only while it's on.
+            // Apps keep the volumes set in the Sound tab only while it's on, and Media borrows its
+            // outputs and faders for the app that's playing.
             mixer.isEnabled = preferences.isEnabled(.sound)
+            media.outputControl =
+                preferences.isEnabled(.sound) ? { [mixer] in AnyView(MediaOutputView(mixer: mixer, appID: $0)) } : nil
         #endif
         preferences.showsVolume ? volume.start() : volume.stop()
         preferences.showsBattery ? battery.start() : battery.stop()

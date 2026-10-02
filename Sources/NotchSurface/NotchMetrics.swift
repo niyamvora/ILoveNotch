@@ -25,6 +25,7 @@ struct NotchMetrics: Equatable {
     static let meterDepth: CGFloat = 26  // room under the notch for a live activity's row
     static let rowPadding: CGFloat = 16  // at either end of that row
     static let labelSpacing: CGFloat = 6  // between a live activity's symbol and its text
+    static let artworkSide: CGFloat = 18  // a cover shown in place of the symbol, such as what's playing
     static let overshootRoom: CGFloat = 1.08  // springy and jelly animations briefly overshoot
 
     /// The notch is the gap between the two auxiliary top areas; no insets means no notch, and then
@@ -138,8 +139,11 @@ struct NotchMetrics: Equatable {
         if let countdown = activity.countdown {
             text = countdown.timeIntervalSince(now) >= 3600 ? "0:00:00" : "00:00"
         }
-        let symbol = NSImage(systemSymbolName: activity.symbol, accessibilityDescription: nil)?
-            .withSymbolConfiguration(.init(pointSize: 12, weight: .semibold))?.size.width
+        let symbol =
+            activity.artwork != nil
+            ? artworkSide
+            : NSImage(systemSymbolName: activity.symbol, accessibilityDescription: nil)?
+                .withSymbolConfiguration(.init(pointSize: 12, weight: .semibold))?.size.width
         let width = (text as NSString).size(withAttributes: [.font: font]).width
         return ((symbol ?? 16) + labelSpacing + width).rounded(.up)
     }

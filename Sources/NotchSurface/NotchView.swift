@@ -540,8 +540,17 @@ struct NotchView: View {
 
     private func label(_ activity: Activity) -> some View {
         HStack(spacing: NotchMetrics.labelSpacing) {
-            Image(systemName: activity.symbol)
-                .font(.system(size: 12, weight: .semibold))
+            if let artwork = activity.artwork.flatMap(NSImage.init(data:)) {
+                Image(nsImage: artwork)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: NotchMetrics.artworkSide, height: NotchMetrics.artworkSide)
+                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                    .accessibilityHidden(true)
+            } else {
+                Image(systemName: activity.symbol)
+                    .font(.system(size: 12, weight: .semibold))
+            }
             Group {
                 if let countdown = activity.countdown {
                     // ponytail: redraws once a second while a countdown shows; a per-minute

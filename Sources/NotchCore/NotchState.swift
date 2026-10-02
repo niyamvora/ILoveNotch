@@ -67,10 +67,12 @@ public struct Activity: Hashable, Sendable {
     public var duration: Duration
     /// Shown instead of the title: the time left until this moment, ticking down to 0:00.
     public var countdown: Date?
+    /// A small encoded image shown in place of the symbol, such as the cover of what's playing.
+    public var artwork: Data?
 
     public init(
         feature: FeatureID?, symbol: String, title: String, level: Double? = nil, duration: Duration,
-        countdown: Date? = nil
+        countdown: Date? = nil, artwork: Data? = nil
     ) {
         self.feature = feature
         self.symbol = symbol
@@ -78,6 +80,7 @@ public struct Activity: Hashable, Sendable {
         self.level = level
         self.duration = duration
         self.countdown = countdown
+        self.artwork = artwork
     }
 }
 

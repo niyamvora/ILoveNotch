@@ -104,13 +104,16 @@ public final class PanelCoordinator {
     /// Shows `activity` on every resting notch until `feature` replaces it, or clears it with nil.
     /// With several at once the newest shows, and the others wait underneath until it clears. An
     /// update keeps its place, so a speed ticking every second can't cover a meeting's countdown, and
-    /// the network's speed, the least urgent, starts out underneath the rest.
+    /// the least urgent, the network's speed and what's playing, start out underneath the rest.
     public func setOngoing(_ activity: Activity?, for feature: FeatureID) {
         if let activity, let index = ongoing.firstIndex(where: { $0.feature == feature }) {
             ongoing[index].activity = activity
         } else {
             ongoing.removeAll { $0.feature == feature }
-            if let activity { ongoing.insert((feature, activity), at: feature == .network ? 0 : ongoing.count) }
+            let underneath: Set<FeatureID> = [.network, .media]
+            if let activity {
+                ongoing.insert((feature, activity), at: underneath.contains(feature) ? 0 : ongoing.count)
+            }
         }
         broadcast(.setOngoing(shownOngoing))
     }

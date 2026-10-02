@@ -10,5 +10,9 @@
 	<!-- The Mirror tab. -->
 	<key>com.apple.security.device.camera</key>
 	<true/>
+	<!-- Music and Spotify's AppleScript, for the media tab's shuffle, repeat, up next, and lyrics.
+	     macOS asks once per app (Privacy & Security › Automation). -->
+	<key>com.apple.security.automation.apple-events</key>
+	<true/>
 </dict>
 </plist>

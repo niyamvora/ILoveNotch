@@ -154,6 +154,21 @@ that delivers it.
 - [ ] Verified with a real phone (S25 Ultra): each of the [manual checks](qa.md#hardware-checks)
 - [ ] The App Store edition (after the GitHub build ships it)
 
+## Media revamp
+
+- [x] Shuffle and repeat (off, all, one) beside the controls, lit in the cover's color; from MediaRemote, or Music's and Spotify's AppleScript where it's missing (Spotify)
+- [x] 15-second skips in place of next and previous for players that skip by time (podcasts, audiobooks)
+- [x] Music's up next, from the playlist it plays from; click a track to play it
+- [x] Spotify's recently played, to play again (its queue isn't readable: no AppleScript, and the Web API is capped at 5 users in development mode since February 2026)
+- [x] Music's own lyrics, when saved with the track (no outside lyrics service)
+- [x] The cover and title in the closed notch while playing and for a minute after a pause, under timers and meetings
+- [x] Output and volume panel from the Sound tab's devices and faders (GitHub build, Sound tab on)
+- [x] Two-finger swipe across the player skips tracks
+- [x] App Store edition: controls for Music and Spotify through scripting access groups, and Music's cover
+- [ ] Automation prompt, shuffle, repeat, up next, and recently played checked by hand with Music and Spotify
+- [ ] Closed-notch tab measured for CPU while a song plays ([efficiency](../README.md#efficiency))
+- [ ] App Store edition's controls accepted by App Review
+
 ## Settings like System Settings
 
 - [x] A sidebar of pages, each marked by a white symbol on a colored tile: the app at the top (opening About), General, Appearance, Displays, and Live Activities, then a page per tab in the notch's order, with "Off" beside the tabs that are off

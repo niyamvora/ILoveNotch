@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import AppKit
 import CoreGraphics
 import Foundation
 import NotchCore
@@ -56,6 +57,92 @@ struct MediaStreamParserTests {
     @Test(arguments: ["", "not json", #"{"type":"error"}"#, #"{"type":"data","diff":true}"#])
     func linesItDoesntUnderstandChangeNothing(line: String) throws {
         #expect(try #require(play(song, line)).title == "Song")
+    }
+
+    @Test func shuffleRepeatAndSkippingByTimeComeAlong() throws {
+        let modes = #"{"type":"data","diff":true,"payload":{"shuffleMode":3,"repeatMode":2}}"#
+        let now = try #require(play(song, modes))
+        #expect(now.shuffle == true && now.repeatMode == .one)
+        let off = try #require(play(song, #"{"type":"data","diff":true,"payload":{"shuffleMode":1,"repeatMode":1}}"#))
+        #expect(off.shuffle == false && off.repeatMode == .off)
+        let podcast =
+            #"{"type":"data","diff":true,"payload":{"supportsRewind15Seconds":true,"supportsFastForward15Seconds":true}}"#
+        #expect(try #require(play(song, podcast)).skipsByInterval)
+    }
+
+    @Test func playersThatDontSayLeaveTheModesUnknown() throws {
+        let now = try #require(play(song))
+        #expect(now.shuffle == nil && now.repeatMode == nil && !now.skipsByInterval, "Spotify reports none of them")
+        let unknown = try #require(play(song, #"{"type":"data","diff":true,"payload":{"shuffleMode":0}}"#))
+        #expect(unknown.shuffle == nil, "0 is MediaRemote's unknown")
+    }
+}
+
+struct RepeatModeTests {
+    @Test func aClickGoesOffAllOneAndBack() {
+        #expect(RepeatMode.off.next(allowsOne: true) == .all)
+        #expect(RepeatMode.all.next(allowsOne: true) == .one)
+        #expect(RepeatMode.one.next(allowsOne: true) == .off)
+        #expect(RepeatMode.all.next(allowsOne: false) == .off, "Spotify's AppleScript has no repeat-one")
+    }
+
+    @Test func mediaRemoteNumbersRoundTrip() {
+        for mode in [RepeatMode.off, .all, .one] { #expect(RepeatMode(remote: mode.remote) == mode) }
+        #expect(RepeatMode(remote: 0) == nil)
+    }
+}
+
+struct PlayerScriptTests {
+    private func list(_ items: NSAppleEventDescriptor...) -> NSAppleEventDescriptor {
+        let list = NSAppleEventDescriptor.list()
+        for (index, item) in items.enumerated() { list.insert(item, at: index + 1) }
+        return list
+    }
+
+    @Test func musicsStateReadsItsRepeatNames() throws {
+        let state = try #require(
+            ScriptedState(
+                list(.init(boolean: true), .init(string: "one"), .init(double: 42.5), .init(string: "ABC123"))))
+        #expect(state.shuffle && state.repeatMode == .one && state.position == 42.5 && state.trackID == "ABC123")
+    }
+
+    @Test func spotifysRepeatIsOnOrOff() throws {
+        let on = try #require(
+            ScriptedState(list(.init(boolean: false), .init(boolean: true), .init(double: 0), .init(string: ""))))
+        #expect(!on.shuffle && on.repeatMode == .all)
+        #expect(on.trackID == nil, "no track, no link")
+        let off = try #require(
+            ScriptedState(list(.init(boolean: false), .init(boolean: false), .init(double: 0), .init(string: "x"))))
+        #expect(off.repeatMode == .off)
+    }
+
+    @Test func aShortListIsNotAState() {
+        #expect(ScriptedState(list(.init(boolean: true))) == nil)
+    }
+
+    @Test func upNextZipsItsColumns() throws {
+        let queue = try #require(
+            PlayerQueue(
+                upNext: list(
+                    .init(string: "Chill"), list(.init(string: "A1"), .init(string: "B2")),
+                    list(.init(string: "First"), .init(string: "Second")),
+                    list(.init(string: "Artist"), .init(string: "")),
+                    list(.init(double: 200), .init(double: 61)))))
+        #expect(queue.title == "Chill")
+        #expect(queue.items.map(\.id) == ["A1", "B2"] && queue.items.map(\.title) == ["First", "Second"])
+        #expect(queue.items[0].artist == "Artist" && queue.items[1].artist == nil, "an empty artist is none")
+        #expect(queue.items[1].duration == 61)
+    }
+
+    @Test func theLastTrackHasNothingNext() throws {
+        let queue = try #require(PlayerQueue(upNext: list(.init(string: "Chill"), list(), list(), list(), list())))
+        #expect(queue.items.isEmpty)
+    }
+
+    @Test func playersAreRecognizedByBundle() {
+        #expect(ScriptedPlayer(bundleID: "com.spotify.client") == .spotify)
+        #expect(ScriptedPlayer(bundleID: "com.apple.Music") == .music)
+        #expect(ScriptedPlayer(bundleID: "com.google.Chrome") == nil && ScriptedPlayer(bundleID: nil) == nil)
     }
 }
 
@@ -153,6 +240,52 @@ struct MediaFeatureTests {
         paused.isPlaying = false
         #expect(!MediaFeature.shouldAnnounce(paused, after: song, settled: true, phase: .background), "same track")
         #expect(!MediaFeature.shouldAnnounce(nil, after: song, settled: true, phase: .background))
+    }
+
+    @Test func theClosedNotchKeepsATrackWhilePlayingAndAMinuteAfter() {
+        let start = Date(timeIntervalSince1970: 1_000)
+        var paused = song
+        paused.isPlaying = false
+        #expect(MediaFeature.showsOngoing(song, pausedAt: nil, at: start, enabled: true))
+        #expect(MediaFeature.showsOngoing(paused, pausedAt: start, at: start.addingTimeInterval(59), enabled: true))
+        #expect(!MediaFeature.showsOngoing(paused, pausedAt: start, at: start.addingTimeInterval(61), enabled: true))
+        #expect(!MediaFeature.showsOngoing(paused, pausedAt: nil, at: start, enabled: true), "found paused at launch")
+        #expect(!MediaFeature.showsOngoing(song, pausedAt: nil, at: start, enabled: false), "setting off")
+        #expect(!MediaFeature.showsOngoing(nil, pausedAt: nil, at: start, enabled: true))
+    }
+
+    @Test func playingRaisesTheClosedNotchTabAndStoppingClearsIt() {
+        let media = MediaFeature(bundle: Bundle(for: BundleMarker.self), defaults: UserDefaults(suiteName: #function)!)
+        var shown: [Activity?] = []
+        media.onOngoing = { shown.append($0) }
+        media.phase = .background
+        media.receive(song)
+        #expect(shown.last??.title == "Song" && shown.last??.feature == .media)
+        media.receive(song)
+        #expect(shown.count == 1, "an unchanged track raises nothing")
+        media.phase = .stopped
+        #expect(shown.last! == nil)
+    }
+
+    @Test func swipesSkipOnlyWhenFarAndSideways() {
+        #expect(swipeDirection(CGSize(width: -80, height: 5)) == true, "left: next")
+        #expect(swipeDirection(CGSize(width: 80, height: 5)) == false, "right: previous")
+        #expect(swipeDirection(CGSize(width: 40, height: 0)) == nil, "too short")
+        #expect(swipeDirection(CGSize(width: 80, height: 60)) == nil, "too diagonal")
+    }
+
+    @Test func theClosedNotchCoverIsATinyPNG() throws {
+        let context = try #require(
+            CGContext(
+                data: nil, width: 300, height: 300, bitsPerComponent: 8, bytesPerRow: 0,
+                space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.setFillColor(CGColor(srgbRed: 1, green: 0, blue: 0, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: 300, height: 300))
+        let image = try #require(context.makeImage())
+        let png = try #require(NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]))
+        let tiny = try #require(MediaFeature.encodedThumbnail(of: png, side: 36))
+        let decoded = try #require(NSBitmapImageRep(data: tiny))
+        #expect(decoded.pixelsWide == 36 && decoded.pixelsHigh == 36)
     }
 
     @Test func withoutTheBundledHelperMediaFallsBack() {

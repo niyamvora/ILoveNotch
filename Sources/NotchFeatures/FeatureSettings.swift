@@ -8,6 +8,10 @@ extension MediaFeature {
         @Bindable var media = self
         return Group {
             Toggle("Show track changes as a live activity", isOn: $media.announcesTracks)
+            Toggle(isOn: $media.showsInClosedNotch) {
+                Text("Show what's playing in the closed notch")
+                Text("The cover and title stay beside the camera while music plays, and for a minute after it pauses.")
+            }
             Toggle(isOn: $media.waveformFollowsAudio) {
                 Text("Waveform follows the music")
                 Text(

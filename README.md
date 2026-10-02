@@ -83,8 +83,10 @@ public and buildable whatever happens to the project.
   notch. On macOS 26, open it in Liquid Glass instead of black. Works on every
   display: where there's no notch, it draws one inside the menu bar, or a
   floating pill if you'd rather.
-- **Media.** What's playing in any app, with artwork, controls, a seek bar, and
-  a waveform that moves with the music.
+- **Media.** What's playing in any app, with artwork, controls, shuffle and
+  repeat, a seek bar, and a waveform that moves with the music. Music's up next
+  and lyrics, Spotify's recently played, output and volume, swipe to skip, and
+  the cover in the closed notch while it plays.
 - **Sound.** Every app playing sound on a fader of its own, with its icon, to
   turn it down or mute it; your output's and microphone's volume; and a switch
   between your speakers, headphones, AirPods and other Bluetooth devices,

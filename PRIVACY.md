@@ -38,6 +38,12 @@ ILoveNotch is local-first.
   time. It listens only while the Media tab is open and something plays, turns
   the sound into loudness per frequency band as it plays, and never records,
   stores, or sends audio. Turn it off in Settings › Media.
+- Shuffle, repeat, Music's up next and lyrics, Spotify's recently played, and,
+  in the App Store edition, all of Media's controls talk to Music or Spotify
+  through their own AppleScript, on this Mac. macOS asks first (Privacy &
+  Security › Automation), the first time you press one of those buttons, and
+  ILoveNotch only ever talks to the app that's playing. Spotify's recently
+  played list is kept in memory and gone when ILoveNotch quits.
 - An app you turn down in the Sound tab (GitHub build) plays through
   ILoveNotch at its new volume while it plays, on the same permission; one you
   mute is silenced at its source. Its sound goes straight back out to your

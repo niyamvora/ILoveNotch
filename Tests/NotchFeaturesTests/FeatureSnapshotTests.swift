@@ -19,7 +19,8 @@ struct FeatureSnapshotTests {
         media.receive(
             NowPlaying(
                 title: "Midnight City", artist: "M83", album: "Hurry Up, We're Dreaming", isPlaying: true,
-                duration: 243, elapsed: 61, timestamp: Date(), artwork: Self.sampleArtwork()))
+                duration: 243, elapsed: 61, timestamp: Date(), artwork: Self.sampleArtwork(),
+                appBundleID: "com.apple.Music", shuffle: true, repeatMode: .all))
         #expect(media.artwork != nil, "artwork is decoded into a thumbnail")
         try render(media.view, name: "media-playing")
     }

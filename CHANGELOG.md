@@ -11,6 +11,18 @@ as they land, written for the people who use the app
 
 ## [Unreleased]
 
+### Added
+
+- **Shuffle and repeat in the Media tab**, lit in the cover's color while on: repeat goes from off to all to this track. They work in Music, Spotify, and other players that report them, and podcasts and audiobooks get 15-second skips in place of next and previous.
+- **Up next in Music, recently played in Spotify.** The list button shows what Music plays after this track; click one to play it. Spotify keeps its queue to itself, so its list holds the tracks you've played, to play again.
+- **Music's lyrics**, when the track has lyrics saved with it.
+- **What's playing in the closed notch.** The cover and title stay beside the camera while music plays, and for a minute after it pauses. Turn it off in Settings › Media.
+- **Output and volume from the player.** Switch speakers, headphones, or AirPods, and set the Mac's volume and the player's own, without leaving the Media tab (GitHub build, with the Sound tab on).
+- **Swipe to skip.** Two fingers sideways across the player go to the next track or the one before.
+- **Media controls in the App Store edition.** Play, pause, skip, seek, shuffle, and repeat now work for Music and Spotify, and Music's cover shows.
+
+macOS asks once before ILoveNotch controls Music or Spotify this way (Privacy & Security › Automation), the first time you press one of these buttons.
+
 ## [1.3.0] - 2026-10-02
 
 ILoveNotch 1.3 puts the tabs on Liquid Glass with new icons, lets you select and clear clipboard items, and no longer quits as it opens when a reminder is due.

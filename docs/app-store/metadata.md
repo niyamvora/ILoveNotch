@@ -38,7 +38,8 @@ ILoveNotch turns the notch on your MacBook into a small, fast tray for the thing
 day. Hover over the notch or click it, and it opens right where you're already looking.
 
 MEDIA
-See what's playing in Music and Spotify, with a waveform that moves with the sound.
+See what's playing in Music and Spotify, with a waveform that moves with the sound. Play, pause,
+skip, shuffle, and repeat from the notch, and pick what plays next in Music.
 
 SHELF
 Drop files on the notch to keep them close, then drag them out, preview them with Quick Look, or
@@ -116,9 +117,10 @@ ILoveNotch is a menu-bar-style utility with no Dock icon. To open it, move the p
 menu bar and choose Settings. Calendar and Reminders access is requested only when you click
 Continue in those tabs. The Mirror tab is off until turned on in Settings › Mirror (or opened from
 the app drawer, the grid button after the tabs), and uses the camera only while it's open. Media shows what's playing in Music or Spotify; its waveform asks for
-system audio recording permission and analyzes the sound on the Mac without recording it. The App
-Sandbox doesn't let this edition control other players, so Media's playback buttons are disabled
-and the tab says so. No account or sign-in is needed, and the app makes no network requests.
+system audio recording permission and analyzes the sound on the Mac without recording it. Its
+playback, shuffle, and repeat buttons control Music and Spotify through the scripting access groups
+they publish (`com.apple.security.scripting-targets`); macOS asks for Automation permission the
+first time one is pressed. No account or sign-in is needed, and the app makes no network requests.
 
 For 1.3.0 the notes also open with what changed since the rejection: the Sponsor link is gone from
 this edition (no in-app payments and no links to outside payments), and the screens before the

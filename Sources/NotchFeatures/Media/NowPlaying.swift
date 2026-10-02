@@ -17,11 +17,17 @@ public struct NowPlaying: Equatable, Sendable {
     public var artwork: Data?
     /// The app playing it; for browsers, the browser rather than its media helper process.
     public var appBundleID: String?
+    /// Whether shuffle is on; nil when the player doesn't say.
+    public var shuffle: Bool?
+    /// Nil when the player doesn't say.
+    public var repeatMode: RepeatMode?
+    /// The player skips 15 seconds back and ahead, as podcast and audiobook players do.
+    public var skipsByInterval: Bool
 
     public init(
         title: String, artist: String? = nil, album: String? = nil, isPlaying: Bool, playbackRate: Double = 1,
         duration: TimeInterval? = nil, elapsed: TimeInterval? = nil, timestamp: Date? = nil, artwork: Data? = nil,
-        appBundleID: String? = nil
+        appBundleID: String? = nil, shuffle: Bool? = nil, repeatMode: RepeatMode? = nil, skipsByInterval: Bool = false
     ) {
         self.title = title
         self.artist = artist
@@ -33,6 +39,9 @@ public struct NowPlaying: Equatable, Sendable {
         self.timestamp = timestamp
         self.artwork = artwork
         self.appBundleID = appBundleID
+        self.shuffle = shuffle
+        self.repeatMode = repeatMode
+        self.skipsByInterval = skipsByInterval
     }
 
     /// Whether `other` is a different track rather than an update to this one.
@@ -46,6 +55,40 @@ public struct NowPlaying: Equatable, Sendable {
         if isPlaying, let timestamp { position += date.timeIntervalSince(timestamp) * playbackRate }
         position = max(0, position)
         return duration.map { min(position, $0) } ?? position
+    }
+}
+
+/// Repeat as players offer it: off, the whole list, or the one track.
+public enum RepeatMode: Sendable {
+    case off, all, one
+
+    /// What a click on repeat picks next, in Music's order. Without repeat-one (Spotify's AppleScript
+    /// only has on and off), all goes back to off.
+    public func next(allowsOne: Bool) -> RepeatMode {
+        switch self {
+        case .off: .all
+        case .all: allowsOne ? .one : .off
+        case .one: .off
+        }
+    }
+
+    /// MediaRemote's numbers, which mediaremote-adapter passes through: 1 off, 2 the track, 3 the
+    /// playlist; 0 is unknown.
+    init?(remote: Int) {
+        switch remote {
+        case 1: self = .off
+        case 2: self = .one
+        case 3: self = .all
+        default: return nil
+        }
+    }
+
+    var remote: Int {
+        switch self {
+        case .off: 1
+        case .one: 2
+        case .all: 3
+        }
     }
 }
 
@@ -80,6 +123,8 @@ struct MediaStreamParser {
     private var current: NowPlaying? {
         guard let title = payload["title"] as? String, !title.isEmpty else { return nil }
         func seconds(_ key: String) -> TimeInterval? { (payload[key] as? Double).map { $0 / 1_000_000 } }
+        // MediaRemote's shuffle: 1 off, 2 albums, 3 tracks; 0 is unknown.
+        let shuffle = (payload["shuffleMode"] as? Int).flatMap { $0 == 0 ? nil : $0 != 1 }
         return NowPlaying(
             title: title,
             artist: payload["artist"] as? String,
@@ -91,7 +136,11 @@ struct MediaStreamParser {
             timestamp: seconds("timestampEpochMicros").map(Date.init(timeIntervalSince1970:)),
             artwork: artwork,
             appBundleID: payload["parentApplicationBundleIdentifier"] as? String
-                ?? payload["bundleIdentifier"] as? String)
+                ?? payload["bundleIdentifier"] as? String,
+            shuffle: shuffle,
+            repeatMode: (payload["repeatMode"] as? Int).flatMap(RepeatMode.init(remote:)),
+            skipsByInterval: payload["supportsRewind15Seconds"] as? Bool == true
+                && payload["supportsFastForward15Seconds"] as? Bool == true)
     }
 }
 
