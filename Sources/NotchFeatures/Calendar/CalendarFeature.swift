@@ -111,7 +111,7 @@ public final class CalendarFeature: NotchFeature {
     @ObservationIgnored public var onOngoing: ((Activity?) -> Void)?
 
     // ponytail: overdue reminders can pile up, so the agenda shows a bounded number.
-    static let dueTaskLimit = 20
+    nonisolated static let dueTaskLimit = 20
     // ponytail: a fixed five minutes' warning; a picker in Calendar's settings if people want more.
     static let lead: TimeInterval = 5 * 60
     /// How far ahead the next meeting is looked for; the countdown looks again when this runs out.
@@ -325,7 +325,8 @@ public final class CalendarFeature: NotchFeature {
             return
         }
         let due = store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: end, calendars: nil)
-        store.fetchReminders(matching: due) { [weak self] reminders in
+        // @Sendable: EventKit calls back on its own queue (see TasksFeature.reload).
+        store.fetchReminders(matching: due) { @Sendable [weak self] reminders in
             let items = (reminders ?? []).map(TaskItem.init).sorted(by: TaskItem.order)
             let bounded = Array(items.prefix(Self.dueTaskLimit))
             Task { @MainActor in

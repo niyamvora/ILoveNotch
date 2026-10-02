@@ -11,6 +11,10 @@ as they land, written for the people who use the app
 
 ## [Unreleased]
 
+### Fixed
+
+- ILoveNotch no longer quits as it opens when a reminder with a time is due within a day.
+
 ## [1.2.0] - 2026-09-28
 
 ILoveNotch 1.2 turns each app's volume up or down, shows your network speed, puts the tabs in your order, and lays Settings out like System Settings.

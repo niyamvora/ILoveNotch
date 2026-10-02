@@ -201,7 +201,7 @@ public final class TasksFeature: NotchFeature {
 
     // ponytail: completed tasks are bounded by age and count so years of history can't flood the notch.
     static let completedWindow = 30  // days
-    static let completedLimit = 50
+    nonisolated static let completedLimit = 50
     static let snoozeMinutes = 10
     private static let listKey = "tasks.listID"
     private static let showsCompletedKey = "tasks.showsCompleted"
@@ -513,7 +513,9 @@ public final class TasksFeature: NotchFeature {
         loadLists()
         let chosen = chosenLists
         let open = store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: chosen)
-        store.fetchReminders(matching: open) { [weak self] reminders in
+        // EventKit calls back on its own queue: @Sendable keeps these closures off the main actor,
+        // or Swift 6 traps the first time a main-actor closure inside them runs there.
+        store.fetchReminders(matching: open) { @Sendable [weak self] reminders in
             let items = (reminders ?? []).map(TaskItem.init).sorted(by: TaskItem.order)
             Task { @MainActor in
                 // Results that land after the tab went away are dropped, not kept in memory.
@@ -524,7 +526,7 @@ public final class TasksFeature: NotchFeature {
         let since = Calendar.current.date(byAdding: .day, value: -Self.completedWindow, to: .now)
         let done = store.predicateForCompletedReminders(
             withCompletionDateStarting: since, ending: nil, calendars: chosen)
-        store.fetchReminders(matching: done) { [weak self] reminders in
+        store.fetchReminders(matching: done) { @Sendable [weak self] reminders in
             let items = (reminders ?? []).map(TaskItem.init).sorted(by: TaskItem.recentlyCompletedFirst)
             let recent = Array(items.prefix(Self.completedLimit))
             Task { @MainActor in
@@ -544,7 +546,7 @@ public final class TasksFeature: NotchFeature {
         let store = eventStore.store
         let soon = store.predicateForIncompleteReminders(
             withDueDateStarting: now, ending: now.addingTimeInterval(86_400), calendars: chosenLists)
-        store.fetchReminders(matching: soon) { [weak self] reminders in
+        store.fetchReminders(matching: soon) { @Sendable [weak self] reminders in
             let upcoming = (reminders ?? []).map(TaskItem.init)
                 .filter { $0.hasTime && ($0.due ?? .distantPast) > Date.now }
                 .min { ($0.due ?? .distantFuture) < ($1.due ?? .distantFuture) }
