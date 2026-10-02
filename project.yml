@@ -22,7 +22,7 @@ settingGroups:
     PRODUCT_NAME: ILoveNotch
     PRODUCT_BUNDLE_IDENTIFIER: cafe.opennotch.app
     ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-    MARKETING_VERSION: 1.2.0 # the latest release, so builds from source say where they stand; releases set their own
+    MARKETING_VERSION: 1.3.0 # the latest release, so builds from source say where they stand; releases set their own
     CURRENT_PROJECT_VERSION: 2
     SWIFT_VERSION: "6.0" # Swift 6 language mode: complete strict-concurrency checking
     SWIFT_TREAT_WARNINGS_AS_ERRORS: YES

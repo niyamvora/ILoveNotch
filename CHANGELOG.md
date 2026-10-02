@@ -11,6 +11,10 @@ as they land, written for the people who use the app
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-02
+
+ILoveNotch 1.3 puts the tabs on Liquid Glass with new icons, lets you select and clear clipboard items, and no longer quits as it opens when a reminder is due.
+
 ### Added
 
 - **Select and clear in the Clipboard tab.** Select ticks items to delete together, favorites included, with Select All for what the search shows. Clear deletes everything but favorites, after asking once more.
@@ -91,7 +95,8 @@ The first release of ILoveNotch: your MacBook's notch, finally useful.
 - **System activities.** Volume, charging and battery, and Bluetooth accessory batteries show briefly in the notch.
 - Signed and notarized by Apple, with updates through Sparkle, and on Homebrew: `brew install --cask niyamvora/tap/ilovenotch`.
 
-[Unreleased]: https://github.com/niyamvora/ILoveNotch/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/niyamvora/ILoveNotch/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/niyamvora/ILoveNotch/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/niyamvora/ILoveNotch/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/niyamvora/ILoveNotch/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/niyamvora/ILoveNotch/releases/tag/v1.0.0
