@@ -3,6 +3,29 @@
     <channel>
         <title>ILoveNotch</title>
         <item>
+            <title>1.3.0</title>
+            <pubDate>Fri, 02 Oct 2026 10:09:37 +0530</pubDate>
+            <sparkle:version>150</sparkle:version>
+            <sparkle:shortVersionString>1.3.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.6</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[
+ILoveNotch 1.3 puts the tabs on Liquid Glass with new icons, lets you select and clear clipboard items, and no longer quits as it opens when a reminder is due.
+
+### Added
+
+- **Select and clear in the Clipboard tab.** Select ticks items to delete together, favorites included, with Select All for what the search shows. Clear deletes everything but favorites, after asking once more.
+
+### Changed
+
+- **Tabs in Liquid Glass, with new icons.** The tab row, All Apps, and the pin with Settings sit on glass, the way macOS 26 draws a toolbar. The notch's icons are now from Tabler Icons, drawn on one grid with one stroke, so every tab looks the same size, and the Network tab is a UFO, beaming your data up and down.
+
+### Fixed
+
+- ILoveNotch no longer quits as it opens when a reminder with a time is due within a day.
+]]></description>
+            <enclosure url="https://github.com/niyamvora/ILoveNotch/releases/download/v1.3.0/ILoveNotch-1.3.0.dmg" length="6979279" type="application/octet-stream" sparkle:edSignature="15KxKKY6FWNz6cIbJwcQrsHvgZZ3MrB0RZyFovD33Z/hrhnO+iLf8zBcTA/yKA2bREJrpATtLjuzhXeI/vXRDw=="/>
+        </item>
+        <item>
             <title>1.2.0</title>
             <pubDate>Mon, 28 Sep 2026 11:03:13 +0530</pubDate>
             <sparkle:version>141</sparkle:version>
@@ -66,14 +89,6 @@ ILoveNotch 1.2 turns each app's volume up or down, shows your network speed, put
 - A Quick Share transfer the other side cancels now says "Cancelled", not "Lost the connection".
 ]]></description>
             <enclosure url="https://github.com/niyamvora/ILoveNotch/releases/download/v1.1.0/ILoveNotch-1.1.0.dmg" length="6265134" type="application/octet-stream" sparkle:edSignature="L/7NfPBKPpOdlTO/VeR1WIIWgXSymnuUEiGX11Qu0u+8Q0h0lxRw9cVsMZjipZ3FLdloiwU67UNwFoF8Z30SBw=="/>
-        </item>
-        <item>
-            <title>1.0.0</title>
-            <pubDate>Fri, 25 Sep 2026 05:50:13 +0530</pubDate>
-            <sparkle:version>88</sparkle:version>
-            <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.6</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/niyamvora/ILoveNotch/releases/download/v1.0.0/ILoveNotch-1.0.0.dmg" length="4782243" type="application/octet-stream" sparkle:edSignature="sil6bwgEiAyiYkfowplK3weQutSYm0HMmplKa0nL7q5zUHqG2h78Q6dex7RrpQqASrjv0AEKkncJZhE0e3B9AQ=="/>
         </item>
     </channel>
 </rss>
