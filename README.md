@@ -239,7 +239,7 @@ log stream --level debug --predicate 'subsystem == "cafe.opennotch.app"'
    menu bar (Settings…, Update ILoveNotch, About, What's New, Sponsor, Quit).
 2. Quit other notch apps first; two apps can't share the notch.
 3. Hover the notch (or click it, or pull down with two fingers), then try each
-   tab. Calendar and Tasks ask for access the first time you tap **Allow Access**.
+   tab. Calendar and Tasks ask for access the first time you tap **Continue**.
    Resize the open notch by dragging its bottom-right corner, keep it open with
    the pin beside Settings, and pick how it looks, opens, and closes in
    **Settings › Appearance**.
@@ -447,7 +447,7 @@ named yourself keeps its name when you edit it in the notch. The Share button
 sends a copy to Apple Notes; driving Apple Notes directly through Apple Events
 was dropped as brittle and permission-heavy. (Google **Keep** is intentionally
 not used: it has no official API.) Calendar and Reminders access is requested
-only when you tap **Allow Access** in their tab.
+only when you tap **Continue** in their tab.
 
 ## Contributing
 

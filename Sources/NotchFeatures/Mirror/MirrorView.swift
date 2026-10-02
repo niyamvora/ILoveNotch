@@ -12,7 +12,7 @@ struct MirrorView: View {
             FeatureUnavailableView(
                 symbol: "web.camera", title: "A mirror in your notch",
                 message: "Uses the camera only while this tab is open. Nothing is recorded.",
-                action: ("Allow Camera", mirror.requestAccess))
+                action: ("Continue", mirror.requestAccess))  // App Review 5.1.1(iv): not "Allow"
         case .denied:
             FeatureUnavailableView(
                 symbol: "video.slash", title: "Camera access is off",

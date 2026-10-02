@@ -50,7 +50,7 @@ struct EventAccessView: View {
                 symbol: symbol,
                 title: "Show your \(what) here",
                 message: "ILoveNotch reads your \(what) on this Mac only. Nothing leaves your Mac.",
-                action: (label: "Allow Access", perform: request))
+                action: (label: "Continue", perform: request))  // App Review 5.1.1(iv): not "Allow"
         }
     }
 }

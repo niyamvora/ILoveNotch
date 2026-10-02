@@ -661,7 +661,7 @@ private struct AboutSettings: View {
                     Image(systemName: "star.fill").font(.title)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Star ILoveNotch on GitHub").font(.headline)
-                        Text("It's free. A star is how other Mac users find it.").font(.callout).opacity(0.9)
+                        Text("A star is how other Mac users find it.").font(.callout).opacity(0.9)
                     }
                     Spacer(minLength: 0)
                     Image(systemName: "arrow.up.right").font(.callout.bold())
@@ -679,9 +679,11 @@ private struct AboutSettings: View {
                 AboutTile(
                     title: "Report a Bug", detail: "Or ask for a feature", symbol: "ladybug.fill", tint: .orange,
                     url: Links.newIssue)
-                AboutTile(
-                    title: "Sponsor", detail: "Fuel the next one", symbol: "heart.fill", tint: .pink, url: Links.sponsor
-                )
+                #if !APP_STORE  // the App Store takes no outside payments (3.1.1)
+                    AboutTile(
+                        title: "Sponsor", detail: "Fuel the next one", symbol: "heart.fill", tint: .pink,
+                        url: Links.sponsor)
+                #endif
             }
             Spacer(minLength: 0)
             VStack(spacing: 4) {

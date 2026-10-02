@@ -21,7 +21,7 @@ public enum CameraAccess: Equatable, Sendable {
 
 /// A mirror from the front camera. The camera runs only while this tab is on screen and access is
 /// granted, and stops the moment the notch closes or switches tabs; nothing is recorded. The
-/// camera is asked for only when the user taps Allow Camera.
+/// camera is asked for only when the user taps Continue.
 @MainActor
 @Observable
 public final class MirrorFeature: NotchFeature {

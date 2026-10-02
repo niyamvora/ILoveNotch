@@ -135,7 +135,7 @@ private struct AccessRow: View {
             case .granted:
                 Label("Allowed", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
             case .notDetermined:
-                Button("Allow Access", action: request)
+                Button("Continue", action: request)  // App Review 5.1.1(iv): not "Allow"
             case .denied:
                 Button("Open Privacy Settings") { NSWorkspace.shared.open(.privacySettings(pane)) }
             }

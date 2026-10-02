@@ -28,11 +28,11 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         for item in updateItems() { menu.addItem(item) }
         menu.addItem(.separator())
         menu.addItem(menuItem("About ILoveNotch", symbol: "info.circle", #selector(showAbout)))
-        #if !APP_STORE  // the App Store tells its edition's story itself
+        #if !APP_STORE  // the App Store tells its edition's story itself, and takes no outside payments (3.1.1)
             menu.addItem(
                 menuItem("What's New in \(Updater.shortVersion)", symbol: "sparkles", #selector(showReleaseNotes)))
+            menu.addItem(menuItem("Sponsor ILoveNotch…", symbol: "heart", #selector(sponsor)))
         #endif
-        menu.addItem(menuItem("Sponsor ILoveNotch…", symbol: "heart", #selector(sponsor)))
         menu.addItem(.separator())
         let quit = NSMenuItem(title: "Quit ILoveNotch", action: #selector(NSApplication.terminate), keyEquivalent: "q")
         quit.image = NSImage(systemSymbolName: "power", accessibilityDescription: nil)
