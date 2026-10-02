@@ -93,7 +93,10 @@ The `OpenNotch App Store` scheme builds the sandboxed edition (see the
 [plan](plan/implementation-plan.md#app-store-edition) for what it leaves out). The app record is
 **ILoveNotch** (Apple ID 6815805975, bundle ID `cafe.opennotch.app`, SKU `ilovenotch-mac`), made on
 the App Store Connect website because the API can't create app records. 1.0.0 was submitted for
-review on 24 September 2026.
+review on 24 September 2026, rejected, and resubmitted as 1.3.0 on 2 October
+([listing](app-store/metadata.md)). Two App Review rules came out of it: the edition must not link
+to payments outside In-App Purchase (the Sponsor link is `#if !APP_STORE`), and a button before a
+permission prompt says Continue, not Allow.
 
 For each version, from a clean `main`:
 

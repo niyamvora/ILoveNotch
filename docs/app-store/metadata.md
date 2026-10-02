@@ -1,7 +1,11 @@
 # App Store listing
 
-**Status: live.** Version 1.0.0 was submitted for review with this listing on 24 September 2026.
-Change it here and in App Store Connect together. Character limits are App Store Connect's.
+**Status: in review.** Version 1.0.0 was submitted on 24 September 2026 and rejected on 29 September
+for the Sponsor link (guideline 3.1.1: no payments outside In-App Purchase) and for "Allow Access"
+buttons before permission prompts (5.1.1(iv): say Continue). The same version, renamed 1.3.0 (build
+150) with both fixed, was resubmitted on 2 October 2026. App Store Connect still has 1.0.0's shorter
+description; the one below goes in with the next version. Change the listing here and in App Store
+Connect together. Character limits are App Store Connect's.
 
 The App Store edition is sandboxed: it has every tab except AI Usage, which reads other apps'
 sign-ins. Media shows what's playing in Music and Spotify from their public notifications, without
@@ -20,7 +24,7 @@ shot) and a real album cover; if App Review objects, replace those.
 | Secondary category | Utilities | |
 | Age rating | 4+ (every question answered None) | |
 | Content rights | Doesn't use third-party content | |
-| Price | Free, in all 175 countries and regions | |
+| Price | US$1.99 (set for the United States; Apple prices the other storefronts from it), in all 175 countries and regions | |
 | Copyright | 2026 Niyam Vora | |
 
 ## Promotional text (170)
@@ -58,7 +62,9 @@ Native and light: no accounts, no tracking, and nothing running when you aren't 
 how it opens and closes, drag its corner to resize it, pin it open, and use it on every display. On
 Macs without a notch it sits at the top of the screen as a small pill.
 
-Free and open source.
+Open source.
+
+(The App Store edition is paid, so its listing never says "free".)
 
 ## Keywords (100)
 
@@ -107,12 +113,16 @@ website can answer this; the API can't.
 
 ILoveNotch is a menu-bar-style utility with no Dock icon. To open it, move the pointer to the notch
 (or the pill at the top of the screen on Macs without a notch), or click the ILoveNotch item in the
-menu bar and choose Settings. Calendar and Reminders access is requested only when you click Allow
-Access in those tabs. The Mirror tab is off until turned on in Settings › Mirror, and uses the
-camera only while it's open. Media shows what's playing in Music or Spotify; its waveform asks for
+menu bar and choose Settings. Calendar and Reminders access is requested only when you click
+Continue in those tabs. The Mirror tab is off until turned on in Settings › Mirror (or opened from
+the app drawer, the grid button after the tabs), and uses the camera only while it's open. Media shows what's playing in Music or Spotify; its waveform asks for
 system audio recording permission and analyzes the sound on the Mac without recording it. The App
 Sandbox doesn't let this edition control other players, so Media's playback buttons are disabled
 and the tab says so. No account or sign-in is needed, and the app makes no network requests.
+
+For 1.3.0 the notes also open with what changed since the rejection: the Sponsor link is gone from
+this edition (no in-app payments and no links to outside payments), and the screens before the
+camera, Calendar, and Reminders prompts use a Continue button.
 
 ## TestFlight
 
