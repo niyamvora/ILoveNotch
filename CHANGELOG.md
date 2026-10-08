@@ -11,6 +11,10 @@ as they land, written for the people who use the app
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-09
+
+ILoveNotch 1.4 makes the Media tab a fuller player: shuffle and repeat, Music's up next, the cover in the closed notch, and controls that work in the App Store edition too.
+
 ### Added
 
 - **Shuffle and repeat in the Media tab**, lit in the cover's color while on: repeat goes from off to all to this track. They work in Music, Spotify, and other players that report them, and podcasts and audiobooks get 15-second skips in place of next and previous.
@@ -107,7 +111,8 @@ The first release of ILoveNotch: your MacBook's notch, finally useful.
 - **System activities.** Volume, charging and battery, and Bluetooth accessory batteries show briefly in the notch.
 - Signed and notarized by Apple, with updates through Sparkle, and on Homebrew: `brew install --cask niyamvora/tap/ilovenotch`.
 
-[Unreleased]: https://github.com/niyamvora/ILoveNotch/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/niyamvora/ILoveNotch/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/niyamvora/ILoveNotch/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/niyamvora/ILoveNotch/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/niyamvora/ILoveNotch/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/niyamvora/ILoveNotch/compare/v1.0.0...v1.1.0
