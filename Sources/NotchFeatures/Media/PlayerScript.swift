@@ -29,14 +29,20 @@ public enum ScriptedPlayer: String, Sendable {
     }
 
     /// Whether ILoveNotch may script the app, asking with macOS's prompt when `ask` is set and the user
-    /// hasn't answered yet. Off the main thread: the prompt waits for the answer.
+    /// hasn't answered yet. Off the main thread: the prompt waits for the answer. The app is addressed
+    /// by process, not bundle ID: asked about Spotify by bundle ID, macOS never answers (observed with
+    /// Spotify 1.3.3 on macOS 26.6), and nothing is sent to an app that isn't running anyway.
     func permission(ask: Bool) async -> Permission {
-        let id = rawValue
+        guard
+            let pid = NSRunningApplication.runningApplications(withBundleIdentifier: rawValue).first?.processIdentifier
+        else { return .denied }
         return await Task.detached(priority: .userInitiated) { () -> Permission in
-            guard let target = NSAppleEventDescriptor(bundleIdentifier: id).aeDesc else { return .denied }
+            let descriptor = NSAppleEventDescriptor(processIdentifier: pid)
+            guard let target = descriptor.aeDesc else { return .denied }
             // A real event, the "get" every script here sends: macOS won't prompt for a wildcard.
-            let status = AEDeterminePermissionToAutomateTarget(
-                target, AEEventClass(kAECoreSuite), AEEventID(kAEGetData), ask)
+            let status = withExtendedLifetime(descriptor) {
+                AEDeterminePermissionToAutomateTarget(target, AEEventClass(kAECoreSuite), AEEventID(kAEGetData), ask)
+            }
             switch status {
             case 0: return .granted
             case -1744: return .notAsked  // errAEEventWouldRequireUserConsent
