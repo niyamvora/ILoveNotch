@@ -1,16 +1,21 @@
 # App Store listing
 
-**Status: in review.** Version 1.0.0 was submitted on 24 September 2026 and rejected on 29 September
-for the Sponsor link (guideline 3.1.1: no payments outside In-App Purchase) and for "Allow Access"
-buttons before permission prompts (5.1.1(iv): say Continue). The same version, renamed 1.3.0 (build
-150) with both fixed, was resubmitted on 2 October 2026. App Store Connect still has 1.0.0's shorter
-description; the one below goes in with the next version. Change the listing here and in App Store
-Connect together. Character limits are App Store Connect's.
+**Status: 1.3.0 live** at US$1.99 since 7 October 2026 (<https://apps.apple.com/app/id6815805975>);
+**1.4.0 (build 157) in review** since 11 October. History: 1.0.0 was submitted on 24 September and
+rejected on 29 September for the Sponsor link (guideline 3.1.1: no payments outside In-App
+Purchase) and for "Allow Access" buttons before permission prompts (5.1.1(iv): say Continue); the
+same version, renamed 1.3.0 (build 150) with both fixed, was resubmitted on 2 October. 1.4.0 was
+first submitted with build 156, then pulled and resubmitted with 157 for the Spotify Automation fix
+(f57875a). Change the listing here and in App Store Connect together. Character limits are App
+Store Connect's.
 
-The App Store edition is sandboxed: it has every tab except AI Usage, which reads other apps'
-sign-ins. Media shows what's playing in Music and Spotify from their public notifications, without
-artwork or playback controls. The 1.0.0 screenshots still show AI Usage (a chip, and one desktop
-shot) and a real album cover; if App Review objects, replace those.
+The App Store edition is sandboxed: it has every tab except Sound, AI Usage, and Agents, and no
+Quick Share. Media shows what's playing in Music and Spotify from their public notifications and,
+since 1.4.0, controls them through their scripting access groups; Music's cover shows, while
+Spotify's is a tinted stand-in (its artwork would be the edition's first network request). The
+screenshots still show the full edition in places: the AI usage chip on the designed shots, and in
+1.4.0's Media capture, a tab row with Sound, AI Usage, and Agents and Spotify's cover. If App Review
+objects, replace those.
 
 ## Identity
 
@@ -45,6 +50,10 @@ SHELF
 Drop files on the notch to keep them close, then drag them out, preview them with Quick Look, or
 send them with AirDrop.
 
+CLIPBOARD
+What you copy, kept and searchable with Control-Option-V, with favorites. Off until you turn it on.
+Select items to delete together, or clear everything but your favorites.
+
 CALENDAR AND TASKS
 Today's events and the tasks due today at a glance, and your Reminders, synced to your iPhone. Add
 a task in plain words, like "Pay rent Friday 9am", group tasks by date or list, block time for
@@ -54,6 +63,10 @@ NOTES, SHORTCUTS, AND TIMER
 Markdown notes that save as you type, with colors, pins, search, and checklists you can send to
 Tasks, in a folder of your choice such as iCloud Drive. Your shortcuts one click away, a timer,
 and a stopwatch with laps.
+
+NETWORK
+Your download and upload speed as it happens, over a graph of the last minute, and how much you've
+moved by the hour, day, or month.
 
 MIRROR
 A quick look at your camera before a call, only while its tab is open.
@@ -84,7 +97,10 @@ notch,menu bar,now playing,shelf,drag and drop,airdrop,reminders,calendar,timer,
 Mac screenshots are 16:10 (2880×1800, 2560×1600, 1440×900, or 1280×800), up to 10, without
 transparency. 1.0.0 has nine, in this order: the designed hero, Shelf, Timer, Tasks, Notes,
 Calendar, and Shortcuts shots at 1440×900, then two desktop captures (Media and AI Usage) cut to
-2880×1800 above the Dock. The files are kept outside the repository, with the launch assets.
+2880×1800 above the Dock. 1.4.0 has eight: the same seven designed shots, then the 1.4 Media player
+on the desktop (`08-media-1.4.png`, 2560×1600, cropped from a full-screen capture around the notch
+to leave out the Dock and desktop icons); the old Media and AI Usage captures were dropped. The
+files are kept outside the repository, with the launch assets.
 
 ## App preview
 
@@ -122,9 +138,12 @@ playback, shuffle, and repeat buttons control Music and Spotify through the scri
 they publish (`com.apple.security.scripting-targets`); macOS asks for Automation permission the
 first time one is pressed. No account or sign-in is needed, and the app makes no network requests.
 
-For 1.3.0 the notes also open with what changed since the rejection: the Sponsor link is gone from
-this edition (no in-app payments and no links to outside payments), and the screens before the
-camera, Calendar, and Reminders prompts use a Continue button.
+To try Media's controls (new in 1.4.0): play a song in Music or Spotify, open the notch on the
+Media tab, and press play/pause, next, shuffle, or repeat. macOS asks once for Automation permission
+for that app. The list button shows Music's up next; for Spotify, the tracks played since launch.
+
+(1.3.0's notes opened with what changed since the rejection: the Sponsor link gone from this
+edition, and Continue buttons before the camera, Calendar, and Reminders prompts.)
 
 ## TestFlight
 
