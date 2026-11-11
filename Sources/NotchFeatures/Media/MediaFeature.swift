@@ -346,7 +346,12 @@ public final class MediaFeature: NotchFeature {
     private func start() {
         guard stream == nil, notificationTokens.isEmpty else { return }
         startedAt = Date()
-        if source == .adapter, let adapter, startStream(adapter) { return }
+        // A helper that failed earlier gets another try each time Media starts (after sleep, a lock,
+        // or turning it back on), so a one-off failure doesn't need ILoveNotch relaunched.
+        if let adapter, startStream(adapter) {
+            source = .adapter
+            return
+        }
         source = .fallback
         startNotifications()
     }
@@ -367,7 +372,8 @@ public final class MediaFeature: NotchFeature {
         process.standardError = FileHandle.nullDevice
         process.terminationHandler = { [weak self] ended in
             let status = ended.terminationStatus
-            Task { @MainActor in self?.streamEnded(ended, status: status) }
+            let crashed = ended.terminationReason == .uncaughtSignal
+            Task { @MainActor in self?.streamEnded(ended, status: status, crashed: crashed) }
         }
         do {
             try process.run()
@@ -392,13 +398,29 @@ public final class MediaFeature: NotchFeature {
         return true
     }
 
-    private func streamEnded(_ process: Process, status: Int32) {
+    private func streamEnded(_ process: Process, status: Int32, crashed: Bool) {
         guard process === stream else { return }  // stopped on purpose
         stream = nil
-        // Upstream advises against restarting a helper that exited on its own: fall back instead.
+        let ran = Date().timeIntervalSince(startedAt)
+        if Self.restartsHelper(status: status, crashed: crashed, ranFor: ran), let adapter, startStream(adapter) {
+            Log.features.error("Media helper ended (status \(status, privacy: .public)) after \(Int(ran))s; restarted")
+            startedAt = Date()
+            return
+        }
         Log.features.error("Media helper exited with status \(status, privacy: .public); using the fallback")
         source = .fallback
+        // The fallback follows only Music and Spotify. Any other app's track (a browser's) would stay
+        // on screen as playing, its time running and its buttons dead, until ILoveNotch relaunched.
+        if scriptedPlayer == nil { receive(nil) }
         startNotifications()
+    }
+
+    /// Whether a helper that ended on its own is worth starting again. A crash or a kill (a signal),
+    /// or a clean exit, isn't the adapter reporting that MediaRemote is closed to it, but one that dies
+    /// within seconds of starting is broken: upstream advises against restarting that, or any helper
+    /// that exits with an error.
+    nonisolated static func restartsHelper(status: Int32, crashed: Bool, ranFor seconds: TimeInterval) -> Bool {
+        (crashed || status == 0) && seconds > 10
     }
 
     private func startNotifications() {

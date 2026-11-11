@@ -11,6 +11,10 @@ as they land, written for the people who use the app
 
 ## [Unreleased]
 
+### Fixed
+
+- **The Media tab no longer gets stuck on a browser's track.** If the helper that reads what's playing stopped, the player kept showing the last track from Chrome or another app as playing, with buttons that did nothing, until you relaunched ILoveNotch. Now the helper starts again by itself. If it can't, the stale track clears.
+
 ## [1.5.0] - 2026-11-04
 
 ILoveNotch 1.5 comes from your feedback: edit the tab row right in All Apps, put your tasks in your own order, and paste with ⌘V.

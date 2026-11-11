@@ -267,6 +267,13 @@ struct MediaFeatureTests {
         #expect(shown.last! == nil)
     }
 
+    @Test func aHelperThatDiedAfterRunningIsRestarted() {
+        #expect(MediaFeature.restartsHelper(status: 9, crashed: true, ranFor: 600), "killed or crashed")
+        #expect(MediaFeature.restartsHelper(status: 0, crashed: false, ranFor: 600), "exited cleanly")
+        #expect(!MediaFeature.restartsHelper(status: 1, crashed: false, ranFor: 600), "the adapter's own error")
+        #expect(!MediaFeature.restartsHelper(status: 11, crashed: true, ranFor: 2), "dies right after starting")
+    }
+
     @Test func swipesSkipOnlyWhenFarAndSideways() {
         #expect(swipeDirection(CGSize(width: -80, height: 5)) == true, "left: next")
         #expect(swipeDirection(CGSize(width: 80, height: 5)) == false, "right: previous")
