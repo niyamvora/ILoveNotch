@@ -11,6 +11,10 @@ as they land, written for the people who use the app
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-11-11
+
+ILoveNotch 1.5.1 keeps the Media tab following Chrome and other apps, instead of getting stuck on the last track.
+
 ### Fixed
 
 - **The Media tab no longer gets stuck on a browser's track.** If the helper that reads what's playing stopped, the player kept showing the last track from Chrome or another app as playing, with buttons that did nothing, until you relaunched ILoveNotch. Now the helper starts again by itself. If it can't, the stale track clears.
@@ -131,7 +135,8 @@ The first release of ILoveNotch: your MacBook's notch, finally useful.
 - **System activities.** Volume, charging and battery, and Bluetooth accessory batteries show briefly in the notch.
 - Signed and notarized by Apple, with updates through Sparkle, and on Homebrew: `brew install --cask niyamvora/tap/ilovenotch`.
 
-[Unreleased]: https://github.com/niyamvora/ILoveNotch/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/niyamvora/ILoveNotch/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/niyamvora/ILoveNotch/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/niyamvora/ILoveNotch/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/niyamvora/ILoveNotch/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/niyamvora/ILoveNotch/compare/v1.2.0...v1.3.0
