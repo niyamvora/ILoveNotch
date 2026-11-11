@@ -3,6 +3,21 @@
     <channel>
         <title>ILoveNotch</title>
         <item>
+            <title>1.5.1</title>
+            <pubDate>Wed, 11 Nov 2026 12:17:13 +0530</pubDate>
+            <sparkle:version>167</sparkle:version>
+            <sparkle:shortVersionString>1.5.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.6</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[
+ILoveNotch 1.5.1 keeps the Media tab following Chrome and other apps, instead of getting stuck on the last track.
+
+### Fixed
+
+- **The Media tab no longer gets stuck on a browser's track.** If the helper that reads what's playing stopped, the player kept showing the last track from Chrome or another app as playing, with buttons that did nothing, until you relaunched ILoveNotch. Now the helper starts again by itself. If it can't, the stale track clears.
+]]></description>
+            <enclosure url="https://github.com/niyamvora/ILoveNotch/releases/download/v1.5.1/ILoveNotch-1.5.1.dmg" length="7179715" type="application/octet-stream" sparkle:edSignature="GHKdIZlLCKU5T1QPmp24AxukQfK57eeUHHIIObDd5dCjMpH8ehIAXvEndSef6d9Dkr8WyvOHGCpibLUHMziaAw=="/>
+        </item>
+        <item>
             <title>1.5.0</title>
             <pubDate>Wed, 04 Nov 2026 12:01:32 +0700</pubDate>
             <sparkle:version>163</sparkle:version>
@@ -47,29 +62,6 @@ ILoveNotch 1.4 makes the Media tab a fuller player: shuffle and repeat, Music's 
 macOS asks once before ILoveNotch controls Music or Spotify this way (Privacy & Security › Automation), the first time you press one of these buttons.
 ]]></description>
             <enclosure url="https://github.com/niyamvora/ILoveNotch/releases/download/v1.4.0/ILoveNotch-1.4.0.dmg" length="7147670" type="application/octet-stream" sparkle:edSignature="h6QDoE838paoB/ie0GoCmEzZCFwQA8/zX6eX8R0GrLkODpCeer8lVXKtBzPYCiUdk58b6UAMexyeW51u1+GAAg=="/>
-        </item>
-        <item>
-            <title>1.3.0</title>
-            <pubDate>Fri, 02 Oct 2026 10:09:37 +0530</pubDate>
-            <sparkle:version>150</sparkle:version>
-            <sparkle:shortVersionString>1.3.0</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.6</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[
-ILoveNotch 1.3 puts the tabs on Liquid Glass with new icons, lets you select and clear clipboard items, and no longer quits as it opens when a reminder is due.
-
-### Added
-
-- **Select and clear in the Clipboard tab.** Select ticks items to delete together, favorites included, with Select All for what the search shows. Clear deletes everything but favorites, after asking once more.
-
-### Changed
-
-- **Tabs in Liquid Glass, with new icons.** The tab row, All Apps, and the pin with Settings sit on glass, the way macOS 26 draws a toolbar. The notch's icons are now from Tabler Icons, drawn on one grid with one stroke, so every tab looks the same size, and the Network tab is a UFO, beaming your data up and down.
-
-### Fixed
-
-- ILoveNotch no longer quits as it opens when a reminder with a time is due within a day.
-]]></description>
-            <enclosure url="https://github.com/niyamvora/ILoveNotch/releases/download/v1.3.0/ILoveNotch-1.3.0.dmg" length="6979279" type="application/octet-stream" sparkle:edSignature="15KxKKY6FWNz6cIbJwcQrsHvgZZ3MrB0RZyFovD33Z/hrhnO+iLf8zBcTA/yKA2bREJrpATtLjuzhXeI/vXRDw=="/>
         </item>
     </channel>
 </rss>
