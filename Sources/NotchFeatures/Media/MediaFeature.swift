@@ -97,6 +97,9 @@ public final class MediaFeature: NotchFeature {
     @ObservationIgnored private var pausedAt: Date?
     @ObservationIgnored private var lingering: Task<Void, Never>?
     @ObservationIgnored private var shownOngoing: Activity?
+    /// The closed notch's tab that already had its 10 seconds, hidden until what's playing changes.
+    @ObservationIgnored private var tuckedOngoing: Activity?
+    @ObservationIgnored private var tucking: Task<Void, Never>?
     /// The cover, small enough for the closed notch.
     @ObservationIgnored private var tinyArtwork: Data?
     /// Spotify tracks that played, newest first, to play again from the list.
@@ -494,16 +497,27 @@ public final class MediaFeature: NotchFeature {
         lingering = nil
         let shows = Self.showsOngoing(
             nowPlaying, pausedAt: pausedAt, at: .now, enabled: showsInClosedNotch && phase != .stopped)
-        let activity =
+        var activity =
             shows
             ? nowPlaying.map {
                 Activity(
                     feature: .media, symbol: $0.isPlaying ? "music.note" : "pause.fill", title: $0.title,
                     duration: .seconds(3), artwork: tinyArtwork)
             } : nil
+        // ponytail: the tab hides 10 s after it appears, and comes back when the track, cover, or play/pause changes.
+        if activity == tuckedOngoing { activity = nil }
         if activity != shownOngoing {
             shownOngoing = activity
             onOngoing?(activity)
+            tucking?.cancel()
+            if let activity {
+                tucking = Task { [weak self] in
+                    try? await Task.sleep(for: .seconds(10))
+                    guard !Task.isCancelled else { return }
+                    self?.tuckedOngoing = activity
+                    self?.updateOngoing()
+                }
+            }
         }
         if shows, let pausedAt {
             let left = Self.linger - Date.now.timeIntervalSince(pausedAt)
