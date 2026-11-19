@@ -1,0 +1,7 @@
+:HL["/ILoveNotch/_next/static/chunks/1p8ei__gngbom.css","style"]
+:HL["/ILoveNotch/_next/static/media/07a39a8a4660cc7c-s.p.0r6juujl39pe6.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/ILoveNotch/_next/static/media/605ce01b664af129-s.p.0wgildi0cnwt9.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/ILoveNotch/_next/static/media/8056169c9d560660-s.p.41rroleoq1br7.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+2:[["children",{"s":"__PAGE__","h":160}]]
+1:[["children",{"s":"compare","h":64,"c":"$Q2"}]]
+0:{"b":"PPq4AgsNhpq73pMYDZG-Q","t":{"t":{"s":"","h":16,"c":"$Q1"}}}

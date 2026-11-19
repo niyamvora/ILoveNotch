@@ -1,0 +1,4 @@
+User-Agent: *
+Allow: /
+
+Sitemap: https://niyamvora.github.io/ILoveNotch/sitemap.xml
