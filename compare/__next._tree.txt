@@ -4,4 +4,4 @@
 :HL["/ILoveNotch/_next/static/media/8056169c9d560660-s.p.41rroleoq1br7.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 2:[["children",{"s":"__PAGE__","h":160}]]
 1:[["children",{"s":"compare","h":64,"c":"$Q2"}]]
-0:{"b":"PPq4AgsNhpq73pMYDZG-Q","t":{"t":{"s":"","h":16,"c":"$Q1"}}}
+0:{"b":"MbFyV2Cf70T1sEqBjk_F6","t":{"t":{"s":"","h":16,"c":"$Q1"}}}
